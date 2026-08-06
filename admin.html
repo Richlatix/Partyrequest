@@ -1,321 +1,347 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super-Admin Beheer | Verzoekjes SaaS</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root {
-      --bg-color: #121212;
-      --card-bg: #1e1e1e;
-      --text-color: #ffffff;
-      --accent-color: #7dff00;
-      --border-color: #2a2a2a;
-      --subtext-color: #b0b0b0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super-Admin | DJ Verzoekjes Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --success: #22c55e;
+        }
 
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      background: var(--bg-color); 
-      color: var(--text-color); 
-      padding: 20px; 
-      max-width: 700px; 
-      margin: auto; 
-    }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
 
-    h1, h2, h3 { color: var(--accent-color); text-align: center; }
-    
-    input, button, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
-    button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
-    button:hover { opacity: 0.9; }
-    
-    .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
-    .company-header { display: flex; justify-content: space-between; align-items: center; }
-    .danger-btn { background: #ff4444; color: #ffffff; width: auto; padding: 6px 12px; }
-    .small-btn { background: #333; color: var(--accent-color); border: 1px solid var(--accent-color); width: auto; padding: 6px 12px; font-size: 0.85em; }
-    .toggle-btn { background: #2a2a2a; color: var(--text-color); border: 1px solid var(--border-color); width: auto; padding: 6px 12px; font-size: 0.85em; }
-    .hidden { display: none !important; }
-    
-    .dj-list-item { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 8px 12px; border-radius: 6px; margin-top: 6px; font-size: 0.9em; }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
 
-    .toast-popup {
-      position: fixed;
-      bottom: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1e1e1e;
-      color: #ffffff;
-      border: 1.5px solid var(--accent-color);
-      padding: 12px 24px;
-      border-radius: 30px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
-      z-index: 9999;
-      font-weight: bold;
-      text-align: center;
-    }
-  </style>
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1, h2 {
+            margin: 0;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .badge-active { background-color: rgba(34, 197, 94, 0.2); color: var(--success); }
+        .badge-warning { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-expired { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: #16a34a; }
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: #dc2626; }
+    </style>
 </head>
 <body>
 
-  <!-- INLOGSCHERM SUPER ADMIN -->
-  <div id="login-view" style="max-width: 400px; margin: 40px auto; text-align: center;">
-    <h2>🔐 Super-Admin Login</h2>
-    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer het beheerwachtwoord in:</p>
-    <input type="password" id="admin-pass-input" placeholder="Wachtwoord..." style="text-align:center;">
-    <button onclick="verifyAdminPass()">Inloggen</button>
-  </div>
+    <div class="container">
+        <header>
+            <h1>⚡ Super-Admin Dashboard</h1>
+            <p id="admin-status" style="color: var(--text-muted);">Abonnementen Beheer</p>
+        </header>
 
-  <!-- DASHBOARD BEHEER SCHERM -->
-  <div id="admin-dashboard" class="hidden">
-    <h2>⚡ Super-Admin Dashboard</h2>
-    <p style="text-align:center; color:var(--subtext-color);">Beheer hier alle huurende bedrijven en hun DJ's.</p>
+        <div class="card">
+            <h2>Nieuw Huurend Bedrijf Toevoegen</h2>
+            <form id="tenant-form" style="margin-top: 16px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="company-name">Bedrijfsnaam / Naam DJ</label>
+                        <input type="text" id="company-name" required placeholder="Bijv. DJ Tim Verhuur">
+                    </div>
+                    <div class="form-group">
+                        <label for="company-slug">Unieke URL Slug (zonder spaties)</label>
+                        <input type="text" id="company-slug" required placeholder="Bijv. dj-tim">
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="primary-color">Primaire Huisstijl Kleur</label>
+                        <input type="color" id="primary-color" value="#4f46e5" style="height: 45px; padding: 4px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email">Contact E-mailadres</label>
+                        <input type="email" id="contact-email" placeholder="info@djtim.nl">
+                    </div>
+                    <div class="form-group">
+                        <label for="subscription-period">Abonnementstermijn</label>
+                        <select id="subscription-period">
+                            <option value="1">1 Jaar (Standaard)</option>
+                            <option value="2">2 Jaar</option>
+                            <option value="0.083">1 Maand (Test)</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit">Bedrijf & Abonnement Toevoegen</button>
+            </form>
+        </div>
 
-    <!-- UITKLAPBAAR FORMULIER: NIEUW BEDRIJF TOEVOEGEN -->
-    <button onclick="toggleAddCompany()" style="background:var(--card-bg); color:var(--accent-color); border:1px dashed var(--accent-color); margin-bottom:20px;">
-      ➕ Nieuw Bedrijf Toevoegen (Uitklappen)
-    </button>
-
-    <div id="new-company-section" class="hidden" style="background:var(--card-bg); padding:20px; border-radius:12px; border:1px solid var(--accent-color); margin-bottom:25px;">
-      <h3 style="margin-top:0; text-align:left;">Nieuw Bedrijf Registreren</h3>
-      
-      <label style="font-size:0.85em; color:var(--subtext-color);">Bedrijfsnaam:</label>
-      <input type="text" id="new-name" placeholder="Bijv. Tim's Drive-in Show">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">Hoofdbedrijfscode (2 letters + 2 cijfers, uniek, bijv. TS01):</label>
-      <input type="text" id="new-code" placeholder="Bijv. TS01" maxlength="4" style="text-transform: uppercase;">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">Startwachtwoord:</label>
-      <input type="text" id="new-password" placeholder="Standaard wachtwoord voor bedrijf" value="welkom123">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">Logo URL (Optioneel):</label>
-      <input type="text" id="new-logo" placeholder="https://jouwsite.nl/logo.png">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">Accentkleur:</label>
-      <input type="color" id="new-color" value="#7dff00" style="height: 45px; padding: 4px;">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">WhatsApp nummer (voor boekingen promo-kaart):</label>
-      <input type="text" id="new-whatsapp" placeholder="31612345678">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">E-mailadres:</label>
-      <input type="email" id="new-email" placeholder="info@bedrijf.nl">
-
-      <button onclick="createCompany()" style="margin-top:15px;">Bedrijf Opslaan 🚀</button>
+        <div class="card">
+            <h2>Beheerde Bedrijven & Abonnementstermijnen</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
+                Bedrijven waarvan het abonnement is verlopen, worden automatisch geblokkeerd voor gasten. Bedrijven die binnenkort of maximaal een maand geleden verlopen zijn, zie je hieronder direct terug.
+            </p>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bedrijfsnaam</th>
+                            <th>Slug (Link)</th>
+                            <th>Vervaldatum</th>
+                            <th>Status</th>
+                            <th>Acties</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tenants-table-body">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <h3>📋 Actieve Huurders & DJ Beheer</h3>
-    <div id="companies-list"></div>
-  </div>
+    <script>
+        // Supabase configuratie (Vervang met jouw gegevens)
+        const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
+        const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
+        
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  <script>
-    const SUPABASE_URL = "https://yhitywueffetjjnoudkt.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po";
+        async function loadTenants() {
+            const tbody = document.getElementById('tenants-table-body');
+            try {
+                const { data, error } = await _supabase.from('tenants').select('*').order('subscription_expires_at', { ascending: true });
+                
+                if (error) throw error;
 
-    let dbClient = null;
-    const SUPER_ADMIN_PASSWORD = "3977"; // Gewijzigd naar 3977
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nog geen bedrijven toegevoegd.</td></tr>`;
+                    return;
+                }
 
-    function toonPopup(bericht) {
-      const oudePopup = document.getElementById('custom-toast');
-      if (oudePopup) oudePopup.remove();
+                const now = new Date();
 
-      const popup = document.createElement('div');
-      popup.id = 'custom-toast';
-      popup.className = 'toast-popup';
-      popup.innerText = bericht;
+                tbody.innerHTML = data.map(tenant => {
+                    const expiryDate = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
+                    let badgeHTML = '<span class="badge badge-active">Actief</span>';
+                    
+                    if (expiryDate) {
+                        const diffTime = expiryDate - now;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      document.body.appendChild(popup);
-      setTimeout(() => { if (popup) popup.remove(); }, 3000);
-    }
+                        if (diffDays < 0) {
+                            // Verlopen
+                            badgeHTML = `<span class="badge badge-expired">Verlopen (${Math.abs(diffDays)}d geleden)</span>`;
+                        } else if (diffDays <= 30) {
+                            // Bijna verlopen (binnen 30 dagen)
+                            badgeHTML = `<span class="badge badge-warning">Verloopt over ${diffDays}d</span>`;
+                        }
+                    }
 
-    function initSupabase() {
-      try {
-        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      } catch (err) {
-        toonPopup('Fout bij verbinden met Supabase!');
-      }
-    }
+                    const formattedDate = expiryDate ? expiryDate.toLocaleDateString('nl-NL') : 'Onbekend';
 
-    function verifyAdminPass() {
-      const pass = document.getElementById('admin-pass-input').value;
-      if (pass === SUPER_ADMIN_PASSWORD) {
-        document.getElementById('login-view').classList.add('hidden');
-        document.getElementById('admin-dashboard').classList.remove('hidden');
-        initSupabase();
-        loadCompanies();
-      } else {
-        toonPopup('Onjuist wachtwoord!');
-        document.getElementById('admin-pass-input').value = '';
-      }
-    }
+                    return `
+                        <tr>
+                            <td><strong>${tenant.company_name}</strong><br><small style="color:var(--text-muted);">${tenant.email || 'Geen e-mail'}</small></td>
+                            <td><code>?tenant=${tenant.slug}</code></td>
+                            <td>${formattedDate}</td>
+                            <td>${badgeHTML}</td>
+                            <td class="actions-cell">
+                                <button class="btn-success btn-sm" onclick="renewSubscription('${tenant.id}')" title="Zet termijn 1 jaar vooruit (Betaald)">Jaar Verlengen</button>
+                                <button class="btn-danger btn-sm" onclick="deleteTenant('${tenant.id}')">Verwijderen</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
 
-    function toggleAddCompany() {
-      const section = document.getElementById('new-company-section');
-      section.classList.toggle('hidden');
-    }
-
-    function toggleCompanyDetails(companyId) {
-      const detailsDiv = document.getElementById(`company-details-${companyId}`);
-      detailsDiv.classList.toggle('hidden');
-    }
-
-    async function loadCompanies() {
-      if (!dbClient) return;
-      
-      const { data: companies, error: compError } = await dbClient.from('companies').select('*, djs(*)').order('created_at', { ascending: false });
-      
-      const listContainer = document.getElementById('companies-list');
-      listContainer.innerHTML = '';
-
-      if (compError || !companies || companies.length === 0) {
-        listContainer.innerHTML = '<p style="text-align:center; color:var(--subtext-color);">Nog geen bedrijven aangemaakt.</p>';
-        return;
-      }
-
-      companies.forEach(comp => {
-        let djsHtml = '';
-        const prefixDigits = comp.company_code.slice(2);
-
-        if (comp.djs && comp.djs.length > 0) {
-          comp.djs.forEach(dj => {
-            djsHtml += `
-              <div class="dj-list-item">
-                <span>🎧 <strong>${dj.dj_name}</strong> (DJ-code: <code style="color:var(--accent-color);">${dj.dj_code}</code>)</span>
-                <button class="danger-btn" style="padding: 2px 8px; font-size: 0.8em;" onclick="deleteDj('${dj.id}')">✕</button>
-              </div>`;
-          });
-        } else {
-          djsHtml = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen DJ\'s toegevoegd aan dit bedrijf.</p>';
+            } catch (err) {
+                console.error('Fout bij ophalen tenants:', err);
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Fout bij laden van gegevens. Zorg dat de databasekolom 'subscription_expires_at' bestaat.</td></tr>`;
+            }
         }
 
-        listContainer.innerHTML += `
-          <div class="card">
-            <div class="company-header">
-              <div>
-                <strong style="font-size: 1.1em;">${comp.company_name}</strong> 
-                <span style="background:rgba(125,255,0,0.1); color:var(--accent-color); padding:2px 6px; border-radius:4px; font-size:0.8em; border:1px solid var(--accent-color);">${comp.company_code}</span><br>
-                <small style="color:var(--subtext-color);">Wachtwoord: <code style="color:#ffffff; background:#2a2a2a; padding:2px 6px; border-radius:4px;">${comp.password || 'welkom123'}</code></small><br>
-                <small style="color:var(--subtext-color);">E-mail: ${comp.email || 'Niet opgegeven'} | WhatsApp: ${comp.whatsapp_nr || 'Niet opgegeven'}</small>
-              </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="toggle-btn" onclick="toggleCompanyDetails('${comp.id}')">📂 Details & DJ's</button>
-                <button class="danger-btn" onclick="deleteCompany('${comp.id}')">Verwijderen</button>
-              </div>
-            </div>
+        // Nieuw bedrijf toevoegen inclusief berekende vervaldatum
+        document.getElementById('tenant-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const company_name = document.getElementById('company-name').value;
+            const slug = document.getElementById('company-slug').value.trim().toLowerCase().replace(/\s+/g, '-');
+            const primary_color = document.getElementById('primary-color').value;
+            const email = document.getElementById('contact-email').value;
+            const periodYears = parseFloat(document.getElementById('subscription-period').value);
 
-            <!-- INKLAPBAAR GEDEELTE VOOR DJ'S EN BEHEER -->
-            <div id="company-details-${comp.id}" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 12px;">
-              <h4 style="margin: 0 0 8px 0; color: var(--text-color); font-size: 0.95em;">DJ's van ${comp.company_name}:</h4>
-              ${djsHtml}
-              
-              <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="dj-name-${comp.id}" placeholder="DJ Naam (bijv. DJ Lars)" style="margin:0; font-size:0.9em; padding:8px; flex: 2;">
-                <span style="background: #2a2a2a; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: var(--accent-color); font-weight: bold; font-family: monospace;">${prefixDigits}</span>
-                <input type="text" id="dj-suffix-${comp.id}" placeholder="Laatste 2 (bijv. 55)" maxlength="2" style="margin:0; font-size:0.9em; padding:8px; width: 130px; text-align: center;">
-                <button class="small-btn" onclick="createDj('${comp.id}', '${prefixDigits}')">DJ Toevoegen</button>
-              </div>
-            </div>
-          </div>`;
-      });
-    }
+            // Bereken vervaldatum
+            const expiresAt = new Date();
+            expiresAt.setFullYear(expiresAt.getFullYear() + periodYears);
 
-    async function createCompany() {
-      const name = document.getElementById('new-name').value.trim();
-      const code = document.getElementById('new-code').value.trim().toUpperCase();
-      const password = document.getElementById('new-password').value.trim();
-      const logo = document.getElementById('new-logo').value.trim();
-      const color = document.getElementById('new-color').value;
-      const whatsapp = document.getElementById('new-whatsapp').value.trim();
-      const email = document.getElementById('new-email').value.trim();
+            try {
+                const { error } = await _supabase.from('tenants').insert([{ 
+                    company_name, 
+                    slug, 
+                    primary_color, 
+                    email,
+                    subscription_expires_at: expiresAt.toISOString()
+                }]);
+                if (error) throw error;
 
-      if (!name || !code || !password) {
-        return toonPopup('Bedrijfsnaam, hoofdbedrijfscode en wachtwoord zijn verplicht!');
-      }
+                alert('Bedrijf succesvol toegevoegd met actieve termijn!');
+                document.getElementById('tenant-form').reset();
+                loadTenants();
+            } catch (err) {
+                alert('Fout bij toevoegen: ' + err.message);
+            }
+        });
 
-      if (code.length !== 4) {
-        return toonPopup('De hoofdbedrijfscode moet exact 4 tekens zijn (2 letters + 2 cijfers, bijv. TS01)!');
-      }
+        // Verleng abonnementstermijn met 1 jaar (simuleert "Betaald")
+        async function renewSubscription(id) {
+            if (!confirm('Bevestig je dat de betaling binnen is? Het abonnement wordt met 1 jaar verlengd.')) return;
 
-      const { error } = await dbClient.from('companies').insert([{
-        company_name: name,
-        company_code: code,
-        password: password,
-        logo_url: logo,
-        accent_color: color,
-        whatsapp_nr: whatsapp,
-        email: email
-      }]);
+            try {
+                // Haal huidige vervaldatum op of pak vandaag
+                const newExpiry = new Date();
+                newExpiry.setFullYear(newExpiry.getFullYear() + 1);
 
-      if (error) {
-        toonPopup('Fout bij aanmaken (mogelijk bestaat de code al).');
-        console.error(error);
-      } else {
-        toonPopup(`Bedrijf "${name}" succesvol aangemaakt!`);
-        document.getElementById('new-name').value = '';
-        document.getElementById('new-code').value = '';
-        document.getElementById('new-password').value = 'welkom123';
-        document.getElementById('new-logo').value = '';
-        document.getElementById('new-whatsapp').value = '';
-        document.getElementById('new-email').value = '';
-        toggleAddCompany();
-        loadCompanies();
-      }
-    }
+                const { error } = await _supabase
+                    .from('tenants')
+                    .update({ subscription_expires_at: newExpiry.toISOString() })
+                    .eq('id', id);
 
-    async function deleteCompany(id) {
-      if (!confirm("Weet je zeker dat je dit bedrijf en al bijbehorende DJ's wilt verwijderen?")) return;
+                if (error) throw error;
 
-      const { error } = await dbClient.from('companies').delete().eq('id', id);
-      if (error) {
-        toonPopup('Fout bij verwijderen.');
-      } else {
-        toonPopup('Bedrijf verwijderd.');
-        loadCompanies();
-      }
-    }
+                alert('Abonnement succesvol met 1 jaar verlengd!');
+                loadTenants();
+            } catch (err) {
+                alert('Fout bij verlengen: ' + err.message);
+            }
+        }
 
-    async function createDj(companyId, prefixDigits) {
-      const nameInput = document.getElementById(`dj-name-${companyId}`);
-      const suffixInput = document.getElementById(`dj-suffix-${companyId}`);
-      
-      const djName = nameInput.value.trim();
-      const djSuffix = suffixInput.value.trim();
+        async function deleteTenant(id) {
+            if (!confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) return;
+            
+            try {
+                const { error } = await _supabase.from('tenants').delete().eq('id', id);
+                if (error) throw error;
+                loadTenants();
+            } catch (err) {
+                alert('Fout bij verwijderen: ' + err.message);
+            }
+        }
 
-      if (!djName || !djSuffix) {
-        return toonPopup('Vul zowel de DJ-naam als de laatste 2 cijfers in!');
-      }
-
-      if (djSuffix.length !== 2) {
-        return toonPopup('De laatste toevoeging moet exact 2 cijfers lang zijn (bijv. 55)!');
-      }
-
-      const fullDjCode = prefixDigits + djSuffix;
-
-      const { error } = await dbClient.from('djs').insert([{
-        company_id: companyId,
-        dj_name: djName,
-        dj_code: fullDjCode
-      }]);
-
-      if (error) {
-        toonPopup('Fout bij aanmaken DJ (mogelijk bestaat deze DJ-code al).');
-        console.error(error);
-      } else {
-        toonPopup(`DJ "${djName}" met code ${fullDjCode} succesvol toegevoegd!`);
-        loadCompanies();
-      }
-    }
-
-    async function deleteDj(djId) {
-      if (!confirm("Weet je zeker dat je deze DJ wilt verwijderen?")) return;
-
-      const { error } = await dbClient.from('djs').delete().eq('id', djId);
-      if (error) {
-        toonPopup('Fout bij verwijderen DJ.');
-      } else {
-        toonPopup('DJ verwijderd.');
-        loadCompanies();
-      }
-    }
-  </script>
+        // Init laden bij openen pagina
+        loadTenants();
+    </script>
 </body>
 </html>
