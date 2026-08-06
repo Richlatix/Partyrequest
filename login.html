@@ -123,7 +123,7 @@
         }
 
         .hidden {
-            display: none;
+            display: none !important;
         }
     </style>
 </head>
@@ -131,7 +131,7 @@
 
     <!-- Knop rechtsboven voor Admin Inlog -->
     <div class="admin-btn-container">
-        <button id="toggle-admin-btn" class="btn-text">Admin Inlog</button>
+        <button id="toggle-admin-btn" type="button" class="btn-text">Admin Inlog</button>
     </div>
 
     <div class="login-card">
@@ -146,7 +146,7 @@
             <button type="submit" class="primary-btn" id="code-btn">Volgende</button>
         </form>
 
-        <!-- STAP 2: Wachtwoord invoeren voor het gevonden bedrijf (blijft verborgen tot stap 1klaar is) -->
+        <!-- STAP 2: Wachtwoord invoeren voor het gevonden bedrijf -->
         <form id="step2-password-form" class="hidden">
             <div class="form-group">
                 <label id="password-label" for="company-password">Wachtwoord</label>
@@ -155,7 +155,7 @@
             <button type="submit" class="primary-btn" id="password-btn">Inloggen</button>
         </form>
 
-        <!-- ADMIN INLOG FORMULIER (Verschijnt als je rechtsboven klikt) -->
+        <!-- ADMIN INLOG FORMULIER -->
         <form id="admin-login-form" class="hidden">
             <div class="form-group">
                 <label for="admin-password">Super Admin Wachtwoord</label>
@@ -168,9 +168,9 @@
     </div>
 
     <script>
-        // Let op: vervang deze variabelen met jouw echte Supabase URL en Sleutel!
-        const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
-        const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
+        // Jouw Supabase configuratie
+        const SUPABASE_URL = 'https://yhitywueffetjjnoudkt.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po';
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -229,7 +229,6 @@
                     throw new Error('Onbekende code');
                 }
 
-                // Controleer of abonnement verlopen is
                 if (data.expires_at && new Date() > new Date(data.expires_at)) {
                     errorMsg.innerText = 'Dit abonnementsaccount is verlopen.';
                     errorMsg.style.display = 'block';
@@ -241,7 +240,6 @@
                 currentCompany = data;
                 mode = 'password';
 
-                // Schakel over naar het wachtwoord-scherm
                 formTitle.innerText = data.company_name;
                 passwordLabel.innerText = `Wachtwoord voor ${data.company_name}`;
                 step1Form.classList.add('hidden');
