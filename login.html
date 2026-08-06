@@ -26,6 +26,30 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            position: relative;
+        }
+
+        .admin-btn-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+
+        .btn-text {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-text:hover {
+            border-color: var(--primary);
+            color: var(--text);
+            background-color: rgba(79, 70, 229, 0.1);
         }
 
         .login-card {
@@ -73,7 +97,7 @@
             border-color: var(--primary);
         }
 
-        button {
+        button.primary-btn {
             width: 100%;
             background-color: var(--primary);
             color: white;
@@ -86,7 +110,7 @@
             transition: background-color 0.2s;
         }
 
-        button:hover {
+        button.primary-btn:hover {
             background-color: var(--primary-hover);
         }
 
@@ -105,25 +129,33 @@
 </head>
 <body>
 
+    <!-- Knop rechtsboven voor Admin Inlog -->
+    <div class="admin-btn-container">
+        <button id="toggle-admin-btn" class="btn-text">Admin Inlog</button>
+    </div>
+
     <div class="login-card">
-        <h1>⚡ Inloggen Platform</h1>
-        <form id="login-form">
-            <!-- Stap 1: Voer Code in -->
-            <div class="form-group" id="step-code">
-                <label for="code-input">Bedrijf-, DJ- of Admincode</label>
-                <input type="text" id="code-input" required placeholder="Bijv. dj-tim of 3977">
-                <button type="button" id="next-btn" style="margin-top: 16px;">Volgende</button>
-            </div>
+        <h1 id="form-title">⚡ Inloggen</h1>
 
-            <!-- Stap 2: Voer Wachtwoord in -->
-            <div class="form-group hidden" id="step-password">
-                <label id="password-label" for="password-input">Wachtwoord</label>
-                <input type="password" id="password-input" placeholder="Voer je wachtwoord in">
-                <button type="submit" id="login-btn" style="margin-top: 16px;">Inloggen</button>
+        <!-- Formulier voor Bedrijven / DJ's (Stap 1: Bedrijfscodes invoeren) -->
+        <form id="client-login-form">
+            <div class="form-group">
+                <label for="company-code">Bedrijfscode of Slug</label>
+                <input type="text" id="company-code" required placeholder="Bijv. dj-tim">
             </div>
-
-            <div id="error-msg" class="error-message"></div>
+            <button type="submit" class="primary-btn" id="client-next-btn">Volgende</button>
         </form>
+
+        <!-- Formulier voor Super Admin (Verschijnt als je rechtsboven klikt) -->
+        <form id="admin-login-form" class="hidden">
+            <div class="form-group">
+                <label for="admin-password">Super Admin Wachtwoord</label>
+                <input type="password" id="admin-password" required placeholder="Voer admin wachtwoord in">
+            </div>
+            <button type="submit" class="primary-btn">Inloggen als Admin</button>
+        </form>
+
+        <div id="error-msg" class="error-message"></div>
     </div>
 
     <script>
@@ -134,38 +166,61 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const codeInput = document.getElementById('code-input');
-        const passwordInput = document.getElementById('password-input');
-        const nextBtn = document.getElementById('next-btn');
-        const stepCode = document.getElementById('step-code');
-        const stepPassword = document.getElementById('step-password');
+        const toggleAdminBtn = document.getElementById('toggle-admin-btn');
+        const formTitle = document.getElementById('form-title');
+        const clientLoginForm = document.getElementById('client-login-form');
+        const adminLoginForm = document.getElementById('admin-login-form');
         const errorMsg = document.getElementById('error-msg');
-        const passwordLabel = document.getElementById('password-label');
 
-        let foundCompanyData = null;
+        let isAdminMode = false;
 
-        async function handleCodeCheck() {
-            const code = codeInput.value.trim().toLowerCase();
+        // Schakel tussen Client inlog en Admin inlog via de knop rechtsboven
+        toggleAdminBtn.addEventListener('click', () => {
+            isAdminMode = !isAdminMode;
             errorMsg.style.display = 'none';
 
-            if (!code) {
-                errorMsg.innerText = 'Vul een code in.';
-                errorMsg.style.display = 'block';
-                return;
+            if (isAdminMode) {
+                formTitle.innerText = '⚡ Super-Admin Inlog';
+                clientLoginForm.classList.add('hidden');
+                adminLoginForm.classList.remove('hidden');
+                toggleAdminBtn.innerText = 'Terug naar Bedrijf Inlog';
+                document.getElementById('admin-password').focus();
+            } else {
+                formTitle.innerText = '⚡ Inloggen';
+                adminLoginForm.classList.add('hidden');
+                clientLoginForm.classList.remove('hidden');
+                toggleAdminBtn.innerText = 'Admin Inlog';
+                document.getElementById('company-code').focus();
             }
+        });
 
-            // 1. Directe check voor Super-Admin code 3977
-            if (code === '3977') {
+        // 1. Admin Inlog afhandelen
+        adminLoginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const password = document.getElementById('admin-password').value.trim();
+            errorMsg.style.display = 'none';
+
+            if (password === '3977') {
                 sessionStorage.setItem('super_admin_logged_in', 'true');
                 window.location.href = 'admin.html';
-                return;
+            } else {
+                errorMsg.innerText = 'Onjuist admin wachtwoord.';
+                errorMsg.style.display = 'block';
+                document.getElementById('admin-password').value = '';
             }
+        });
+
+        // 2. Bedrijf / DJ Inlog afhandelen (Stap 1: Controleer of code bestaat)
+        clientLoginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('company-code').value.trim().toLowerCase();
+            const nextBtn = document.getElementById('client-next-btn');
+            errorMsg.style.display = 'none';
 
             try {
-                nextBtn.innerText = 'Zoeken...';
+                nextBtn.innerText = 'Controleren...';
                 nextBtn.disabled = true;
 
-                // Zoek of het bedrijf/de DJ bestaat in de database
                 const { data, error } = await _supabase
                     .from('companies')
                     .select('*')
@@ -173,10 +228,10 @@
                     .single();
 
                 if (error || !data) {
-                    throw new Error('Onbekende code');
+                    throw new Error('Onbekende bedrijfscode');
                 }
 
-                // Controleer of het abonnement is verlopen
+                // Check op verlopen abonnement
                 if (data.expires_at) {
                     const expiresAt = new Date(data.expires_at);
                     if (new Date() > expiresAt) {
@@ -188,55 +243,22 @@
                     }
                 }
 
-                foundCompanyData = data;
-                
-                const typeText = data.account_type === 'bedrijf' ? 'Bedrijf' : 'Solo DJ';
-                passwordLabel.innerText = `Wachtwoord voor ${data.company_name} (${typeText})`;
+                // Sla tijdelijk op welk bedrijf het is en stuur door naar een wachtwoordpagina (of latere stap)
+                sessionStorage.setItem('pending_company_login', JSON.stringify({
+                    id: data.id,
+                    name: data.company_name,
+                    code: data.company_code,
+                    password: data.password
+                }));
 
-                stepCode.classList.add('hidden');
-                stepPassword.classList.remove('hidden');
-                passwordInput.focus();
+                // Stuur door naar een dedicated wachtwoordpagina voor dat bedrijf
+                window.location.href = 'bedrijf-login.html';
 
             } catch (err) {
-                errorMsg.innerText = 'Code niet gevonden of ongeldig.';
+                errorMsg.innerText = 'Bedrijfscode niet gevonden.';
                 errorMsg.style.display = 'block';
                 nextBtn.innerText = 'Volgende';
                 nextBtn.disabled = false;
-            }
-        }
-
-        // Klik op de knop 'Volgende'
-        nextBtn.addEventListener('click', handleCodeCheck);
-
-        // Ook op Enter drukken in het code-veld werkt nu direct
-        codeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleCodeCheck();
-            }
-        });
-
-        // Stap 2: Controleer het wachtwoord voor bedrijven/DJ's
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const enteredPassword = passwordInput.value.trim();
-            errorMsg.style.display = 'none';
-
-            if (!foundCompanyData) return;
-
-            if (enteredPassword === foundCompanyData.password) {
-                sessionStorage.setItem('company_logged_in', JSON.stringify({
-                    id: foundCompanyData.id,
-                    name: foundCompanyData.company_name,
-                    code: foundCompanyData.company_code,
-                    type: foundCompanyData.account_type
-                }));
-
-                window.location.href = 'dashboard.html';
-            } else {
-                errorMsg.innerText = 'Onjuist wachtwoord.';
-                errorMsg.style.display = 'block';
-                passwordInput.value = '';
             }
         });
     </script>
