@@ -115,7 +115,7 @@
                 <button type="button" id="next-btn" style="margin-top: 16px;">Volgende</button>
             </div>
 
-            <!-- Stap 2: Voer Wachtwoord in (verschijnt pas na detectie) -->
+            <!-- Stap 2: Voer Wachtwoord in -->
             <div class="form-group hidden" id="step-password">
                 <label id="password-label" for="password-input">Wachtwoord</label>
                 <input type="password" id="password-input" placeholder="Voer je wachtwoord in">
@@ -144,8 +144,7 @@
 
         let foundCompanyData = null;
 
-        // Stap 1: Controleer de ingevoerde code
-        nextBtn.addEventListener('click', async () => {
+        async function handleCodeCheck() {
             const code = codeInput.value.trim().toLowerCase();
             errorMsg.style.display = 'none';
 
@@ -155,7 +154,7 @@
                 return;
             }
 
-            // 1. Check of het de Super-Admin code is
+            // 1. Directe check voor Super-Admin code 3977
             if (code === '3977') {
                 sessionStorage.setItem('super_admin_logged_in', 'true');
                 window.location.href = 'admin.html';
@@ -189,10 +188,8 @@
                     }
                 }
 
-                // Sla de gegevens tijdelijk op en schakel over naar het wachtwoordscherm
                 foundCompanyData = data;
                 
-                // Pas label aan op basis van account type (Bedrijf of Solo DJ)
                 const typeText = data.account_type === 'bedrijf' ? 'Bedrijf' : 'Solo DJ';
                 passwordLabel.innerText = `Wachtwoord voor ${data.company_name} (${typeText})`;
 
@@ -206,9 +203,20 @@
                 nextBtn.innerText = 'Volgende';
                 nextBtn.disabled = false;
             }
+        }
+
+        // Klik op de knop 'Volgende'
+        nextBtn.addEventListener('click', handleCodeCheck);
+
+        // Ook op Enter drukken in het code-veld werkt nu direct
+        codeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleCodeCheck();
+            }
         });
 
-        // Stap 2: Controleer het wachtwoord
+        // Stap 2: Controleer het wachtwoord voor bedrijven/DJ's
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const enteredPassword = passwordInput.value.trim();
@@ -217,7 +225,6 @@
             if (!foundCompanyData) return;
 
             if (enteredPassword === foundCompanyData.password) {
-                // Sla de bedrijfsgegevens op voor hun dashboard
                 sessionStorage.setItem('company_logged_in', JSON.stringify({
                     id: foundCompanyData.id,
                     name: foundCompanyData.company_name,
@@ -225,7 +232,6 @@
                     type: foundCompanyData.account_type
                 }));
 
-                // Stuur door naar het dashboard voor bedrijven/DJ's
                 window.location.href = 'dashboard.html';
             } else {
                 errorMsg.innerText = 'Onjuist wachtwoord.';
