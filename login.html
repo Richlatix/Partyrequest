@@ -105,12 +105,12 @@
         <h1>⚡ Inloggen Platform</h1>
         <form id="login-form">
             <div class="form-group">
-                <label for="company-code-input">Bedrijfscode (Slug)</label>
-                <input type="text" id="company-code-input" placeholder="Bijv. dj-tim (of laat leeg voor admin)">
+                <label for="company-code-input">Bedrijfscode (Optioneel voor DJ / Bedrijf)</label>
+                <input type="text" id="company-code-input" placeholder="Bijv. dj-tim">
             </div>
             <div class="form-group">
                 <label for="password-input">Wachtwoord</label>
-                <input type="password" id="password-input" required placeholder="Voer je wachtwoord in">
+                <input type="password" id="password-input" required placeholder="Voer wachtwoord in">
             </div>
             <button type="submit" id="login-btn">Inloggen</button>
             <div id="error-msg" class="error-message">Onjuiste gegevens of abonnement verlopen.</div>
@@ -134,14 +134,14 @@
 
             errorMsg.style.display = 'none';
 
-            // 1. Check of het de Super-Admin is (wachtwoord 3977)
+            // 1. Check of het de Super-Admin is (wachtwoord 3977 onafhankelijk van bedrijfscode)
             if (passwordInput === '3977') {
                 sessionStorage.setItem('super_admin_logged_in', 'true');
                 window.location.href = 'admin.html';
                 return;
             }
 
-            // 2. Als het een bedrijf/DJ is, moet de bedrijfscode ingevuld zijn
+            // 2. Als het geen admin is, is een bedrijfscode verplicht
             if (!companyCode) {
                 errorMsg.innerText = 'Vul je bedrijfscode in.';
                 errorMsg.style.display = 'block';
