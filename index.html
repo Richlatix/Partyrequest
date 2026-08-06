@@ -91,23 +91,29 @@
       <p id="welcome-text-display" style="margin: 0; font-size: 0.95em; color: var(--text-color);"></p>
     </div>
 
-    <!-- TABBLADEN / KEUZE TUSSEN LIBRARY & LOS VERZOEK -->
+    <!-- ZOEKEN IN BIBLIOTHEEK -->
     <div class="card">
       <h3 style="margin-top:0; text-align:left; color:var(--accent-color); font-size:1.1em;">🔍 Zoek in Muziekbibliotheek</h3>
-      <input type="text" id="library-search-input" placeholder="Typ artiest of titel..." oninput="searchLibrary()" style="margin-bottom: 10px;">
-      <div id="library-results" style="max-height: 200px; overflow-y: auto;">
+      <input type="text" id="library-search-input" placeholder="Typ artiest of titel..." oninput="searchLibrary()" style="margin-bottom: 8px;">
+      
+      <div id="library-results" style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;">
         <p style="color:var(--subtext-color); font-size:0.85em; text-align:center;">Typ hierboven om te zoeken in de bibliotheek van de DJ...</p>
       </div>
-    </div>
 
-    <!-- LOS VERZOEKJE INDIENEN -->
-    <div class="card">
-      <h3 style="margin-top:0; text-align:left; color:var(--accent-color); font-size:1.1em;">✍️ Of vraag handmatig een nummer aan</h3>
-      <input type="text" id="guest-name" placeholder="Jouw naam (optioneel)" style="font-size: 0.9em; margin-bottom: 6px;">
-      <input type="text" id="manual-song" placeholder="Nummer (titel)" style="font-size: 0.9em; margin-bottom: 6px;">
-      <input type="text" id="manual-artist" placeholder="Artiest" style="font-size: 0.9em; margin-bottom: 6px;">
-      <input type="text" id="manual-message" placeholder="Persoonlijk berichtje voor de DJ (optioneel)" style="font-size: 0.9em; margin-bottom: 10px;">
-      <button onclick="submitManualRequest()" style="padding: 10px; font-size: 0.9em;">Verzoekje Versturen 🎶</button>
+      <!-- KNOP VOOR HANDMATIG INVOEREN -->
+      <button onclick="toggleManualInput()" id="toggle-manual-btn" style="background: #2a2a2a; color: var(--accent-color); border: 1px dashed var(--accent-color); font-size: 0.85em; padding: 10px; margin-top: 5px;">
+        Staat het nummer niet in de bibliotheek? Klik dan hier ✍️
+      </button>
+
+      <!-- HANDMATIG VERZOEKJE FORMULIER (STANDAARD VERBORGEN) -->
+      <div id="manual-form-container" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+        <h4 style="margin: 0 0 10px 0; color: var(--accent-color); font-size: 0.95em;">Handmatig Verzoekje Indienen</h4>
+        <input type="text" id="guest-name" placeholder="Jouw naam (optioneel)" style="font-size: 0.9em; margin-bottom: 6px;">
+        <input type="text" id="manual-song" placeholder="Nummer (titel)" style="font-size: 0.9em; margin-bottom: 6px;">
+        <input type="text" id="manual-artist" placeholder="Artiest" style="font-size: 0.9em; margin-bottom: 6px;">
+        <input type="text" id="manual-message" placeholder="Persoonlijk berichtje voor de DJ (optioneel)" style="font-size: 0.9em; margin-bottom: 10px;">
+        <button onclick="submitManualRequest()" style="padding: 10px; font-size: 0.9em;">Handmatig Versturen 🎶</button>
+      </div>
     </div>
 
     <!-- LIJST VAN ALLE VERZOEKJES & STEMMEN -->
@@ -129,7 +135,7 @@
     let dbClient = null;
     let currentDjId = null;
     let currentPartyCode = null;
-    let xmlLibraryTracks = []; // Slaat geparseerde XML nummers op
+    let xmlLibraryTracks = [];
     let realtimeSubscription = null;
     let presenceChannel = null;
 
@@ -170,7 +176,6 @@
 
       initSupabase();
 
-      // De feestcode bestaat uit de dj_code + 2 willekeurige cijfers. We kunnen de DJ vinden op basis van de eerste 4 cijfers.
       const djCode = partyCodeInput.substring(0, 4);
 
       const { data: djData, error: djError } = await dbClient
@@ -189,7 +194,6 @@
       currentPartyCode = partyCodeInput;
       localStorage.setItem('active_party_code', partyCodeInput);
 
-      // Bedrijfshuisstijl toepassen (Accentkleur)
       if (djData.companies && djData.companies.accent_color) {
         document.documentElement.style.setProperty('--accent-color', djData.companies.accent_color);
       }
@@ -213,6 +217,19 @@
       setupPresenceTracker(partyCodeInput);
     }
 
+    function toggleManualInput() {
+      const container = document.getElementById('manual-form-container');
+      const btn = document.getElementById('toggle-manual-btn');
+      
+      if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        btn.innerText = 'Sluit handmatig invoeren ▲';
+      } else {
+        container.classList.add('hidden');
+        btn.innerText = 'Staat het nummer niet in de bibliotheek? Klik dan hier ✍️';
+      }
+    }
+
     function setupPresenceTracker(partyCode) {
       presenceChannel = dbClient.channel(`party_${partyCode}`, {
         config: { presence: { key: 'guest_' + Math.random() } }
@@ -233,7 +250,6 @@
       document.getElementById('party-code-input').value = '';
     }
 
-    // XML Library inladen en parsen
     async function loadXmlLibrary() {
       xmlLibraryTracks = [];
       const { data, error } = await dbClient.from('xml_files').select('file_content').eq('dj_id', currentDjId);
@@ -245,7 +261,6 @@
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(file.file_content, "text/xml");
           
-          // Ondersteunt vaak voorkomende XML structuren zoals Rekordbox / Traktor / VirtualDJ (bijv. <TRACK> of <entry>)
           let tracks = xmlDoc.getElementsByTagName('TRACK');
           if (tracks.length === 0) tracks = xmlDoc.getElementsByTagName('track');
           if (tracks.length === 0) tracks = xmlDoc.getElementsByTagName('ENTRY');
@@ -273,10 +288,10 @@
 
       const matches = xmlLibraryTracks.filter(t => 
         t.title.toLowerCase().includes(query) || t.artist.toLowerCase().includes(query)
-      ).slice(0, 15); // Max 15 resultaten tonen
+      ).slice(0, 15);
 
       if (matches.length === 0) {
-        resultsContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; text-align:center;">Geen nummers gevonden in de bibliotheek. Gebruik hieronder een los verzoekje!</p>';
+        resultsContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; text-align:center;">Geen nummers gevonden in de bibliotheek.</p>';
         return;
       }
 
@@ -335,6 +350,7 @@
         document.getElementById('manual-song').value = '';
         document.getElementById('manual-artist').value = '';
         document.getElementById('manual-message').value = '';
+        toggleManualInput(); // Sluit formulier na verzenden
       }
     }
 
@@ -395,7 +411,6 @@
     async function toggleLike(requestId, isLiked) {
       let myLikedRequests = JSON.parse(localStorage.getItem('liked_requests') || '[]');
       
-      // Haal huidige likes op uit database om zeker te zijn van juiste getal
       const { data: reqData } = await dbClient.from('requests').select('likes').eq('id', requestId).single();
       if (!reqData) return;
 
