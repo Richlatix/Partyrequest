@@ -134,14 +134,14 @@
             text-transform: uppercase;
             display: inline-block;
         }
-        .badge-bedrijf { background-color: rgba(79, 70, 229, 0.2); color: #818cf8; cursor: pointer; }
+        .badge-bedrijf { background-color: rgba(79, 70, 229, 0.2); color: #818cf8; }
         .badge-dj { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
         .badge-warning { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); }
         .badge-danger { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-        /* Uitklapbaar gedeelte voor bedrijven */
-        .company-row { cursor: pointer; transition: background 0.2s; }
-        .company-row:hover { background-color: rgba(255, 255, 255, 0.02); }
+        /* Uitklapbaar gedeelte */
+        .toggle-row { cursor: pointer; transition: background 0.2s; }
+        .toggle-row:hover { background-color: rgba(255, 255, 255, 0.02); }
         .details-row { background-color: rgba(15, 23, 42, 0.6); display: none; }
         .details-row.open { display: table-row; }
         .details-content { padding: 20px; }
@@ -154,14 +154,13 @@
         }
         .sub-table th, .sub-table td { padding: 8px 12px; font-size: 0.85rem; }
 
-        .company-settings-grid {
+        .settings-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 16px;
             background: rgba(0, 0, 0, 0.2);
             padding: 16px;
             border-radius: 8px;
-            margin-bottom: 20px;
             border: 1px solid var(--border);
         }
     </style>
@@ -213,7 +212,7 @@
         <!-- Overzicht van alle bestaande accounts -->
         <div class="card">
             <h2>Beheerde Accounts</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een Bedrijf-rij om de instellingen te wijzigen en DJ's te beheren.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een rij (Bedrijf of DJ) om de instellingen te wijzigen of extra's te beheren.</p>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -281,7 +280,7 @@
             in30Days.setDate(now.getDate() + 30);
 
             const expiringSoon = data.filter(c => {
-                if (c.account_type === 'bedrijf' && c.expires_at) {
+                if (c.expires_at) {
                     const expDate = new Date(c.expires_at);
                     return expDate >= now && expDate <= in30Days;
                 }
@@ -290,7 +289,7 @@
 
             if (expiringSoon.length > 0) {
                 const names = expiringSoon.map(c => `<strong>${c.company_name}</strong> (${c.expires_at})`).join(', ');
-                alertContainer.innerHTML = `<div class="alert-box">⚠️ Volgende bedrijfsabonnement(en) verlopen binnen 30 dagen: ${names}</div>`;
+                alertContainer.innerHTML = `<div class="alert-box">⚠️ Volgende abonnement(en) verlopen binnen 30 dagen: ${names}</div>`;
             } else {
                 alertContainer.innerHTML = '';
             }
@@ -306,19 +305,17 @@
                 if (isExpired) statusBadge = `<span class="badge badge-danger">Verlopen</span>`;
                 else if (isExpiringSoon) statusBadge = `<span class="badge badge-warning">Verloopt bijna</span>`;
 
-                // Hoofdrij voor bedrijf/dj (alleen overzichtelijke info)
+                // Hoofdrij (voor zowel bedrijven als solo DJ's uitklapbaar)
                 const row = document.createElement('tr');
-                if (company.account_type === 'bedrijf') {
-                    row.className = 'company-row';
-                    row.title = 'Klik om details te openen';
-                    row.onclick = (e) => {
-                        if (e.target.tagName === 'BUTTON') return;
-                        toggleDetails(company.id);
-                    };
-                }
+                row.className = 'toggle-row';
+                row.title = 'Klik om details te openen';
+                row.onclick = (e) => {
+                    if (e.target.tagName === 'BUTTON') return;
+                    toggleDetails(company.id);
+                };
 
                 row.innerHTML = `
-                    <td><strong>${company.company_name}</strong> ${company.account_type === 'bedrijf' ? '🔽' : ''}</td>
+                    <td><strong>${company.company_name}</strong> 🔽</td>
                     <td><code>${company.company_code}</code></td>
                     <td><span class="badge ${badgeClass}">${company.account_type}</span></td>
                     <td>
@@ -331,46 +328,52 @@
                 `;
                 tableBody.appendChild(row);
 
-                // Als het een bedrijf is, voegen we de uitklapbare rij toe met instellingen en DJ's
-                if (company.account_type === 'bedrijf') {
-                    const detailsRow = document.createElement('tr');
-                    detailsRow.id = `details-${company.id}`;
-                    detailsRow.className = 'details-row';
-                    detailsRow.innerHTML = `
-                        <td colspan="5">
-                            <div class="details-content">
-                                <h3>Instellingen & DJ's voor ${company.company_name}</h3>
-                                
-                                <!-- Bedrijfswachtwoord en Abonnement aanpassen -->
-                                <div class="company-settings-grid">
-                                    <div class="form-group" style="margin:0;">
-                                        <label>Bedrijf Wachtwoord</label>
-                                        <input type="text" value="${company.password}" onchange="updateField('${company.id}', 'password', this.value)">
-                                    </div>
-                                    <div class="form-group" style="margin:0;">
-                                        <label>Abonnement Geldig Tot</label>
-                                        <input type="date" value="${company.expires_at || ''}" onchange="updateField('${company.id}', 'expires_at', this.value)">
-                                    </div>
-                                </div>
+                // Uitklapbare details rij voor ALLE accounts
+                const detailsRow = document.createElement('tr');
+                detailsRow.id = `details-${company.id}`;
+                detailsRow.className = 'details-row';
 
-                                <h4 style="margin-bottom: 8px;">Gekoppelde DJ's / Gebruikers</h4>
-                                <div id="djs-list-${company.id}">Laden...</div>
-                                
-                                <form onsubmit="addCompanyDJ(event, '${company.id}')" style="margin-top: 15px; display: flex; gap: 10px; align-items: flex-end;">
-                                    <div class="form-group" style="margin:0;">
-                                        <label>DJ Naam</label>
-                                        <input type="text" id="dj-name-${company.id}" required placeholder="DJ Naam">
-                                    </div>
-                                    <div class="form-group" style="margin:0;">
-                                        <label>Wachtwoord</label>
-                                        <input type="text" id="dj-pass-${company.id}" required placeholder="Wachtwoord">
-                                    </div>
-                                    <button type="submit" class="btn" style="padding: 10px 14px;">DJ Toevoegen</button>
-                                </form>
+                let extraContent = '';
+                if (company.account_type === 'bedrijf') {
+                    extraContent = `
+                        <h4 style="margin: 20px 0 8px 0;">Gekoppelde DJ's / Gebruikers</h4>
+                        <div id="djs-list-${company.id}">Laden...</div>
+                        
+                        <form onsubmit="addCompanyDJ(event, '${company.id}')" style="margin-top: 15px; display: flex; gap: 10px; align-items: flex-end;">
+                            <div class="form-group" style="margin:0;">
+                                <label>DJ Naam</label>
+                                <input type="text" id="dj-name-${company.id}" required placeholder="DJ Naam">
                             </div>
-                        </td>
+                            <div class="form-group" style="margin:0;">
+                                <label>Wachtwoord</label>
+                                <input type="text" id="dj-pass-${company.id}" required placeholder="Wachtwoord">
+                            </div>
+                            <button type="submit" class="btn" style="padding: 10px 14px;">DJ Toevoegen</button>
+                        </form>
                     `;
-                    tableBody.appendChild(detailsRow);
+                }
+
+                detailsRow.innerHTML = `
+                    <td colspan="5">
+                        <div class="details-content">
+                            <h3>Instellingen voor ${company.company_name}</h3>
+                            <div class="settings-grid" style="margin-top: 12px;">
+                                <div class="form-group" style="margin:0;">
+                                    <label>Wachtwoord</label>
+                                    <input type="text" value="${company.password}" onchange="updateField('${company.id}', 'password', this.value)">
+                                </div>
+                                <div class="form-group" style="margin:0;">
+                                    <label>Abonnement Geldig Tot</label>
+                                    <input type="date" value="${company.expires_at || ''}" onchange="updateField('${company.id}', 'expires_at', this.value)">
+                                </div>
+                            </div>
+                            ${extraContent}
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(detailsRow);
+
+                if (company.account_type === 'bedrijf') {
                     loadCompanyDJs(company.id);
                 }
             }
@@ -483,7 +486,7 @@
         });
 
         window.deleteCompany = async function(id) {
-            if (!confirm('Weet je zeker dat je dit account wilt verwijderen? Alle gekoppelde DJ\'s worden ook verwijderd.')) return;
+            if (!confirm('Weet je zeker dat je dit account wilt verwijderen? Alle gekoppelde gegevens worden ook verwijderd.')) return;
 
             const { error } = await _supabase
                 .from('companies')
