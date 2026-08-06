@@ -107,7 +107,6 @@
 
       <!-- HANDMATIG VERZOEKJE FORMULIER (STANDAARD VERBORGEN) -->
       <div id="manual-form-container" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-        <input type="text" id="guest-name" placeholder="Jouw naam (optioneel)" style="font-size: 0.9em; margin-bottom: 6px;">
         <input type="text" id="manual-song" placeholder="Nummer (titel)" style="font-size: 0.9em; margin-bottom: 6px;">
         <input type="text" id="manual-artist" placeholder="Artiest" style="font-size: 0.9em; margin-bottom: 6px;">
         <input type="text" id="manual-message" placeholder="Persoonlijk berichtje voor de DJ (optioneel)" style="font-size: 0.9em; margin-bottom: 10px;">
@@ -304,13 +303,11 @@
     }
 
     async function requestFromLibrary(title, artist) {
-      const guestName = document.getElementById('guest-name').value.trim() || 'Anonieme Gast';
-      
       const { error } = await dbClient.from('requests').insert([{
         dj_id: currentDjId,
         song_title: title,
         artist: artist,
-        sender_name: guestName,
+        sender_name: 'Anonieme Gast',
         status: 'pending',
         likes: 0
       }]);
@@ -325,7 +322,6 @@
     }
 
     async function submitManualRequest() {
-      const guestName = document.getElementById('guest-name').value.trim() || 'Anonieme Gast';
       const song = document.getElementById('manual-song').value.trim();
       const artist = document.getElementById('manual-artist').value.trim();
       const message = document.getElementById('manual-message').value.trim();
@@ -336,7 +332,7 @@
         dj_id: currentDjId,
         song_title: song,
         artist: artist,
-        sender_name: guestName,
+        sender_name: 'Anonieme Gast',
         message: message,
         status: 'pending',
         likes: 0
@@ -387,7 +383,7 @@
             <div class="request-header">
               <div class="request-info">
                 <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span><br>
-                <small style="color:var(--subtext-color);">Aangevraagd door: <em>${req.sender_name || 'Anoniem'}</em> ${req.message ? `("${req.message}")` : ''}</small>
+                <small style="color:var(--subtext-color);">${req.message ? `"${req.message}"` : ''}</small>
               </div>
               <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${req.id}', ${isLiked})">
                 ❤️ <span id="likes-count-${req.id}">${req.likes || 0}</span>
@@ -434,11 +430,9 @@
       const text = inputEl.value.trim();
       if (!text) return;
 
-      const authorName = document.getElementById('guest-name').value.trim() || 'Gast';
-
       const { error } = await dbClient.from('comments').insert([{
         request_id: requestId,
-        author: authorName,
+        author: 'Gast',
         text: text
       }]);
 
