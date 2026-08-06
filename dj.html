@@ -10,7 +10,7 @@
       --bg-color: #121212;
       --card-bg: #1e1e1e;
       --text-color: #ffffff;
-      --accent-color: #7dff00;
+      --accent-color: #7dff00; /* Wordt overschreven door bedrijfsstijl */
       --border-color: #2a2a2a;
       --subtext-color: #b0b0b0;
     }
@@ -139,9 +139,10 @@
 
       initSupabase();
 
+      // Haal DJ gegevens op inclusief gekoppeld bedrijf (voor de huisstijlkleur)
       const { data: djData, error } = await dbClient
         .from('djs')
-        .select('*')
+        .select('*, companies(*)')
         .eq('dj_code', djCode)
         .single();
 
@@ -153,6 +154,11 @@
 
       currentDjId = djData.id;
       localStorage.setItem('active_dj_code', djCode);
+
+      // Dynamisch de huisstijlkleur van het bedrijf toepassen als deze bestaat
+      if (djData.companies && djData.companies.accent_color) {
+        document.documentElement.style.setProperty('--accent-color', djData.companies.accent_color);
+      }
 
       document.getElementById('welcome-text-input').value = djData.welcome_text || '';
       document.getElementById('dj-login-view').classList.add('hidden');
