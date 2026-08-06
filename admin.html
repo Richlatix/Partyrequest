@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super-Admin | DJ Verzoekjes Platform</title>
+    <title>Super-Admin Dashboard | DJ Verzoekjes Platform</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -16,7 +16,6 @@
             --border: #334155;
             --danger: #ef4444;
             --success: #22c55e;
-            --warning: #f59e0b;
         }
 
         body {
@@ -24,11 +23,11 @@
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 24px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
         }
 
@@ -36,35 +35,48 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 32px;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            padding-bottom: 16px;
         }
 
         h1, h2 {
             margin: 0;
         }
 
-        .header-actions {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .btn-secondary {
-            background-color: var(--border);
-            color: var(--text);
+        .btn {
+            background-color: var(--primary);
+            color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 16px;
             border-radius: 8px;
-            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s;
+            text-decoration: none;
+            font-size: 0.9rem;
         }
 
-        .btn-secondary:hover {
-            background-color: #475569;
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-outline {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--text);
+            background-color: rgba(79, 70, 229, 0.1);
         }
 
         .card {
@@ -73,35 +85,35 @@
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
-        }
-
-        .form-group {
             margin-bottom: 16px;
         }
 
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
         label {
-            display: block;
             margin-bottom: 6px;
-            font-weight: 500;
+            font-size: 0.9rem;
             color: var(--text-muted);
+            font-weight: 500;
         }
 
         input, select {
-            width: 100%;
-            padding: 10px 14px;
+            padding: 10px 12px;
             background-color: var(--bg);
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text);
             font-size: 1rem;
-            box-sizing: border-box;
         }
 
         input:focus, select:focus {
@@ -109,26 +121,10 @@
             border-color: var(--primary);
         }
 
-        button[type="submit"] {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button[type="submit"]:hover {
-            background-color: var(--primary-hover);
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         th, td {
@@ -146,145 +142,78 @@
         .badge {
             padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
         }
+        .badge-bedrijf { background-color: rgba(79, 70, 229, 0.2); color: #818cf8; }
+        .badge-dj { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
 
-        .badge-active {
-            background-color: rgba(34, 197, 94, 0.2);
-            color: var(--success);
-        }
-
-        .badge-warning {
-            background-color: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
-        }
-
-        .badge-expired {
-            background-color: rgba(239, 68, 68, 0.2);
+        .expired {
             color: var(--danger);
-        }
-
-        .badge-type {
-            background-color: rgba(79, 70, 229, 0.2);
-            color: #818cf8;
-        }
-
-        .actions-cell {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
-        .btn-danger:hover {
-            background-color: #dc2626;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
 
-    <script>
-        // Beveiligingscheck: Als niet ingelogd, direct terugsturen naar login.html
-        if (sessionStorage.getItem('super_admin_logged_in') !== 'true') {
-            window.location.href = 'login.html';
-        }
-    </script>
-
     <div class="container">
         <header>
             <h1>⚡ Super-Admin Dashboard</h1>
-            <div class="header-actions">
-                <p id="admin-status" style="color: var(--text-muted); margin: 0;">Verbonden</p>
-                <button class="btn-secondary" onclick="logout()">Uitloggen</button>
-            </div>
+            <button id="logout-btn" class="btn btn-outline">Uitloggen</button>
         </header>
 
-        <!-- Formulier om toe te voegen -->
+        <!-- Formulier: Nieuw Bedrijf of DJ Toevoegen -->
         <div class="card">
-            <h2>Nieuw Bedrijf / Solo DJ Toevoegen</h2>
-            <form id="company-form" style="margin-top: 16px;">
+            <h2>Nieuw Account Aanmaken</h2>
+            <form id="create-company-form" style="margin-top: 16px;">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="company-name">Bedrijfsnaam / DJ Naam</label>
-                        <input type="text" id="company-name" required placeholder="Bijv. DJ Tim">
+                        <label for="company-name">Bedrijfs- of DJ Naam</label>
+                        <input type="text" id="company-name" required placeholder="Bijv. DJ Tim of Club Lux">
                     </div>
                     <div class="form-group">
-                        <label for="company-code">Unieke Company Code (Slug)</label>
-                        <input type="text" id="company-code" required placeholder="Bijv. dj-tim">
+                        <label for="company-code">Unieke Code / Slug</label>
+                        <input type="text" id="company-code" required placeholder="Bijv. dj-tim (zonder spaties)">
                     </div>
                     <div class="form-group">
                         <label for="account-type">Type Account</label>
                         <select id="account-type">
-                            <option value="solo_dj">Solo DJ</option>
+                            <option value="dj">Solo DJ</option>
                             <option value="bedrijf">Bedrijf</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="subscription-months">Abonnementsduur</label>
-                        <select id="subscription-months">
-                            <option value="12">1 Jaar (Standaard)</option>
-                            <option value="24">2 Jaar</option>
-                            <option value="1">1 Maand (Test)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="email">E-mailadres</label>
-                        <input type="email" id="email" placeholder="info@djtim.nl">
-                    </div>
-                    <div class="form-group">
-                        <label for="whatsapp-nr">WhatsApp Nummer</label>
-                        <input type="text" id="whatsapp-nr" placeholder="31612345678">
-                    </div>
-                    <div class="form-group">
                         <label for="password">Wachtwoord</label>
-                        <input type="password" id="password" required placeholder="••••••••">
+                        <input type="text" id="password" required placeholder="Korte inlogcode">
                     </div>
                     <div class="form-group">
-                        <label for="accent-color">Accent Kleur</label>
-                        <input type="color" id="accent-color" value="#4f46e5" style="height: 42px; padding: 4px;">
+                        <label for="expires-at">Abonnement Geldig Tot</label>
+                        <input type="date" id="expires-at" required>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label for="logo-url">Logo URL</label>
-                    <input type="url" id="logo-url" placeholder="https://voorbeeld.nl/logo.png">
-                </div>
-
-                <button type="submit">Account Aanmaken</button>
+                <button type="submit" class="btn">Account Aanmaken</button>
             </form>
         </div>
 
-        <!-- Overzichtstabel -->
+        <!-- Overzicht van alle bestaande accounts -->
         <div class="card">
-            <h2>Beheerde Accounts (`companies`)</h2>
+            <h2>Actieve Accounts</h2>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
-                            <th>Naam / Code</th>
+                            <th>Naam</th>
+                            <th>Code (Slug)</th>
                             <th>Type</th>
-                            <th>Contact</th>
-                            <th>Kleur</th>
-                            <th>Abonnement tot</th>
-                            <th>Status</th>
-                            <th>Acties</th>
+                            <th>Wachtwoord</th>
+                            <th>Verloopt op</th>
+                            <th>Actie</th>
                         </tr>
                     </thead>
                     <tbody id="companies-table-body">
                         <tr>
-                            <td colspan="7" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -293,133 +222,119 @@
     </div>
 
     <script>
-        // Supabase configuratie (Vervang deze met jouw eigen gegevens)
-        const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
-        const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
+        // 1. Beveiliging: Check of de super admin wel is ingelogd
+        if (sessionStorage.getItem('super_admin_logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // Uitlog knop
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            sessionStorage.removeItem('super_admin_logged_in');
+            window.location.href = 'login.html';
+        });
+
+        // 2. Supabase Configuratie (zelfde gegevens)
+        const SUPABASE_URL = 'https://yhitywueffetjjnoudkt.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po';
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        function logout() {
-            sessionStorage.removeItem('super_admin_logged_in');
-            window.location.href = 'login.html';
-        }
+        // Standaard datum voor 'expires-at' zetten op over 1 jaar
+        const nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        document.getElementById('expires-at').valueAsDate = nextYear;
 
+        // 3. Haal alle bedrijven/DJ's op en toon ze in de tabel
         async function loadCompanies() {
-            const tbody = document.getElementById('companies-table-body');
-            try {
-                const { data, error } = await _supabase.from('companies').select('*').order('created_at', { ascending: false });
-                
-                if (error) throw error;
+            const tableBody = document.getElementById('companies-table-body');
+            
+            const { data, error } = await _supabase
+                .from('companies')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Nog geen accounts toegevoegd.</td></tr>`;
-                    return;
-                }
-
-                const nu = new Date();
-
-                tbody.innerHTML = data.map(company => {
-                    const expiresAt = company.expires_at ? new Date(company.expires_at) : null;
-                    let statusBadge = `<span class="badge badge-active">Actief</span>`;
-                    
-                    if (expiresAt) {
-                        const diffTime = expiresAt - nu;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                        if (diffDays < 0) {
-                            statusBadge = `<span class="badge badge-expired">Verlopen</span>`;
-                        } else if (diffDays <= 30) {
-                            statusBadge = `<span class="badge badge-warning" title="Verloopt over ${diffDays} dagen!">⚠️ Verloopt bijna</span>`;
-                        }
-                    }
-
-                    const formattedDate = expiresAt ? expiresAt.toLocaleDateString('nl-NL') : 'Onbeperkt';
-                    const typeLabel = company.account_type === 'bedrijf' ? 'Bedrijf' : 'Solo DJ';
-
-                    return `
-                        <tr>
-                            <td>
-                                <strong>${company.company_name}</strong><br>
-                                <code style="color: var(--text-muted); font-size: 0.85rem;">?company=${company.company_code}</code>
-                            </td>
-                            <td><span class="badge badge-type">${typeLabel}</span></td>
-                            <td>
-                                ${company.email || '-'}<br>
-                                <span style="font-size: 0.85rem; color: var(--text-muted);">WA: ${company.whatsapp_nr || '-'}</span>
-                            </td>
-                            <td>
-                                <span style="display:inline-block;width:18px;height:18px;background:${company.accent_color || '#fff'};border-radius:4px;vertical-align:middle;"></span> 
-                                <span style="font-size:0.85rem;">${company.accent_color || '-'}</span>
-                            </td>
-                            <td>${formattedDate}</td>
-                            <td>${statusBadge}</td>
-                            <td class="actions-cell">
-                                <button class="btn-danger" onclick="deleteCompany('${company.id}')">Verwijderen</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-            } catch (err) {
-                console.error('Fout bij ophalen companies:', err);
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">Fout bij laden van gegevens.</td></tr>`;
+            if (error) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Fout bij laden: ${error.message}</td></tr>`;
+                return;
             }
+
+            if (!data || data.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen accounts aangemaakt.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            data.forEach(company => {
+                const isExpired = company.expires_at && new Date() > new Date(company.expires_at);
+                const badgeClass = company.account_type === 'bedrijf' ? 'badge-bedrijf' : 'badge-dj';
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${company.company_name}</strong></td>
+                    <td><code>${company.company_code}</code></td>
+                    <td><span class="badge ${badgeClass}">${company.account_type}</span></td>
+                    <td>${company.password}</td>
+                    <td class="${isExpired ? 'expired' : ''}">
+                        ${company.expires_at ? company.expires_at : 'Onbeperkt'} ${isExpired ? '(Verlopen)' : ''}
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem;" onclick="deleteCompany('${company.id}')">Verwijderen</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
         }
 
-        document.getElementById('company-form').addEventListener('submit', async (e) => {
+        // 4. Nieuw account toevoegen aan database
+        document.getElementById('create-company-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const company_name = document.getElementById('company-name').value;
-            const company_code = document.getElementById('company-code').value.trim().toLowerCase().replace(/\s+/g, '-');
-            const account_type = document.getElementById('account-type').value;
-            const months = parseInt(document.getElementById('subscription-months').value);
-            const email = document.getElementById('email').value;
-            const whatsapp_nr = document.getElementById('whatsapp-nr').value;
-            const password = document.getElementById('password').value;
-            const accent_color = document.getElementById('accent-color').value;
-            const logo_url = document.getElementById('logo-url').value;
 
-            // Bereken de vervaldatum op basis van gekozen maanden
-            const expiresAt = new Date();
-            expiresAt.setMonth(expiresAt.getMonth() + months);
+            const companyName = document.getElementById('company-name').value.trim();
+            const companyCode = document.getElementById('company-code').value.trim().toLowerCase().replace(/\s+/g, '-');
+            const accountType = document.getElementById('account-type').value;
+            const password = document.getElementById('password').value.trim();
+            const expiresAt = document.getElementById('expires-at').value;
 
-            try {
-                const { error } = await _supabase.from('companies').insert([{ 
-                    company_name, 
-                    company_code, 
-                    account_type,
-                    email, 
-                    whatsapp_nr, 
-                    password, 
-                    accent_color, 
-                    logo_url,
-                    expires_at: expiresAt.toISOString() 
-                }]);
-                
-                if (error) throw error;
+            const { error } = await _supabase
+                .from('companies')
+                .insert([
+                    { 
+                        company_name: companyName, 
+                        company_code: companyCode, 
+                        account_type: accountType, 
+                        password: password, 
+                        expires_at: expiresAt 
+                    }
+                ]);
 
+            if (error) {
+                alert('Fout bij aanmaken: ' + error.message);
+            } else {
                 alert('Account succesvol aangemaakt!');
-                document.getElementById('company-form').reset();
+                document.getElementById('create-company-form').reset();
+                document.getElementById('expires-at').valueAsDate = nextYear;
                 loadCompanies();
-            } catch (err) {
-                alert('Fout bij toevoegen: ' + err.message);
             }
         });
 
-        async function deleteCompany(id) {
+        // 5. Account verwijderen
+        window.deleteCompany = async function(id) {
             if (!confirm('Weet je zeker dat je dit account wilt verwijderen?')) return;
-            
-            try {
-                const { error } = await _supabase.from('companies').delete().eq('id', id);
-                if (error) throw error;
+
+            const { error } = await _supabase
+                .from('companies')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                alert('Fout bij verwijderen: ' + error.message);
+            } else {
                 loadCompanies();
-            } catch (err) {
-                alert('Fout bij verwijderen: ' + err.message);
             }
         }
 
-        // Automatisch laden bij openen pagina
+        // Laad de lijst direct bij openen
         loadCompanies();
     </script>
 </body>
