@@ -377,7 +377,10 @@
                 alert('Fout bij verwijderen: ' + err.message);
             }
         }
-
+// Controleer of de admin is ingelogd, zo niet: stuur terug naar de loginpagina
+if (sessionStorage.getItem('super_admin_logged_in') !== 'true') {
+    window.location.href = 'login.html';
+}
         // Automatisch laden bij openen pagina
         loadCompanies();
     </script>
