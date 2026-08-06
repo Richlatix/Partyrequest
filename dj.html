@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DJ Portal | Verzoekjes SaaS</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #ffffff;
+      --accent-color: #7dff00; /* Past zich straks dynamisch aan */
+      --border-color: #2a2a2a;
+      --subtext-color: #b0b0b0;
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: var(--bg-color); 
+      color: var(--text-color); 
+      padding: 20px; 
+      max-width: 600px; 
+      margin: auto; 
+    }
+
+    h1, h2, h3 { color: var(--accent-color); text-align: center; }
+    
+    input, button, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
+    button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+    .hidden { display: none !important; }
+    
+    .request-item { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent-color); display: flex; justify-content: space-between; align-items: center; }
+    .request-info { flex: 1; }
+    .request-actions { display: flex; gap: 6px; }
+    
+    .action-btn { padding: 8px 12px; border-radius: 6px; font-size: 0.85em; font-weight: bold; cursor: pointer; border: none; }
+    .accept-btn { background: #2ecc71; color: #fff; }
+    .deny-btn { background: #e74c3c; color: #fff; }
+    .done-btn { background: #34495e; color: #fff; }
+
+    .toast-popup {
+      position: fixed;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e1e;
+      color: #ffffff;
+      border: 1.5px solid var(--accent-color);
+      padding: 12px 24px;
+      border-radius: 30px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- INLOGSCHERM DJ -->
+  <div id="login-view" style="max-width: 400px; margin: 60px auto; text-align: center;">
+    <h2>🎧 DJ Portal Inloggen</h2>
+    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer je 4-cijferige DJ-code in:</p>
+    <input type="text" id="dj-code-input" placeholder="Bijv. 0155" maxlength="4" style="text-align:center; font-size: 1.5em; letter-spacing: 4px;">
+    <button onclick="loginDj()">Inloggen 🚀</button>
+  </div>
+
+  <!-- DASHBOARD DJ -->
+  <div id="dj-dashboard" class="hidden">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h2 id="dj-portal-title" style="margin-bottom: 5px;">DJ Dashboard</h2>
+      <p style="color:var(--subtext-color); margin:0;">Welkom, <span id="dj-name-display" style="color:var(--accent-color); font-weight: bold;"></span> (<span id="company-name-display"></span>)</p>
+      <button onclick="logout()" style="background: transparent; color: var(--subtext-color); border: none; width: auto; font-size: 0.85em; margin-top: 10px; cursor: pointer; text-decoration: underline;">Uitloggen</button>
+    </div>
+
+    <!-- PUBLIEK LINK / QR INFO -->
+    <div class="card" style="text-align: center;">
+      <h3 style="margin-top:0; font-size: 1.1em; color: var(--accent-color);">🔗 Jouw Verzoekjes Link</h3>
+      <p style="color: var(--subtext-color); font-size: 0.85em; margin-bottom: 10px;">Deel deze link met het publiek zodat ze verzoekjes kunnen indienen:</p>
+      <input type="text" id="public-link-input" readonly style="text-align: center; font-size: 0.85em; background: #121212; color: var(--accent-color);">
+      <button onclick="copyPublicLink()" style="width: auto; padding: 8px 16px; font-size: 0.85em; margin-top: 5px;">Kopieer Link 📋</button>
+    </div>
+
+    <!-- INKOMENDE VERZOEKJES -->
+    <div class="card">
+      <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">📨 Inkomende Verzoekjes</h3>
+      <div id="requests-list">
+        <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes ontvangen...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://yhitywueffetjjnoudkt.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po";
+
+    let dbClient = null;
+    let currentDj = null;
+    let currentCompany = null;
+    let realtimeSubscription = null;
+
+    function toonPopup(bericht) {
+      const oudePopup = document.getElementById('custom-toast');
+      if (oudePopup) oudePopup.remove();
+
+      const popup = document.createElement('div');
+      popup.id = 'custom-toast';
+      popup.className = 'toast-popup';
+      popup.innerText = bericht;
+
+      document.body.appendChild(popup);
+      setTimeout(() => { if (popup) popup.remove(); }, 3000);
+    }
+
+    function initSupabase() {
+      if (!dbClient) {
+        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    }
+
+    window.onload = function() {
+      initSupabase();
+      const savedDjCode = localStorage.getItem('active_dj_code');
+      if (savedDjCode) {
+        document.getElementById('dj-code-input').value = savedDjCode;
+        loginDj(true);
+      }
+    };
+
+    async function loginDj(isAutoLogin = false) {
+      const codeInput = document.getElementById('dj-code-input').value.trim();
+      if (!codeInput) {
+        if (!isAutoLogin) toonPopup('Voer je DJ-code in!');
+        return;
+      }
+
+      initSupabase();
+
+      // Zoek DJ op basis van dj_code en haal direct het gekoppelde bedrijf (`companies`) via Supabase relatie op
+      const { data: djData, error: djError } = await dbClient
+        .from('djs')
+        .select('*, companies(*)')
+        .eq('dj_code', codeInput)
+        .single();
+
+      if (djError || !djData) {
+        if (!isAutoLogin) toonPopup('DJ-code niet gevonden. Controleer je code.');
+        localStorage.removeItem('active_dj_code');
+        return;
+      }
+
+      currentDj = djData;
+      currentCompany = djData.companies;
+      localStorage.setItem('active_dj_code', djData.dj_code);
+
+      // Pas de accentkleur toe van het bedrijf
+      if (currentCompany && currentCompany.accent_color) {
+        document.documentElement.style.setProperty('--accent-color', currentCompany.accent_color);
+      }
+
+      // Vul gegevens in op het dashboard
+      document.getElementById('dj-name-display').innerText = currentDj.dj_name;
+      document.getElementById('company-name-display').innerText = currentCompany ? currentCompany.company_name : 'Onbekend Bedrijf';
+      
+      // Genereer de publieke link voor verzoekjes (bijv. verzoekjes.html?dj=0155 of iets vergelijkbaars)
+      const publicUrl = window.location.origin + `/verzoek.html?code=${currentDj.dj_code}`;
+      document.getElementById('public-link-input').value = publicUrl;
+
+      // Schakel schermen om
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('dj-dashboard').classList.remove('hidden');
+
+      loadRequests();
+      setupRealtimeListener();
+    }
+
+    function logout() {
+      localStorage.removeItem('active_dj_code');
+      currentDj = null;
+      currentCompany = null;
+      if (realtimeSubscription) dbClient.removeChannel(realtimeSubscription);
+      
+      document.getElementById('dj-dashboard').classList.add('hidden');
+      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('dj-code-input').value = '';
+    }
+
+    async function loadRequests() {
+      if (!currentDj) return;
+
+      // Ophalen van verzoekjes die bij deze DJ horen (we gaan ervan uit dat de `requests` tabel gekoppeld is aan dj_id)
+      const { data, error } = await dbClient
+        .from('requests')
+        .select('*')
+        .eq('dj_id', currentDj.id)
+        .order('created_at', { ascending: false });
+
+      const listContainer = document.getElementById('requests-list');
+      listContainer.innerHTML = '';
+
+      if (error || !data || data.length === 0) {
+        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen verzoekjes ontvangen voor deze sessie.</p>';
+        return;
+      }
+
+      data.forEach(req => {
+        let statusBadge = '';
+        if (req.status === 'accepted') statusBadge = '<span style="color:#2ecc71; font-size:0.8em; font-weight:bold;">[Goedgekeurd]</span>';
+        else if (req.status === 'denied') statusBadge = '<span style="color:#e74c3c; font-size:0.8em; font-weight:bold;">[Geweigerd]</span>';
+        else if (req.status === 'played') statusBadge = '<span style="color:#34495e; font-size:0.8em; font-weight:bold;">[Gedraaid]</span>';
+
+        listContainer.innerHTML += `
+          <div class="request-item">
+            <div class="request-info">
+              <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span><br>
+              <small style="color:var(--subtext-color);">Van: <em>${req.sender_name || 'Anoniem'}</em> ${req.message ? `("${req.message}")` : ''} ${statusBadge}</small>
+            </div>
+            <div class="request-actions">
+              <button class="action-btn accept-btn" onclick="updateRequestStatus('${req.id}', 'accepted')">✓</button>
+              <button class="action-btn deny-btn" onclick="updateRequestStatus('${req.id}', 'denied')">✕</button>
+              <button class="action-btn done-btn" onclick="updateRequestStatus('${req.id}', 'played')">Gedraaid</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    function setupRealtimeListener() {
+      if (!currentDj) return;
+
+      // Luister live in realtime of er nieuwe verzoekjes binnenkomen voor deze DJ via Supabase Realtime
+      realtimeSubscription = dbClient
+        .channel('public:requests')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: `dj_id=eq.${currentDj.id}` }, payload => {
+          loadRequests();
+          toonPopup('Nieuw verzoekje binnengekomen! 🎶');
+        })
+        .subscribe();
+    }
+
+    async function updateRequestStatus(requestId, newStatus) {
+      const { error } = await dbClient
+        .from('requests')
+        .update({ status: newStatus })
+        .eq('id', requestId);
+
+      if (error) {
+        toonPopup('Fout bij bijwerken status.');
+      } else {
+        loadRequests();
+      }
+    }
+
+    function copyPublicLink() {
+      const input = document.getElementById('public-link-input');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      toonPopup('Link gekopieerd naar klembord! 📋');
+    }
+  </script>
+</body>
+</html>
