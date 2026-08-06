@@ -58,11 +58,14 @@
             font-size: 0.9rem;
         }
         .btn:hover { background-color: var(--primary-hover); }
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: #16a34a; }
         .btn-danger { background-color: var(--danger); }
         .btn-danger:hover { background-color: #dc2626; }
         .btn-warning { background-color: var(--warning); color: #000; }
         .btn-outline { background: none; border: 1px solid var(--border); color: var(--text-muted); }
         .btn-outline:hover { border-color: var(--primary); color: var(--text); background-color: rgba(79, 70, 229, 0.1); }
+        .btn-active { background-color: var(--warning) !important; color: #000 !important; }
 
         .card {
             background-color: var(--card-bg);
@@ -162,6 +165,16 @@
             padding: 16px;
             border-radius: 8px;
             border: 1px solid var(--border);
+            align-items: flex-end;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
         }
     </style>
 </head>
@@ -211,8 +224,16 @@
 
         <!-- Overzicht van alle bestaande accounts -->
         <div class="card">
-            <h2>Beheerde Accounts</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een rij om details te openen en wachtwoorden of vervaldatums aan te passen.</p>
+            <div class="dashboard-actions">
+                <div>
+                    <h2>Beheerde Accounts</h2>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een rij om details te openen en instellingen te wijzigen.</p>
+                </div>
+                <div>
+                    <button id="filter-expiring-btn" class="btn btn-outline" onclick="toggleExpiringFilter()">⏳ Bijna verlopen (Binnen 30 dagen)</button>
+                </div>
+            </div>
+            
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -251,6 +272,9 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let allCompaniesData = [];
+        let showOnlyExpiring = false;
+
         const nextYear = new Date();
         nextYear.setFullYear(nextYear.getFullYear() + 1);
         document.getElementById('expires-at').valueAsDate = nextYear;
@@ -269,18 +293,19 @@
                 return;
             }
 
-            if (!data || data.length === 0) {
+            allCompaniesData = data || [];
+
+            if (allCompaniesData.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen accounts aangemaakt.</td></tr>`;
                 alertContainer.innerHTML = '';
                 return;
             }
 
-            // Check voor abonnementen die binnen 30 dagen aflopen
             const now = new Date();
             const in30Days = new Date();
             in30Days.setDate(now.getDate() + 30);
 
-            const expiringSoon = data.filter(c => {
+            const expiringSoon = allCompaniesData.filter(c => {
                 if (c.expires_at) {
                     const expDate = new Date(c.expires_at);
                     return expDate >= now && expDate <= in30Days;
@@ -295,9 +320,48 @@
                 alertContainer.innerHTML = '';
             }
 
+            renderTable();
+        }
+
+        window.toggleExpiringFilter = function() {
+            showOnlyExpiring = !showOnlyExpiring;
+            const btn = document.getElementById('filter-expiring-btn');
+            if (showOnlyExpiring) {
+                btn.classList.add('btn-active');
+                btn.classList.remove('btn-outline');
+            } else {
+                btn.classList.remove('btn-active');
+                btn.classList.add('btn-outline');
+            }
+            renderTable();
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('companies-table-body');
+            const now = new Date();
+            const in30Days = new Date();
+            in30Days.setDate(now.getDate() + 30);
+
+            let dataToDisplay = allCompaniesData;
+
+            if (showOnlyExpiring) {
+                dataToDisplay = allCompaniesData.filter(c => {
+                    if (c.expires_at) {
+                        const expDate = new Date(c.expires_at);
+                        return expDate >= now && expDate <= in30Days;
+                    }
+                    return false;
+                });
+            }
+
+            if (dataToDisplay.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Geen accounts gevonden die aan dit filter voldoen.</td></tr>`;
+                return;
+            }
+
             tableBody.innerHTML = '';
 
-            for (const company of data) {
+            for (const company of dataToDisplay) {
                 const isExpired = company.expires_at && new Date() > new Date(company.expires_at);
                 const isExpiringSoon = company.expires_at && new Date() >= new Date() && new Date(company.expires_at) <= in30Days;
                 const badgeClass = company.account_type === 'bedrijf' ? 'badge-bedrijf' : 'badge-dj';
@@ -330,7 +394,7 @@
                 `;
                 tableBody.appendChild(row);
 
-                // Uitklapbare details rij voor ALLE accounts (hier kan het hoofdwachtwoord/vervaldatum aangepast worden)
+                // Uitklapbare details rij met duidelijke Opslaan knop
                 const detailsRow = document.createElement('tr');
                 detailsRow.id = `details-${company.id}`;
                 detailsRow.className = 'details-row';
@@ -362,11 +426,14 @@
                             <div class="settings-grid" style="margin-top: 12px;">
                                 <div class="form-group" style="margin:0;">
                                     <label>Hoofdwachtwoord</label>
-                                    <input type="text" value="${company.password}" onchange="updateField('${company.id}', 'password', this.value)">
+                                    <input type="text" id="pass-input-${company.id}" value="${company.password}">
                                 </div>
                                 <div class="form-group" style="margin:0;">
                                     <label>Abonnement Geldig Tot</label>
-                                    <input type="date" value="${company.expires_at || ''}" onchange="updateField('${company.id}', 'expires_at', this.value)">
+                                    <input type="date" id="date-input-${company.id}" value="${company.expires_at || ''}">
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-success" onclick="saveCompanySettings('${company.id}')">Wijzigingen Opslaan</button>
                                 </div>
                             </div>
                             ${extraContent}
@@ -384,6 +451,32 @@
         window.toggleDetails = function(companyId) {
             const detailsRow = document.getElementById(`details-${companyId}`);
             detailsRow.classList.toggle('open');
+        }
+
+        // Functie om hoofdwachtwoord en vervaldatum handmatig op te slaan
+        window.saveCompanySettings = async function(id) {
+            const newPassword = document.getElementById(`pass-input-${id}`).value.trim();
+            const newDate = document.getElementById(`date-input-${id}`).value;
+
+            if (!newPassword) {
+                alert('Wachtwoord mag niet leeg zijn.');
+                return;
+            }
+
+            const { error } = await _supabase
+                .from('companies')
+                .update({ 
+                    password: newPassword, 
+                    expires_at: newDate === '' ? null : newDate 
+                })
+                .eq('id', id);
+
+            if (error) {
+                alert('Fout bij opslaan: ' + error.message);
+            } else {
+                alert('Instellingen succesvol opgeslagen!');
+                loadCompanies();
+            }
         }
 
         async function loadCompanyDJs(companyId) {
@@ -455,21 +548,6 @@
             }
         }
 
-        window.updateField = async function(id, field, value) {
-            const updateObj = {};
-            updateObj[field] = value === '' ? null : value;
-
-            const { error } = await _supabase
-                .from('companies')
-                .update(updateObj)
-                .eq('id', id);
-
-            if (error) {
-                alert('Fout bij bijwerken: ' + error.message);
-                loadCompanies();
-            }
-        }
-
         document.getElementById('create-company-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -479,7 +557,6 @@
             const password = document.getElementById('password').value.trim();
             const expiresAt = document.getElementById('expires-at').value;
 
-            // 1. Maak het hoofdaccount aan in 'companies'
             const { data: newCompany, error } = await _supabase
                 .from('companies')
                 .insert([
@@ -499,9 +576,8 @@
                 return;
             }
 
-            // 2. ALS het type 'dj' (solo DJ) is, voeg hem direct toe aan 'company_djs'
             if (accountType === 'dj' && newCompany) {
-                const { error: djError } = await _supabase
+                await _supabase
                     .from('company_djs')
                     .insert([
                         {
@@ -510,10 +586,6 @@
                             password: password
                         }
                     ]);
-
-                if (djError) {
-                    alert('Account aangemaakt, maar fout bij genereren solodj inlog: ' + djError.message);
-                }
             }
 
             alert('Account succesvol aangemaakt!');
