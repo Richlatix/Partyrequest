@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DJ Portal | Verzoekjes SaaS</title>
+  <title>DJ Dashboard | Verzoekjes</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -20,26 +20,27 @@
       background: var(--bg-color); 
       color: var(--text-color); 
       padding: 20px; 
-      max-width: 650px; 
+      max-width: 800px; 
       margin: auto; 
     }
 
     h1, h2, h3 { color: var(--accent-color); text-align: center; }
     
-    input, button, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
+    input, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
     button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
     button:hover { opacity: 0.9; }
     
     .card { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color); }
     .hidden { display: none !important; }
     
-    .request-item { background: #252525; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent-color); display: flex; justify-content: space-between; align-items: center; }
+    .request-item { background: #252525; padding: 15px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid var(--accent-color); display: flex; justify-content: space-between; align-items: center; gap: 15px; }
     .request-info { flex: 1; }
-    .request-actions { display: flex; gap: 6px; align-items: center; }
+    .request-comment { font-size: 0.85em; color: var(--subtext-color); margin-top: 6px; font-style: italic; }
     
-    .action-btn { padding: 6px 10px; border-radius: 6px; font-size: 0.8em; font-weight: bold; cursor: pointer; border: none; }
-    .done-btn { background: #2ecc71; color: #fff; }
-    .delete-btn { background: #e74c3c; color: #fff; }
+    .actions { display: flex; gap: 8px; }
+    .btn-action { width: auto; padding: 8px 14px; font-size: 0.85em; margin: 0; }
+    .btn-done { background: #2ecc71; color: #fff; }
+    .btn-delete { background: #e74c3c; color: #fff; }
 
     .toast-popup {
       position: fixed;
@@ -55,101 +56,40 @@
       z-index: 9999;
       font-weight: bold;
       text-align: center;
+      max-width: 90%;
+      word-break: break-word;
     }
-
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
   </style>
 </head>
 <body>
 
-  <!-- INLOGSCHERM DJ -->
-  <div id="login-view" style="max-width: 400px; margin: 60px auto; text-align: center;">
-    <h2>🎧 DJ Portal Inloggen</h2>
-    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer je 4-cijferige DJ-code in:</p>
-    <input type="text" id="dj-code-input" placeholder="Bijv. 0155" maxlength="4" style="text-align:center; font-size: 1.5em; letter-spacing: 4px;">
+  <!-- DJ INLOGSCHERM -->
+  <div id="dj-login-view" style="max-width: 400px; margin: 60px auto; text-align: center;">
+    <h2>🎛️ DJ Dashboard Inloggen</h2>
+    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer je DJ-code in:</p>
+    <input type="text" id="dj-code-input" placeholder="Bijv. 0155" style="text-align:center; font-size: 1.5em; letter-spacing: 2px;">
     <button onclick="loginDj()">Inloggen 🚀</button>
   </div>
 
-  <!-- DASHBOARD DJ -->
+  <!-- DJ HOOFDSCHERM -->
   <div id="dj-dashboard" class="hidden">
-    
-    <!-- KLEINE FEESTCODE & LIVE TELLER BOVENIN -->
-    <div style="background: #1a1a1a; border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.85em;">
-      <div>
-        Feestcode: <span id="party-code-display" style="color: var(--accent-color); font-weight: bold; font-family: monospace; letter-spacing: 1px;">------</span>
-      </div>
-      <div style="color: var(--subtext-color);">
-        👥 <span id="online-count" style="color: #fff; font-weight: bold;">0</span>
-      </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2>🎛️ Beheer Verzoekjes</h2>
+      <button onclick="logoutDj()" style="background: transparent; color: var(--subtext-color); border: none; width: auto; font-size: 0.85em; cursor: pointer; text-decoration: underline;">Uitloggen</button>
     </div>
 
-    <div class="top-bar">
-      <div>
-        <h2 id="dj-portal-title" style="margin:0; text-align:left;">DJ Dashboard</h2>
-        <p style="color:var(--subtext-color); margin:0; font-size:0.85em;">Welkom, <span id="dj-name-display" style="color:var(--accent-color); font-weight: bold;"></span></p>
-      </div>
-      <div style="display: flex; gap: 10px; align-items: center;">
-        <button onclick="toggleSettingsMenu()" style="background: #2a2a2a; color: var(--accent-color); border: 1px solid var(--border-color); width: auto; padding: 10px; font-size: 1.2em; border-radius: 8px;" title="Instellingen & XML">⚙️</button>
-        <button onclick="logout()" style="background: transparent; color: var(--subtext-color); border: none; width: auto; font-size: 0.85em; cursor: pointer; text-decoration: underline;">Uitloggen</button>
-      </div>
-    </div>
-
-    <!-- TANDWIEL MENU (INSTELLINGEN, NIEUW FEEST & XML) -->
-    <div id="settings-menu" class="card hidden" style="border: 1px solid var(--accent-color);">
-      <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">⚙️ DJ Instellingen & Bestanden</h3>
-      
-      <!-- NIEUW FEEST STARTEN -->
-      <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
-        <label style="font-size:0.85em; color:var(--subtext-color); display:block; margin-bottom:5px;">Sessie / Feest Beheer:</label>
-        <button onclick="startNewParty()" style="background: #ff4444; color: #fff; font-size: 0.85em; padding: 8px;">🎉 Start Nieuw Feest (Nieuwe Code)</button>
-      </div>
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">Welkomsttekst voor publiek:</label>
-      <textarea id="edit-welcome-text" rows="2" placeholder="Welkom bij mijn feestje! Vraag hier je favoriete nummer aan..."></textarea>
-      <button onclick="saveWelcomeText()" style="font-size:0.85em; padding:8px; margin-bottom:15px;">Tekst Opslaan 💾</button>
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">XML Verzoekjes / Muziekbestand Uploaden:</label>
-      <input type="file" id="xml-file-input" accept=".xml" style="background:#121212; padding:8px;">
-      <button onclick="uploadXmlFile()" class="small-btn" style="background:#333; color:var(--accent-color); border:1px solid var(--accent-color); font-size:0.85em; padding:8px;">Upload XML 📂</button>
-
-      <div style="margin-top: 15px;">
-        <label style="font-size:0.85em; color:var(--subtext-color);">Geüploadde XML Bestanden:</label>
-        <div id="xml-files-list" style="max-height: 120px; overflow-y: auto; margin-top: 5px;">
-          <p style="color:var(--subtext-color); font-size:0.8em;">Geen bestanden.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ZELF NUMMER TOEVOEGEN -->
+    <!-- WELKOMSTTEKST BEWERKEN -->
     <div class="card">
-      <h3 style="margin-top:0; text-align:left; color:var(--accent-color); font-size:1.1em;">➕ Zelf Verzoekje / Nummer Toevoegen</h3>
-      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <input type="text" id="manual-song" placeholder="Nummer (titel)" style="flex: 2; margin:0; font-size: 0.9em;">
-        <input type="text" id="manual-artist" placeholder="Artiest" style="flex: 2; margin:0; font-size: 0.9em;">
-        <button onclick="addManualRequest()" style="flex: 1; margin:0; font-size: 0.9em; padding: 10px;">Toevoegen</button>
-      </div>
+      <h3 style="margin-top:0; text-align:left; font-size: 1.1em;">💬 Welkomsttekst voor gasten</h3>
+      <textarea id="welcome-text-input" placeholder="Bijv. Welkom op ons feest! Vraag hier je favoriete nummers aan..." rows="2"></textarea>
+      <button onclick="saveWelcomeText()" style="width: auto; padding: 8px 16px; font-size: 0.9em;">Opslaan</button>
     </div>
 
     <!-- INKOMENDE VERZOEKJES -->
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <h3 style="margin:0; text-align:left; color:var(--accent-color); font-size:1.1em;">📨 Inkomende Verzoekjes</h3>
-        <select id="sort-select" onchange="loadRequests()" style="width: auto; margin:0; padding: 6px; font-size: 0.85em;">
-          <option value="created_at">Sorteer op: Tijd (Nieuwste)</option>
-          <option value="likes">Sorteer op: Meeste Likes ❤️</option>
-        </select>
-      </div>
-      
-      <div id="requests-list">
+      <h3 style="margin-top:0; text-align:left; font-size: 1.1em;">📋 Ontvangen Verzoekjes</h3>
+      <div id="dj-requests-list">
         <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes ontvangen...</p>
-      </div>
-    </div>
-
-    <!-- GEDRAAIDE VERZOEKJES (ALTIJD ZICHTBAAR) -->
-    <div class="card">
-      <h3 style="margin-top:0; text-align:left; color:var(--subtext-color); font-size:1.1em;">🎧 Gedraaide Verzoekjes (<span id="played-count">0</span>)</h3>
-      <div id="played-requests-list" style="margin-top: 10px;">
-        <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes gedraaid.</p>
       </div>
     </div>
   </div>
@@ -159,10 +99,8 @@
     const SUPABASE_KEY = "sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po";
 
     let dbClient = null;
-    let currentDj = null;
-    let currentCompany = null;
+    let currentDjId = null;
     let realtimeSubscription = null;
-    let presenceChannel = null;
 
     function toonPopup(bericht) {
       const oudePopup = document.getElementById('custom-toast');
@@ -174,7 +112,7 @@
       popup.innerText = bericht;
 
       document.body.appendChild(popup);
-      setTimeout(() => { if (popup) popup.remove(); }, 3000);
+      setTimeout(() => { if (popup) popup.remove(); }, 4000);
     }
 
     function initSupabase() {
@@ -193,315 +131,113 @@
     };
 
     async function loginDj(isAutoLogin = false) {
-      const codeInput = document.getElementById('dj-code-input').value.trim();
-      if (!codeInput) {
+      const djCode = document.getElementById('dj-code-input').value.trim();
+      if (!djCode) {
         if (!isAutoLogin) toonPopup('Voer je DJ-code in!');
         return;
       }
 
       initSupabase();
 
-      const { data: djData, error: djError } = await dbClient
+      const { data: djData, error } = await dbClient
         .from('djs')
-        .select('*, companies(*)')
-        .eq('dj_code', codeInput)
+        .select('*')
+        .eq('dj_code', djCode)
         .single();
 
-      if (djError || !djData) {
-        if (!isAutoLogin) toonPopup('DJ-code niet gevonden. Controleer je code.');
+      if (error || !djData) {
+        if (!isAutoLogin) toonPopup('Ongeldige DJ-code.');
         localStorage.removeItem('active_dj_code');
         return;
       }
 
-      currentDj = djData;
-      currentCompany = djData.companies;
-      localStorage.setItem('active_dj_code', djData.dj_code);
+      currentDjId = djData.id;
+      localStorage.setItem('active_dj_code', djCode);
 
-      if (currentCompany && currentCompany.accent_color) {
-        document.documentElement.style.setProperty('--accent-color', currentCompany.accent_color);
-      }
-
-      document.getElementById('dj-name-display').innerText = currentDj.dj_name;
-      
-      let activePartyCode = localStorage.getItem(`party_code_${currentDj.id}`);
-      if (!activePartyCode) {
-        activePartyCode = generatePartyCode(currentDj.dj_code);
-        localStorage.setItem(`party_code_${currentDj.id}`, activePartyCode);
-      }
-      document.getElementById('party-code-display').innerText = activePartyCode;
-
-      document.getElementById('edit-welcome-text').value = currentDj.welcome_text || '';
-
-      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('welcome-text-input').value = djData.welcome_text || '';
+      document.getElementById('dj-login-view').classList.add('hidden');
       document.getElementById('dj-dashboard').classList.remove('hidden');
 
-      loadRequests();
-      loadXmlFiles();
+      loadDjRequests();
       setupRealtimeListener();
-      setupPresenceTracker(activePartyCode);
     }
 
-    function generatePartyCode(djCode) {
-      const randomSuffix = Math.floor(10 + Math.random() * 90);
-      return djCode + randomSuffix;
-    }
-
-    async function startNewParty() {
-      if (!confirm("Weet je zeker dat je een nieuw feest wilt starten? Er wordt een nieuwe feestcode gegenereerd.")) return;
-
-      const newPartyCode = generatePartyCode(currentDj.dj_code);
-      localStorage.setItem(`party_code_${currentDj.id}`, newPartyCode);
-      document.getElementById('party-code-display').innerText = newPartyCode;
-      
-      toonPopup(`Nieuw feest gestart! Code: ${newPartyCode}`);
-      
-      if (presenceChannel) dbClient.removeChannel(presenceChannel);
-      setupPresenceTracker(newPartyCode);
-      loadRequests();
-    }
-
-    function setupPresenceTracker(partyCode) {
-      presenceChannel = dbClient.channel(`party_${partyCode}`, {
-        config: { presence: { key: 'dj_admin' } }
-      });
-
-      presenceChannel
-        .on('presence', { event: 'sync' }, () => {
-          const state = presenceChannel.presenceState();
-          const totalUsers = Object.keys(state).length;
-          document.getElementById('online-count').innerText = totalUsers;
-        })
-        .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
-            await presenceChannel.track({ online_at: new Date().toISOString(), role: 'dj' });
-          }
-        });
-    }
-
-    function logout() {
+    function logoutDj() {
       localStorage.removeItem('active_dj_code');
-      currentDj = null;
-      currentCompany = null;
       if (realtimeSubscription) dbClient.removeChannel(realtimeSubscription);
-      if (presenceChannel) dbClient.removeChannel(presenceChannel);
-      
       document.getElementById('dj-dashboard').classList.add('hidden');
-      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('dj-login-view').classList.remove('hidden');
       document.getElementById('dj-code-input').value = '';
     }
 
-    function toggleSettingsMenu() {
-      const menu = document.getElementById('settings-menu');
-      menu.classList.toggle('hidden');
-    }
-
     async function saveWelcomeText() {
-      if (!currentDj) return;
-      const text = document.getElementById('edit-welcome-text').value.trim();
-
+      const text = document.getElementById('welcome-text-input').value.trim();
       const { error } = await dbClient
         .from('djs')
         .update({ welcome_text: text })
-        .eq('id', currentDj.id);
+        .eq('id', currentDjId);
 
       if (error) {
-        toonPopup('Fout bij opslaan welkomsttekst.');
+        toonPopup('Fout bij opslaan: ' + error.message);
       } else {
-        toonPopup('Welkomsttekst opgeslagen! ✨');
-        currentDj.welcome_text = text;
+        toonPopup('Welkomsttekst bijgewerkt! 🎉');
       }
     }
 
-    async function loadRequests() {
-      if (!currentDj) return;
+    async function loadDjRequests() {
+      const { data, error } = await dbClient
+        .from('requests')
+        .select('*')
+        .eq('dj_id', currentDjId)
+        .eq('status', 'pending')
+        .order('likes', { ascending: false })
+        .order('created_at', { ascending: false });
 
-      const sortBy = document.getElementById('sort-select').value;
-      let query = dbClient.from('requests').select('*').eq('dj_id', currentDj.id);
-
-      if (sortBy === 'likes') {
-        query = query.order('likes', { ascending: false }).order('created_at', { ascending: false });
-      } else {
-        query = query.order('created_at', { ascending: false });
-      }
-
-      const { data, error } = await query;
-
-      const listContainer = document.getElementById('requests-list');
-      const playedContainer = document.getElementById('played-requests-list');
-      
+      const listContainer = document.getElementById('dj-requests-list');
       listContainer.innerHTML = '';
-      playedContainer.innerHTML = '';
 
       if (error || !data || data.length === 0) {
-        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen verzoekjes ontvangen.</p>';
-        playedContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen verzoekjes gedraaid.</p>';
-        document.getElementById('played-count').innerText = '0';
+        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em;">Nog geen openstaande verzoekjes...</p>';
         return;
       }
-
-      let activeCount = 0;
-      let playedCount = 0;
 
       data.forEach(req => {
-        if (req.status === 'played') {
-          playedCount++;
-          playedContainer.innerHTML += `
-            <div class="request-item" style="opacity: 0.7; border-left-color: #34495e;">
-              <div class="request-info">
-                <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span><br>
-                <small style="color:var(--subtext-color);">Van: <em>${req.sender_name || 'Anoniem'}</em></small>
-              </div>
-              <div class="request-actions">
-                <button class="action-btn delete-btn" onclick="deleteRequest('${req.id}')">✕</button>
-              </div>
-            </div>`;
-        } else {
-          activeCount++;
-          listContainer.innerHTML += `
-            <div class="request-item">
-              <div class="request-info">
-                <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span><br>
-                <small style="color:var(--subtext-color);">Van: <em>${req.sender_name || 'DJ / Gast'}</em> ${req.message ? `("${req.message}")` : ''} | ❤️ ${req.likes || 0}</small>
-              </div>
-              <div class="request-actions">
-                <button class="action-btn done-btn" onclick="markAsPlayed('${req.id}')">Gedraaid ✓</button>
-                <button class="action-btn delete-btn" onclick="deleteRequest('${req.id}')">✕</button>
-              </div>
-            </div>`;
-        }
-      });
+        const commentHtml = req.comment ? `<div class="request-comment">💬 "${req.comment}"</div>` : '';
 
-      if (activeCount === 0) {
-        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Geen openstaande verzoekjes.</p>';
-      }
-      if (playedCount === 0) {
-        playedContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen verzoekjes gedraaid.</p>';
-      }
-      document.getElementById('played-count').innerText = playedCount;
-    }
-
-    async function addManualRequest() {
-      if (!currentDj) return;
-      const song = document.getElementById('manual-song').value.trim();
-      const artist = document.getElementById('manual-artist').value.trim();
-
-      if (!song || !artist) return toonPopup('Vul zowel de titel als artiest in!');
-
-      const { error } = await dbClient.from('requests').insert([{
-        dj_id: currentDj.id,
-        song_title: song,
-        artist: artist,
-        sender_name: currentDj.dj_name + ' (DJ)',
-        status: 'pending',
-        likes: 0
-      }]);
-
-      if (error) {
-        toonPopup('Fout bij toevoegen nummer.');
-      } else {
-        toonPopup('Verzoekje toegevoegd! 🎶');
-        document.getElementById('manual-song').value = '';
-        document.getElementById('manual-artist').value = '';
-        loadRequests();
-      }
-    }
-
-    async function markAsPlayed(requestId) {
-      const { error } = await dbClient
-        .from('requests')
-        .update({ status: 'played' })
-        .eq('id', requestId);
-
-      if (error) {
-        toonPopup('Fout bij bijwerken status.');
-      } else {
-        loadRequests();
-      }
-    }
-
-    async function deleteRequest(requestId) {
-      const { error } = await dbClient
-        .from('requests')
-        .delete()
-        .eq('id', requestId);
-
-      if (error) {
-        toonPopup('Fout bij verwijderen.');
-      } else {
-        loadRequests();
-      }
-    }
-
-    async function uploadXmlFile() {
-      const fileInput = document.getElementById('xml-file-input');
-      if (fileInput.files.length === 0) return toonPopup('Selecteer eerst een XML bestand!');
-
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = async function(e) {
-        const fileContent = e.target.result;
-
-        const { error } = await dbClient.from('xml_files').insert([{
-          dj_id: currentDj.id,
-          file_name: file.name,
-          file_content: fileContent
-        }]);
-
-        if (error) {
-          toonPopup('Fout bij opslaan XML in database.');
-          console.error(error);
-        } else {
-          toonPopup('XML bestand succesvol geüpload! 📂');
-          fileInput.value = '';
-          loadXmlFiles();
-        }
-      };
-
-      reader.readAsText(file);
-    }
-
-    async function loadXmlFiles() {
-      if (!currentDj) return;
-      const { data, error } = await dbClient.from('xml_files').select('id, file_name, created_at').eq('dj_id', currentDj.id);
-      
-      const listContainer = document.getElementById('xml-files-list');
-      listContainer.innerHTML = '';
-
-      if (error || !data || data.length === 0) {
-        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.8em;">Geen XML bestanden.</p>';
-        return;
-      }
-
-      data.forEach(file => {
         listContainer.innerHTML += `
-          <div style="display: flex; justify-content: space-between; align-items: center; background: #121212; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 0.85em;">
-            <span>📄 ${file.file_name}</span>
-            <button class="action-btn delete-btn" style="padding: 2px 6px; font-size: 0.75em;" onclick="deleteXmlFile('${file.id}')">✕</button>
+          <div class="request-item">
+            <div class="request-info">
+              <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span>
+              <div style="font-size: 0.85em; color: var(--accent-color); margin-top: 4px;">👍 Likes: ${req.likes || 0}</div>
+              ${commentHtml}
+            </div>
+            <div class="actions">
+              <button class="btn-action btn-done" onclick="completeRequest('${req.id}')">Gedraaid ✓</button>
+              <button class="btn-action btn-delete" onclick="deleteRequest('${req.id}')">Verwijder ✕</button>
+            </div>
           </div>`;
       });
     }
 
-    async function deleteXmlFile(fileId) {
-      if (!confirm("Weet je zeker dat je dit XML-bestand wilt verwijderen?")) return;
+    async function completeRequest(id) {
+      const { error } = await dbClient.from('requests').update({ status: 'completed' }).eq('id', id);
+      if (error) toonPopup('Fout bij bijwerken: ' + error.message);
+      else loadDjRequests();
+    }
 
-      const { error } = await dbClient.from('xml_files').delete().eq('id', fileId);
-      if (error) {
-        toonPopup('Fout bij verwijderen XML bestand.');
-      } else {
-        toonPopup('Bestand verwijderd.');
-        loadXmlFiles();
-      }
+    async function deleteRequest(id) {
+      const { error } = await dbClient.from('requests').delete().eq('id', id);
+      if (error) toonPopup('Fout bij verwijderen: ' + error.message);
+      else loadDjRequests();
     }
 
     function setupRealtimeListener() {
-      if (!currentDj) return;
+      if (!currentDjId) return;
 
       realtimeSubscription = dbClient
-        .channel('public:requests')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: `dj_id=eq.${currentDj.id}` }, payload => {
-          loadRequests();
-          toonPopup('Nieuw verzoekje binnengekomen! 🎶');
+        .channel('public:dj_requests')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: `dj_id=eq.${currentDjId}` }, payload => {
+          loadDjRequests();
         })
         .subscribe();
     }
