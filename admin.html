@@ -153,6 +153,17 @@
             border-radius: 8px;
         }
         .sub-table th, .sub-table td { padding: 8px 12px; font-size: 0.85rem; }
+
+        .company-settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
     </style>
 </head>
 <body>
@@ -202,7 +213,7 @@
         <!-- Overzicht van alle bestaande accounts -->
         <div class="card">
             <h2>Beheerde Accounts</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een Bedrijf-rij om de gekoppelde DJ's/gebruikers te beheren.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een Bedrijf-rij om de instellingen te wijzigen en DJ's te beheren.</p>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -210,14 +221,13 @@
                             <th>Naam</th>
                             <th>Code (Slug)</th>
                             <th>Type</th>
-                            <th>Wachtwoord</th>
                             <th>Verloopt op</th>
                             <th>Acties</th>
                         </tr>
                     </thead>
                     <tbody id="companies-table-body">
                         <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
+                            <td colspan="5" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -255,12 +265,12 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Fout bij laden: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Fout bij laden: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen accounts aangemaakt.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nog geen accounts aangemaakt.</td></tr>`;
                 alertContainer.innerHTML = '';
                 return;
             }
@@ -296,14 +306,13 @@
                 if (isExpired) statusBadge = `<span class="badge badge-danger">Verlopen</span>`;
                 else if (isExpiringSoon) statusBadge = `<span class="badge badge-warning">Verloopt bijna</span>`;
 
-                // Hoofdrij voor bedrijf/dj
+                // Hoofdrij voor bedrijf/dj (alleen overzichtelijke info)
                 const row = document.createElement('tr');
                 if (company.account_type === 'bedrijf') {
                     row.className = 'company-row';
-                    row.title = 'Klik om DJ\'s toe te voegen/te bekijken';
+                    row.title = 'Klik om details te openen';
                     row.onclick = (e) => {
-                        // Voorkom dat klik op input/knop de rij inklapt
-                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+                        if (e.target.tagName === 'BUTTON') return;
                         toggleDetails(company.id);
                     };
                 }
@@ -312,10 +321,9 @@
                     <td><strong>${company.company_name}</strong> ${company.account_type === 'bedrijf' ? '🔽' : ''}</td>
                     <td><code>${company.company_code}</code></td>
                     <td><span class="badge ${badgeClass}">${company.account_type}</span></td>
-                    <td><input type="text" value="${company.password}" style="width: 110px; padding: 4px 8px;" onchange="updateField('${company.id}', 'password', this.value)"></td>
                     <td>
-                        <input type="date" value="${company.expires_at || ''}" style="padding: 4px 8px;" onchange="updateField('${company.id}', 'expires_at', this.value)">
-                        <br>${statusBadge}
+                        ${company.expires_at ? company.expires_at : 'Onbeperkt'} 
+                        ${statusBadge}
                     </td>
                     <td>
                         <button class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem;" onclick="deleteCompany('${company.id}')">Verwijderen</button>
@@ -323,16 +331,30 @@
                 `;
                 tableBody.appendChild(row);
 
-                // Als het een bedrijf is, voegen we een verborgen rij toe voor de extra DJ's
+                // Als het een bedrijf is, voegen we de uitklapbare rij toe met instellingen en DJ's
                 if (company.account_type === 'bedrijf') {
                     const detailsRow = document.createElement('tr');
                     detailsRow.id = `details-${company.id}`;
                     detailsRow.className = 'details-row';
                     detailsRow.innerHTML = `
-                        <td colspan="6">
+                        <td colspan="5">
                             <div class="details-content">
-                                <h3>DJ's / Gebruikers voor ${company.company_name}</h3>
-                                <div id="djs-list-${company.id}" style="margin-top: 10px;">Laden...</div>
+                                <h3>Instellingen & DJ's voor ${company.company_name}</h3>
+                                
+                                <!-- Bedrijfswachtwoord en Abonnement aanpassen -->
+                                <div class="company-settings-grid">
+                                    <div class="form-group" style="margin:0;">
+                                        <label>Bedrijf Wachtwoord</label>
+                                        <input type="text" value="${company.password}" onchange="updateField('${company.id}', 'password', this.value)">
+                                    </div>
+                                    <div class="form-group" style="margin:0;">
+                                        <label>Abonnement Geldig Tot</label>
+                                        <input type="date" value="${company.expires_at || ''}" onchange="updateField('${company.id}', 'expires_at', this.value)">
+                                    </div>
+                                </div>
+
+                                <h4 style="margin-bottom: 8px;">Gekoppelde DJ's / Gebruikers</h4>
+                                <div id="djs-list-${company.id}">Laden...</div>
                                 
                                 <form onsubmit="addCompanyDJ(event, '${company.id}')" style="margin-top: 15px; display: flex; gap: 10px; align-items: flex-end;">
                                     <div class="form-group" style="margin:0;">
@@ -354,13 +376,11 @@
             }
         }
 
-        // Uitklapfunctie voor bedrijven
         window.toggleDetails = function(companyId) {
             const detailsRow = document.getElementById(`details-${companyId}`);
             detailsRow.classList.toggle('open');
         }
 
-        // Laad DJ's van een specifiek bedrijf
         async function loadCompanyDJs(companyId) {
             const container = document.getElementById(`djs-list-${companyId}`);
             const { data, error } = await _supabase
@@ -391,7 +411,6 @@
             container.innerHTML = html;
         }
 
-        // Voeg een DJ toe aan een bedrijf
         window.addCompanyDJ = async function(e, companyId) {
             e.preventDefault();
             const djName = document.getElementById(`dj-name-${companyId}`).value.trim();
@@ -410,7 +429,6 @@
             }
         }
 
-        // Verwijder een DJ gekoppeld aan een bedrijf
         window.deleteCompanyDJ = async function(djId, companyId) {
             if (!confirm('Weet je zeker dat je deze DJ wilt verwijderen?')) return;
             const { error } = await _supabase.from('company_djs').delete().eq('id', djId);
@@ -418,7 +436,6 @@
             else loadCompanyDJs(companyId);
         }
 
-        // Direct velden (wachtwoord of datum) aanpassen via de tabel
         window.updateField = async function(id, field, value) {
             const updateObj = {};
             updateObj[field] = value === '' ? null : value;
@@ -434,7 +451,6 @@
             }
         }
 
-        // Nieuw account aanmaken
         document.getElementById('create-company-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -466,7 +482,6 @@
             }
         });
 
-        // Account verwijderen
         window.deleteCompany = async function(id) {
             if (!confirm('Weet je zeker dat je dit account wilt verwijderen? Alle gekoppelde DJ\'s worden ook verwijderd.')) return;
 
