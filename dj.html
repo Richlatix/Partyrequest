@@ -1,386 +1,482 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DJ Verzoekjes Dashboard</title>
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --danger: #ef4444;
-            --success: #22c55e;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DJ Portal | Verzoekjes SaaS</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #ffffff;
+      --accent-color: #7dff00;
+      --border-color: #2a2a2a;
+      --subtext-color: #b0b0b0;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: var(--bg-color); 
+      color: var(--text-color); 
+      padding: 20px; 
+      max-width: 650px; 
+      margin: auto; 
+    }
 
-        .container {
-            width: 100%;
-            max-width: 800px;
-        }
+    h1, h2, h3 { color: var(--accent-color); text-align: center; }
+    
+    input, button, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
+    button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+    .hidden { display: none !important; }
+    
+    .request-item { background: #252525; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent-color); display: flex; justify-content: space-between; align-items: center; }
+    .request-info { flex: 1; }
+    .request-actions { display: flex; gap: 6px; align-items: center; }
+    
+    .action-btn { padding: 6px 10px; border-radius: 6px; font-size: 0.8em; font-weight: bold; cursor: pointer; border: none; }
+    .done-btn { background: #2ecc71; color: #fff; }
+    .delete-btn { background: #e74c3c; color: #fff; }
 
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
+    .toast-popup {
+      position: fixed;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e1e;
+      color: #ffffff;
+      border: 1.5px solid var(--accent-color);
+      padding: 12px 24px;
+      border-radius: 30px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      font-weight: bold;
+      text-align: center;
+    }
 
-        h1, h2 { margin: 0; }
-
-        .party-code-badge {
-            background: var(--primary);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-        }
-
-        /* Tandwiel Menu */
-        .settings-container {
-            position: relative;
-        }
-
-        .gear-btn {
-            background: none;
-            border: none;
-            color: var(--text);
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 5px;
-            transition: transform 0.2s;
-        }
-
-        .gear-btn:hover {
-            transform: rotate(90deg);
-        }
-
-        .settings-dropdown {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 40px;
-            background: var(--card-bg);
-            border: 1px solid var(--text-muted);
-            border-radius: 8px;
-            padding: 15px;
-            width: 300px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            z-index: 100;
-        }
-
-        .settings-dropdown.active {
-            display: block;
-        }
-
-        .settings-dropdown label {
-            display: block;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .settings-dropdown input, .settings-dropdown textarea {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            background: var(--bg);
-            border: 1px solid var(--text-muted);
-            color: var(--text);
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        /* Secties & Formulieren */
-        .card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            padding: 10px;
-            background: var(--bg);
-            border: 1px solid var(--text-muted);
-            color: var(--text);
-            border-radius: 6px;
-        }
-
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background: var(--primary-hover);
-        }
-
-        button.danger {
-            background: var(--danger);
-        }
-        button.danger:hover {
-            background: #dc2626;
-        }
-
-        /* Verzoekjes Lijst */
-        .request-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--bg);
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid var(--primary);
-        }
-
-        .request-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .request-title {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
-        .request-meta {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .request-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .like-count {
-            background: rgba(99, 102, 241, 0.2);
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-    </style>
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <div>
-            <h1>DJ Dashboard</h1>
-            <p id="welcomeTextDisplay" style="margin: 5px 0 0 0; color: var(--text-muted);">Welkom bij het feest!</p>
-        </div>
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <div>
-                <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Feestcode</span>
-                <span class="party-code-badge" id="partyCode">------</span>
-            </div>
-            
-            <!-- Tandwiel Menu -->
-            <div class="settings-container">
-                <button class="gear-btn" onclick="toggleSettings()" title="Instellingen">⚙️</button>
-                <div class="settings-dropdown" id="settingsDropdown">
-                    <h3>Instellingen</h3>
-                    
-                    <label for="welcomeInput">Welkomsttekst</label>
-                    <textarea id="welcomeInput" rows="2" oninput="updateWelcomeText()"></textarea>
+  <!-- INLOGSCHERM DJ -->
+  <div id="login-view" style="max-width: 400px; margin: 60px auto; text-align: center;">
+    <h2>🎧 DJ Portal Inloggen</h2>
+    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer je 4-cijferige DJ-code in:</p>
+    <input type="text" id="dj-code-input" placeholder="Bijv. 0155" maxlength="4" style="text-align:center; font-size: 1.5em; letter-spacing: 4px;">
+    <button onclick="loginDj()">Inloggen 🚀</button>
+  </div>
 
-                    <label for="xmlUpload">XML Bestanden Uploaden</label>
-                    <input type="file" id="xmlUpload" accept=".xml" onchange="handleXmlUpload(event)">
-
-                    <label>Beheerde XML Bestanden</label>
-                    <div id="xmlFileList" style="max-height: 100px; overflow-y: auto; margin-top: 5px; font-size: 0.9rem;">
-                        <!-- Dynamisch geladen bestanden -->
-                    </div>
-
-                    <hr style="border: 0; border-top: 1px solid var(--text-muted); margin: 15px 0;">
-                    
-                    <button class="danger" style="width: 100%;" onclick="startNewParty()">Nieuw Feest Starten</button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Handmatig Verzoekje Toevoegen -->
-    <div class="card">
-        <h2>Verzoekje Toevoegen</h2>
-        <div class="form-group">
-            <input type="text" id="manualSong" placeholder="Artiest - Nummer...">
-            <button onclick="addManualRequest()">Toevoegen</button>
-        </div>
+  <!-- DASHBOARD DJ -->
+  <div id="dj-dashboard" class="hidden">
+    <div class="top-bar">
+      <div>
+        <h2 id="dj-portal-title" style="margin:0; text-align:left;">DJ Dashboard</h2>
+        <p style="color:var(--subtext-color); margin:0; font-size:0.85em;">Welkom, <span id="dj-name-display" style="color:var(--accent-color); font-weight: bold;"></span></p>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button onclick="toggleSettingsMenu()" style="background: #2a2a2a; color: var(--accent-color); border: 1px solid var(--border-color); width: auto; padding: 10px; font-size: 1.2em; border-radius: 8px;" title="Instellingen & XML">⚙️</button>
+        <button onclick="logout()" style="background: transparent; color: var(--subtext-color); border: none; width: auto; font-size: 0.85em; cursor: pointer; text-decoration: underline;">Uitloggen</button>
+      </div>
     </div>
 
-    <!-- Verzoekjes Overzicht -->
-    <div class="card">
-        <h2>Ingekomen Verzoekjes</h2>
-        <div id="requestsList" style="margin-top: 15px;">
-            <!-- Dynamische verzoekjes -->
+    <!-- TANDWIEL MENU (INSTELLINGEN & XML) -->
+    <div id="settings-menu" class="card hidden" style="border: 1px solid var(--accent-color);">
+      <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">⚙️ DJ Instellingen & Bestanden</h3>
+      
+      <label style="font-size:0.85em; color:var(--subtext-color);">Welkomsttekst voor publiek:</label>
+      <textarea id="edit-welcome-text" rows="2" placeholder="Welkom bij mijn feestje! Vraag hier je favoriete nummer aan..."></textarea>
+      <button onclick="saveWelcomeText()" style="font-size:0.85em; padding:8px; margin-bottom:15px;">Tekst Opslaan 💾</button>
+
+      <label style="font-size:0.85em; color:var(--subtext-color);">XML Verzoekjes / Muziekbestand Uploaden:</label>
+      <input type="file" id="xml-file-input" accept=".xml" style="background:#121212; padding:8px;">
+      <button onclick="uploadXmlFile()" class="small-btn" style="background:#333; color:var(--accent-color); border:1px solid var(--accent-color); font-size:0.85em; padding:8px;">Upload XML 📂</button>
+
+      <div style="margin-top: 15px;">
+        <label style="font-size:0.85em; color:var(--subtext-color);">Geüploadde XML Bestanden:</label>
+        <div id="xml-files-list" style="max-height: 120px; overflow-y: auto; margin-top: 5px;">
+          <p style="color:var(--subtext-color); font-size:0.8em;">Geen bestanden.</p>
         </div>
+      </div>
     </div>
-</div>
 
-<script>
-    // Lokale State Simulatie (gebaseerd op de originele logica)
-    let djCode = "DJ" + Math.floor(10 + Math.random() * 90); // Bijv. DJ45
-    let partyCode = djCode + Math.floor(10 + Math.random() * 90); // 6-karakter code (bv. DJ4582)
-    let welcomeMessage = "Welkom bij het feest! Vraag hier je favoriete nummers aan.";
-    
-    // Dummy verzoekjes met likes en aanvraagvolgorde (timestamp)
-    let requests = [
-        id = 1, { title: "Tiësto - Lethal Industry", likes: 5, timestamp: 1000 },
-        { title: "Armin van Buuren - Blah Blah Blah", likes: 12, timestamp: 1005 },
-        { title: "Hardwell - Spaceman", likes: 2, timestamp: 1010 }
-    ];
+    <!-- FEESTCODE & NIEUW FEEST CARD -->
+    <div class="card" style="text-align: center; background: linear-gradient(135deg, #1e1e1e, #252525);">
+      <h3 style="margin-top:0; font-size: 1em; color: var(--subtext-color);">HUIDIGE FEESTCODE</h3>
+      <div id="party-code-display" style="font-size: 2.5em; font-weight: bold; letter-spacing: 6px; color: var(--accent-color); margin: 10px 0; font-family: monospace;">------</div>
+      <p style="color: var(--subtext-color); font-size: 0.8em; margin-bottom: 15px;">Het publiek gebruikt deze 6-cijferige code om in te loggen.</p>
+      <button onclick="startNewParty()" style="background: #ff4444; color: #fff; width: auto; padding: 10px 20px; font-size: 0.9em;">🎉 Start Nieuw Feest</button>
+    </div>
 
-    let xmlFiles = ["playlist_oud.xml", "feest_export.xml"];
+    <!-- ZELF NUMMER TOEVOEGEN -->
+    <div class="card">
+      <h3 style="margin-top:0; text-align:left; color:var(--accent-color); font-size:1.1em;">➕ Zelf Verzoekje / Nummer Toevoegen</h3>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <input type="text" id="manual-song" placeholder="Nummer (titel)" style="flex: 2; margin:0; font-size: 0.9em;">
+        <input type="text" id="manual-artist" placeholder="Artiest" style="flex: 2; margin:0; font-size: 0.9em;">
+        <button onclick="addManualRequest()" style="flex: 1; margin:0; font-size: 0.9em; padding: 10px;">Toevoegen</button>
+      </div>
+    </div>
 
-    // Initialisatie
-    document.getElementById("partyCode").innerText = partyCode;
-    document.getElementById("welcomeInput").value = welcomeMessage;
-    document.getElementById("welcomeTextDisplay").innerText = welcomeMessage;
-    renderRequests();
-    renderXmlList();
+    <!-- INKOMENDE VERZOEKJES -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin:0; text-align:left; color:var(--accent-color); font-size:1.1em;">📨 Inkomende Verzoekjes</h3>
+        <select id="sort-select" onchange="loadRequests()" style="width: auto; margin:0; padding: 6px; font-size: 0.85em;">
+          <option value="created_at">Sorteer op: Tijd (Nieuwste)</option>
+          <option value="likes">Sorteer op: Meeste Likes ❤️</option>
+        </select>
+      </div>
+      
+      <div id="requests-list">
+        <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes ontvangen...</p>
+      </div>
+    </div>
 
-    // Toggle Tandwiel Menu
-    function toggleSettings() {
-        const dropdown = document.getElementById("settingsDropdown");
-        dropdown.classList.toggle("active");
+    <!-- GEDRAAIDE VERZOEKJES -->
+    <div class="card">
+      <details>
+        <summary style="cursor: pointer; color: var(--subtext-color); font-weight: bold; font-size: 1em;">🎧 Gedraaide Verzoekjes (<span id="played-count">0</span>)</summary>
+        <div id="played-requests-list" style="margin-top: 10px;">
+          <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes gedraaid.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://yhitywueffetjjnoudkt.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po";
+
+    let dbClient = null;
+    let currentDj = null;
+    let currentCompany = null;
+    let realtimeSubscription = null;
+
+    function toonPopup(bericht) {
+      const oudePopup = document.getElementById('custom-toast');
+      if (oudePopup) oudePopup.remove();
+
+      const popup = document.createElement('div');
+      popup.id = 'custom-toast';
+      popup.className = 'toast-popup';
+      popup.innerText = bericht;
+
+      document.body.appendChild(popup);
+      setTimeout(() => { if (popup) popup.remove(); }, 3000);
     }
 
-    // Welkomsttekst aanpassen
-    function updateWelcomeText() {
-        welcomeMessage = document.getElementById("welcomeInput").value;
-        document.getElementById("welcomeTextDisplay").innerText = welcomeMessage;
+    function initSupabase() {
+      if (!dbClient) {
+        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
     }
 
-    // Nieuw feest starten (Reset code en data)
-    function startNewParty() {
-        if(confirm("Weet je zeker dat je een nieuw feest wilt starten? Alle huidige verzoekjes worden gewist.")) {
-            partyCode = djCode + Math.floor(10 + Math.random() * 90);
-            document.getElementById("partyCode").innerText = partyCode;
-            requests = [];
-            renderRequests();
-            toggleSettings();
-            alert("Nieuw feest gestart! Nieuwe code: " + partyCode);
+    window.onload = function() {
+      initSupabase();
+      const savedDjCode = localStorage.getItem('active_dj_code');
+      if (savedDjCode) {
+        document.getElementById('dj-code-input').value = savedDjCode;
+        loginDj(true);
+      }
+    };
+
+    async function loginDj(isAutoLogin = false) {
+      const codeInput = document.getElementById('dj-code-input').value.trim();
+      if (!codeInput) {
+        if (!isAutoLogin) toonPopup('Voer je DJ-code in!');
+        return;
+      }
+
+      initSupabase();
+
+      const { data: djData, error: djError } = await dbClient
+        .from('djs')
+        .select('*, companies(*)')
+        .eq('dj_code', codeInput)
+        .single();
+
+      if (djError || !djData) {
+        if (!isAutoLogin) toonPopup('DJ-code niet gevonden. Controleer je code.');
+        localStorage.removeItem('active_dj_code');
+        return;
+      }
+
+      currentDj = djData;
+      currentCompany = djData.companies;
+      localStorage.setItem('active_dj_code', djData.dj_code);
+
+      if (currentCompany && currentCompany.accent_color) {
+        document.documentElement.style.setProperty('--accent-color', currentCompany.accent_color);
+      }
+
+      document.getElementById('dj-name-display').innerText = currentDj.dj_name;
+      
+      // Controleer of er al een actieve feestcode is opgeslagen in localStorage of haal op
+      let activePartyCode = localStorage.getItem(`party_code_${currentDj.id}`);
+      if (!activePartyCode) {
+        activePartyCode = generatePartyCode(currentDj.dj_code);
+        localStorage.setItem(`party_code_${currentDj.id}`, activePartyCode);
+      }
+      document.getElementById('party-code-display').innerText = activePartyCode;
+
+      // Laad instellingen in tandwielmenu
+      document.getElementById('edit-welcome-text').value = currentDj.welcome_text || '';
+
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('dj-dashboard').classList.remove('hidden');
+
+      loadRequests();
+      loadXmlFiles();
+      setupRealtimeListener();
+    }
+
+    function generatePartyCode(djCode) {
+      const randomSuffix = Math.floor(10 + Math.random() * 90); // 2 willekeurige cijfers
+      return djCode + randomSuffix;
+    }
+
+    async function startNewParty() {
+      if (!confirm("Weet je zeker dat je een nieuw feest wilt starten? Er wordt een nieuwe 6-cijferige feestcode gegenereerd.")) return;
+
+      const newPartyCode = generatePartyCode(currentDj.dj_code);
+      localStorage.setItem(`party_code_${currentDj.id}`, newPartyCode);
+      document.getElementById('party-code-display').innerText = newPartyCode;
+      
+      toonPopup(`Nieuw feest gestart! Code: ${newPartyCode}`);
+      loadRequests();
+    }
+
+    function logout() {
+      localStorage.removeItem('active_dj_code');
+      currentDj = null;
+      currentCompany = null;
+      if (realtimeSubscription) dbClient.removeChannel(realtimeSubscription);
+      
+      document.getElementById('dj-dashboard').classList.add('hidden');
+      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('dj-code-input').value = '';
+    }
+
+    function toggleSettingsMenu() {
+      const menu = document.getElementById('settings-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    async function saveWelcomeText() {
+      if (!currentDj) return;
+      const text = document.getElementById('edit-welcome-text').value.trim();
+
+      const { error } = await dbClient
+        .from('djs')
+        .update({ welcome_text: text })
+        .eq('id', currentDj.id);
+
+      if (error) {
+        toonPopup('Fout bij opslaan welkomsttekst.');
+      } else {
+        toonPopup('Welkomsttekst opgeslagen! ✨');
+        currentDj.welcome_text = text;
+      }
+    }
+
+    async function loadRequests() {
+      if (!currentDj) return;
+
+      const sortBy = document.getElementById('sort-select').value;
+      let query = dbClient.from('requests').select('*').eq('dj_id', currentDj.id);
+
+      if (sortBy === 'likes') {
+        query = query.order('likes', { ascending: false }).order('created_at', { ascending: false });
+      } else {
+        query = query.order('created_at', { ascending: false });
+      }
+
+      const { data, error } = await query;
+
+      const listContainer = document.getElementById('requests-list');
+      const playedContainer = document.getElementById('played-requests-list');
+      
+      listContainer.innerHTML = '';
+      playedContainer.innerHTML = '';
+
+      if (error || !data || data.length === 0) {
+        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen verzoekjes ontvangen.</p>';
+        playedContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen verzoekjes gedraaid.</p>';
+        document.getElementById('played-count').innerText = '0';
+        return;
+      }
+
+      let activeCount = 0;
+      let playedCount = 0;
+
+      data.forEach(req => {
+        if (req.status === 'played') {
+          playedCount++;
+          playedContainer.innerHTML += `
+            <div class="request-item" style="opacity: 0.7; border-left-color: #34495e;">
+              <div class="request-info">
+                <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span><br>
+                <small style="color:var(--subtext-color);">Van: <em>${req.sender_name || 'Anoniem'}</em></small>
+              </div>
+              <div class="request-actions">
+                <button class="action-btn delete-btn" onclick="deleteRequest('${req.id}')">✕</button>
+              </div>
+            </div>`;
+        } else {
+          activeCount++;
+          listContainer.innerHTML += `
+            <div class="request-item">
+              <div class="request-info">
+                <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span><br>
+                <small style="color:var(--subtext-color);">Van: <em>${req.sender_name || 'DJ / Gast'}</em> ${req.message ? `("${req.message}")` : ''} | ❤️ ${req.likes || 0}</small>
+              </div>
+              <div class="request-actions">
+                <button class="action-btn done-btn" onclick="markAsPlayed('${req.id}')">Gedraaid ✓</button>
+                <button class="action-btn delete-btn" onclick="deleteRequest('${req.id}')">✕</button>
+              </div>
+            </div>`;
         }
+      });
+
+      if (activeCount === 0) {
+        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Geen openstaande verzoekjes.</p>';
+      }
+      if (playedCount === 0) {
+        playedContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen verzoekjes gedraaid.</p>';
+      }
+      document.getElementById('played-count').innerText = playedCount;
     }
 
-    // Handmatig verzoekje toevoegen door DJ
-    function addManualRequest() {
-        const input = document.getElementById("manualSong");
-        if(input.value.trim() === "") return;
+    async function addManualRequest() {
+      if (!currentDj) return;
+      const song = document.getElementById('manual-song').value.trim();
+      const artist = document.getElementById('manual-artist').value.trim();
 
-        requests.push({
-            title: input.value,
-            likes: 0,
-            timestamp: Date.now()
-        });
+      if (!song || !artist) return toonPopup('Vul zowel de titel als artiest in!');
 
-        input.value = "";
-        renderRequests();
+      const { error } = await dbClient.from('requests').insert([{
+        dj_id: currentDj.id,
+        song_title: song,
+        artist: artist,
+        sender_name: currentDj.dj_name + ' (DJ)',
+        status: 'pending',
+        likes: 0
+      }]);
+
+      if (error) {
+        toonPopup('Fout bij toevoegen nummer.');
+      } else {
+        toonPopup('Verzoekje toegevoegd! 🎶');
+        document.getElementById('manual-song').value = '';
+        document.getElementById('manual-artist').value = '';
+        loadRequests();
+      }
     }
 
-    // XML Upload simulatie
-    function handleXmlUpload(event) {
-        const file = event.target.files[0];
-        if(file) {
-            xmlFiles.push(file.name);
-            renderXmlList();
-            alert("XML-bestand '" + file.name + "' succesvol geüpload.");
-            event.target.value = "";
+    async function markAsPlayed(requestId) {
+      const { error } = await dbClient
+        .from('requests')
+        .update({ status: 'played' })
+        .eq('id', requestId);
+
+      if (error) {
+        toonPopup('Fout bij bijwerken status.');
+      } else {
+        loadRequests();
+      }
+    }
+
+    async function deleteRequest(requestId) {
+      const { error } = await dbClient
+        .from('requests')
+        .delete()
+        .eq('id', requestId);
+
+      if (error) {
+        toonPopup('Fout bij verwijderen.');
+      } else {
+        loadRequests();
+      }
+    }
+
+    async function uploadXmlFile() {
+      const fileInput = document.getElementById('xml-file-input');
+      if (fileInput.files.length === 0) return toonPopup('Selecteer eerst een XML bestand!');
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async function(e) {
+        const fileContent = e.target.result;
+
+        // Opslaan in Supabase (tabel `xml_files` of direct gekoppeld aan dj)
+        const { error } = await dbClient.from('xml_files').insert([{
+          dj_id: currentDj.id,
+          file_name: file.name,
+          file_content: fileContent
+        }]);
+
+        if (error) {
+          toonPopup('Fout bij opslaan XML in database. (Zorg dat de xml_files tabel bestaat)');
+          console.error(error);
+        } else {
+          toonPopup('XML bestand succesvol geüpload! 📂');
+          fileInput.value = '';
+          loadXmlFiles();
         }
+      };
+
+      reader.readAsText(file);
     }
 
-    // XML Bestand verwijderen
-    function deleteXmlFile(index) {
-        xmlFiles.splice(index, 1);
-        renderXmlList();
+    async function loadXmlFiles() {
+      if (!currentDj) return;
+      const { data, error } = await dbClient.from('xml_files').select('id, file_name, created_at').eq('dj_id', currentDj.id);
+      
+      const listContainer = document.getElementById('xml-files-list');
+      listContainer.innerHTML = '';
+
+      if (error || !data || data.length === 0) {
+        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.8em;">Geen XML bestanden.</p>';
+        return;
+      }
+
+      data.forEach(file => {
+        listContainer.innerHTML += `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: #121212; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 0.85em;">
+            <span>📄 ${file.file_name}</span>
+            <button class="action-btn delete-btn" style="padding: 2px 6px; font-size: 0.75em;" onclick="deleteXmlFile('${file.id}')">✕</button>
+          </div>`;
+      });
     }
 
-    function renderXmlList() {
-        const listContainer = document.getElementById("xmlFileList");
-        listContainer.innerHTML = "";
-        xmlFiles.forEach((file, index) => {
-            listContainer.innerHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                    <span>${file}</span>
-                    <button class="danger" style="padding: 2px 6px; font-size: 0.8rem;" onclick="deleteXmlFile(${index})">X</button>
-                </div>
-            `;
-        });
+    async function deleteXmlFile(fileId) {
+      if (!confirm("Weet je zeker dat je dit XML-bestand wilt verwijderen?")) return;
+
+      const { error } = await dbClient.from('xml_files').delete().eq('id', fileId);
+      if (error) {
+        toonPopup('Fout bij verwijderen XML bestand.');
+      } else {
+        toonPopup('Bestand verwijderd.');
+        loadXmlFiles();
+      }
     }
 
-    // Sorteren op Likes (aflopend) en daarna op Aanvraagvolgorde (oplopend / oudste eerst)
-    function renderRequests() {
-        const listContainer = document.getElementById("requestsList");
-        
-        // Sorteeralgoritme: Meeste likes eerst, bij gelijke likes wint de oudste aanvraag
-        requests.sort((a, b) => {
-            if (b.likes !== a.likes) {
-                return b.likes - a.likes;
-            }
-            return a.timestamp - b.timestamp;
-        });
+    function setupRealtimeListener() {
+      if (!currentDj) return;
 
-        if (requests.length === 0) {
-            listContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center;">Nog geen verzoekjes binnengekomen.</p>`;
-            return;
-        }
-
-        listContainer.innerHTML = "";
-        requests.forEach((req, index) => {
-            listContainer.innerHTML += `
-                <div class="request-item">
-                    <div class="request-info">
-                        <span class="request-title">${req.title}</span>
-                        <span class="request-meta">Aanvraag #${index + 1}</span>
-                    </div>
-                    <div class="request-actions">
-                        <span class="like-count">❤️ ${req.likes}</span>
-                        <button class="danger" style="padding: 5px 10px; font-size: 0.8rem;" onclick="removeRequest(${index})">Verwijder</button>
-                    </div>
-                </div>
-            `;
-        });
+      realtimeSubscription = dbClient
+        .channel('public:requests')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: `dj_id=eq.${currentDj.id}` }, payload => {
+          loadRequests();
+          toonPopup('Nieuw verzoekje binnengekomen! 🎶');
+        })
+        .subscribe();
     }
-
-    function removeRequest(index) {
-        requests.splice(index, 1);
-        renderRequests();
-    }
-</script>
-
+  </script>
 </body>
 </html>
