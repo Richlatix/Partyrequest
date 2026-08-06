@@ -20,7 +20,7 @@
       background: var(--bg-color); 
       color: var(--text-color); 
       padding: 20px; 
-      max-width: 600px; 
+      max-width: 700px; 
       margin: auto; 
     }
 
@@ -30,10 +30,14 @@
     button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
     button:hover { opacity: 0.9; }
     
-    .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+    .company-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
     .danger-btn { background: #ff4444; color: #ffffff; width: auto; padding: 6px 12px; }
+    .small-btn { background: #333; color: var(--accent-color); border: 1px solid var(--accent-color); width: auto; padding: 6px 12px; font-size: 0.85em; }
     .hidden { display: none !important; }
     
+    .dj-list-item { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 8px 12px; border-radius: 6px; margin-top: 6px; font-size: 0.9em; }
+
     .toast-popup {
       position: fixed;
       bottom: 25px;
@@ -64,7 +68,7 @@
   <!-- DASHBOARD BEHEER SCHERM -->
   <div id="admin-dashboard" class="hidden">
     <h2>⚡ Super-Admin Dashboard</h2>
-    <p style="text-align:center; color:var(--subtext-color);">Beheer hier alle huurende bedrijven (tenants).</p>
+    <p style="text-align:center; color:var(--subtext-color);">Beheer hier alle huurende bedrijven en hun DJ's.</p>
 
     <!-- FORMULIER BEDRIJF TOEVOEGEN -->
     <div style="background:var(--card-bg); padding:20px; border-radius:12px; border:1px dashed var(--accent-color); margin-bottom:25px;">
@@ -73,7 +77,7 @@
       <label style="font-size:0.85em; color:var(--subtext-color);">Bedrijfsnaam:</label>
       <input type="text" id="new-name" placeholder="Bijv. Tim's Drive-in Show">
 
-      <label style="font-size:0.85em; color:var(--subtext-color);">Hoofdbedrijfscode (2 letters + 2 cijfers, uniek):</label>
+      <label style="font-size:0.85em; color:var(--subtext-color);">Hoofdbedrijfscode (2 letters + 2 cijfers, uniek, bijv. TS01):</label>
       <input type="text" id="new-code" placeholder="Bijv. TS01" maxlength="4" style="text-transform: uppercase;">
 
       <label style="font-size:0.85em; color:var(--subtext-color);">Logo URL (Optioneel):</label>
@@ -91,7 +95,7 @@
       <button onclick="createCompany()" style="margin-top:15px;">Bedrijf Aanmaken 🚀</button>
     </div>
 
-    <h3>📋 Actieve Huurders / Bedrijven</h3>
+    <h3>📋 Actieve Huurders & DJ Beheer</h3>
     <div id="companies-list"></div>
   </div>
 
@@ -139,25 +143,56 @@
 
     async function loadCompanies() {
       if (!dbClient) return;
-      const { data, error } = await dbClient.from('companies').select('*').order('created_at', { ascending: false });
+      
+      // Haal bedrijven en direct al hun DJ's op via Supabase relatie
+      const { data: companies, error: compError } = await dbClient.from('companies').select('*, djs(*)').order('created_at', { ascending: false });
       
       const listContainer = document.getElementById('companies-list');
       listContainer.innerHTML = '';
 
-      if (error || !data || data.length === 0) {
+      if (compError || !companies || companies.length === 0) {
         listContainer.innerHTML = '<p style="text-align:center; color:var(--subtext-color);">Nog geen bedrijven aangemaakt.</p>';
         return;
       }
 
-      data.forEach(comp => {
+      companies.forEach(comp => {
+        // Bouw de lijst van DJ's voor dit bedrijf
+        let djsHtml = '';
+        if (comp.djs && comp.djs.length > 0) {
+          comp.djs.forEach(dj => {
+            djsHtml += `
+              <div class="dj-list-item">
+                <span>🎧 <strong>${dj.dj_name}</strong> (DJ-code: <code style="color:var(--accent-color);">${dj.dj_code}</code>)</span>
+                <button class="danger-btn" style="padding: 2px 8px; font-size: 0.8em;" onclick="deleteDj('${dj.id}')">✕</button>
+              </div>`;
+          });
+        } else {
+          djsHtml = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen DJ\'s toegevoegd aan dit bedrijf.</p>';
+        }
+
         listContainer.innerHTML += `
           <div class="card">
-            <div>
-              <strong>${comp.company_name}</strong> <span style="background:rgba(125,255,0,0.1); color:var(--accent-color); padding:2px 6px; border-radius:4px; font-size:0.8em; border:1px solid var(--accent-color);">${comp.company_code}</span><br>
-              <small style="color:var(--subtext-color);">E-mail: ${comp.email || 'Niet opgegeven'} | WhatsApp: ${comp.whatsapp_nr || 'Niet opgegeven'}</small>
+            <div class="company-header">
+              <div>
+                <strong style="font-size: 1.1em;">${comp.company_name}</strong> 
+                <span style="background:rgba(125,255,0,0.1); color:var(--accent-color); padding:2px 6px; border-radius:4px; font-size:0.8em; border:1px solid var(--accent-color);">${comp.company_code}</span><br>
+                <small style="color:var(--subtext-color);">E-mail: ${comp.email || 'Niet opgegeven'} | WhatsApp: ${comp.whatsapp_nr || 'Niet opgegeven'}</small>
+              </div>
+              <div>
+                <button class="danger-btn" onclick="deleteCompany('${comp.id}')">Bedrijf Verwijderen</button>
+              </div>
             </div>
-            <div>
-              <button class="danger-btn" onclick="deleteCompany('${comp.id}')">Verwijderen</button>
+
+            <div style="margin-top: 15px; background: #181818; padding: 12px; border-radius: 6px;">
+              <h4 style="margin: 0 0 8px 0; color: var(--text-color); font-size: 0.95em;">DJ's van ${comp.company_name}:</h4>
+              ${djsHtml}
+              
+              <!-- Inline formulier om direct een DJ toe te voegen voor dit bedrijf -->
+              <div style="margin-top: 10px; display: flex; gap: 8px;">
+                <input type="text" id="dj-name-${comp.id}" placeholder="DJ Naam (bijv. DJ Lars)" style="margin:0; font-size:0.9em; padding:8px;">
+                <input type="text" id="dj-code-${comp.id}" placeholder="Code (4 cijfers, bijv. ${comp.company_code.slice(2)}55)" maxlength="4" style="margin:0; font-size:0.9em; padding:8px; width: 150px;">
+                <button class="small-btn" onclick="createDj('${comp.id}', '${comp.company_code}')">Toevoegen</button>
+              </div>
             </div>
           </div>`;
       });
@@ -175,9 +210,8 @@
         return toonPopup('Bedrijfsnaam en hoofdbedrijfscode zijn verplicht!');
       }
 
-      // Check of code exact 4 tekens is (2 letters + 2 cijfers)
       if (code.length !== 4) {
-        return toonPopup('De hoofdbedrijfscode moet exact 4 tekens zijn (bijv. TS01)!');
+        return toonPopup('De hoofdbedrijfscode moet exact 4 tekens zijn (2 letters + 2 cijfers, bijv. TS01)!');
       }
 
       const { error } = await dbClient.from('companies').insert([{
@@ -204,13 +238,63 @@
     }
 
     async function deleteCompany(id) {
-      if (!confirm("Weet je zeker dat je dit bedrijf wilt verwijderen?")) return;
+      if (!confirm("Weet je zeker dat je dit bedrijf en al bijbehorende DJ's wilt verwijderen?")) return;
 
       const { error } = await dbClient.from('companies').delete().eq('id', id);
       if (error) {
         toonPopup('Fout bij verwijderen.');
       } else {
         toonPopup('Bedrijf verwijderd.');
+        loadCompanies();
+      }
+    }
+
+    async function createDj(companyId, companyCode) {
+      const nameInput = document.getElementById(`dj-name-${companyId}`);
+      const codeInput = document.getElementById(`dj-code-${companyId}`);
+      
+      const djName = nameInput.value.trim();
+      const djCode = codeInput.value.trim();
+
+      if (!djName || !djCode) {
+        return toonPopup('Vul zowel de DJ-naam als de DJ-code in!');
+      }
+
+      if (djCode.length !== 4) {
+        return toonPopup('De DJ-code moet exact 4 cijfers lang zijn!');
+      }
+
+      // Optionele controle: check of de DJ-code begint met de cijfers van het hoofdbedrijf
+      const companyDigits = companyCode.slice(2); // bijv. "TS01" geeft "01"
+      if (!djCode.startsWith(companyDigits)) {
+        if (!confirm(`Let op: De DJ-code begint niet met de cijfers van het hoofdbedrijf (${companyDigits}). Wil je doorgaan?`)) {
+          return;
+        }
+      }
+
+      const { error } = await dbClient.from('djs').insert([{
+        company_id: companyId,
+        dj_name: djName,
+        dj_code: djCode
+      }]);
+
+      if (error) {
+        toonPopup('Fout bij aanmaken DJ (mogelijk bestaat deze DJ-code al).');
+        console.error(error);
+      } else {
+        toonPopup(`DJ "${djName}" succesvol toegevoegd!`);
+        loadCompanies();
+      }
+    }
+
+    async function deleteDj(djId) {
+      if (!confirm("Weet je zeker dat je deze DJ wilt verwijderen?")) return;
+
+      const { error } = await dbClient.from('djs').delete().eq('id', djId);
+      if (error) {
+        toonPopup('Fout bij verwijderen DJ.');
+      } else {
+        toonPopup('DJ verwijderd.');
         loadCompanies();
       }
     }
