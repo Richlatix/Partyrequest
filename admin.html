@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Partyrequest - Platform Admin</title>
-  <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -48,23 +47,23 @@
   <h1>🎛️ Partyrequest Platform Admin</h1>
 
   <!-- INLOGSCHERM ADMIN -->
-  <div id="login-section" class="card">
+  <div id="login-section" class="card" style="max-width: 400px; margin: 40px auto;">
     <h2>Admin Inloggen</h2>
     <form id="login-form">
-      <label>E-mailadres</label>
-      <input type="email" id="admin-email" required placeholder="admin@partyrequest.nl">
+      <label>Gebruikersnaam</label>
+      <input type="text" id="admin-username" required placeholder="Admin" value="Admin">
       
       <label>Wachtwoord</label>
-      <input type="password" id="admin-password" required placeholder="••••••••">
+      <input type="password" id="admin-password" required placeholder="••••">
       
-      <button type="submit">Inloggen op Dashboard</button>
+      <button type="submit">Inloggen</button>
     </form>
   </div>
 
   <!-- ADMIN DASHBOARD (Na inloggen) -->
   <div id="dashboard-section" class="hidden">
     <div style="display:flex; justify-content:space-between; align-items:center;" class="card">
-      <div>Ingelogd als: <strong id="user-email-display"></strong></div>
+      <div>Ingelogd als: <strong>Platform Admin</strong></div>
       <button onclick="logout()" class="secondary" style="width:auto; margin:0;">Uitloggen</button>
     </div>
 
@@ -125,37 +124,38 @@
 </div>
 
 <script>
-  // 1. SUPABASE CONFIGURATIE (Vul hier je eigen Supabase URL en Key in)
-  const SUPABASE_URL = https://vuwrolizqvogvjwhbytc.supabase.co/rest/v1/;
-  const SUPABASE_KEY = sb_publishable_Yk-N-MiANRyOHXwJtFVkDA_Nd9NUTp5;
+  const SUPABASE_URL = 'https://vuwrolizqvogvjwhbytc.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Yk-N-MiANRyOHXwJtFVkDA_Nd9NUTp5';
   const dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Client voor het aanmaken van sub-accounts zonder de admin sessie te verbreken
   const tempAuthClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     auth: { persistSession: false }
   });
 
-  // 2. INLOGGEN EN SESSIE BEHEER
+  // 1. SESSIE BEHEER & INLOGGEN
   window.onload = async () => {
     const { data: { session } } = await dbClient.auth.getSession();
-    if (session) {
-      checkAdminRole(session.user);
-    }
+    if (session) checkAdminRole(session.user);
   };
 
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = document.getElementById('admin-email').value;
+    const username = document.getElementById('admin-username').value.trim();
     const password = document.getElementById('admin-password').value;
 
+    // Vertaal 'Admin' naar de Supabase e-mail
+    let email = username;
+    if (username.toLowerCase() === 'admin') {
+      email = 'admin@partyrequest.nl';
+    }
+
     const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
-    if (error) return alert('Inloggen mislukt: ' + error.message);
+    if (error) return alert('Inloggen mislukt: Controleer je gebruikersnaam en wachtwoord.');
     
     checkAdminRole(data.user);
   });
 
   async function checkAdminRole(user) {
-    // Controleer of de gebruiker de rol 'admin' heeft in de database
     const { data: profile } = await dbClient
       .from('profiles')
       .select('role')
@@ -165,10 +165,9 @@
     if (profile && profile.role === 'admin') {
       document.getElementById('login-section').classList.add('hidden');
       document.getElementById('dashboard-section').classList.remove('hidden');
-      document.getElementById('user-email-display').innerText = user.email;
       loadAccounts();
     } else {
-      alert('Toegang geweigerd: Je bent geen Platform Admin!');
+      alert('Toegang geweigerd: Dit account is geen Platform Admin!');
       await dbClient.auth.signOut();
     }
   }
@@ -178,14 +177,13 @@
     location.reload();
   }
 
-  // 3. BEDRIJF AANMAKEN
+  // 2. BEDRIJF AANMAKEN
   document.getElementById('create-company-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('comp-name').value;
     const email = document.getElementById('comp-email').value;
     const password = document.getElementById('comp-password').value;
 
-    // 1. Maak Auth user aan met de rol 'company'
     const { data: authData, error: authError } = await tempAuthClient.auth.signUp({
       email,
       password,
@@ -194,7 +192,6 @@
 
     if (authError) return alert('Fout bij maken account: ' + authError.message);
 
-    // 2. Maak entry in 'companies' tabel
     const { error: compError } = await dbClient.from('companies').insert([{
       admin_id: authData.user.id,
       name: name
@@ -207,14 +204,13 @@
     loadAccounts();
   });
 
-  // 4. SOLO DJ AANMAKEN
+  // 3. SOLO DJ AANMAKEN
   document.getElementById('create-dj-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const displayName = document.getElementById('dj-name').value;
     const email = document.getElementById('dj-email').value;
     const password = document.getElementById('dj-password').value;
 
-    // 1. Maak Auth user aan met de rol 'dj' en geef display_name mee voor de trigger
     const { error: authError } = await tempAuthClient.auth.signUp({
       email,
       password,
@@ -233,7 +229,7 @@
     loadAccounts();
   });
 
-  // 5. OVERZICHT DYNAMISCH LADEN
+  // 4. OVERZICHT LADEN
   async function loadAccounts() {
     const tableBody = document.getElementById('accounts-table-body');
     tableBody.innerHTML = '<tr><td colspan="4">Laden...</td></tr>';
@@ -247,7 +243,7 @@
     tableBody.innerHTML = '';
     
     profiles.forEach(p => {
-      if (p.role === 'admin') return; // Sla de admin zelf over in de lijst
+      if (p.role === 'admin') return;
 
       let typeBadge = '';
       let name = '-';
