@@ -305,12 +305,12 @@
                 if (isExpired) statusBadge = `<span class="badge badge-danger">Verlopen</span>`;
                 else if (isExpiringSoon) statusBadge = `<span class="badge badge-warning">Verloopt bijna</span>`;
 
-                // Hoofdrij (voor zowel bedrijven als solo DJ's uitklapbaar)
+                // Hoofdrij
                 const row = document.createElement('tr');
                 row.className = 'toggle-row';
                 row.title = 'Klik om details te openen';
                 row.onclick = (e) => {
-                    if (e.target.tagName === 'BUTTON') return;
+                    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
                     toggleDetails(company.id);
                 };
 
@@ -405,7 +405,9 @@
                 html += `
                     <tr>
                         <td>${dj.dj_name}</td>
-                        <td>${dj.password}</td>
+                        <td>
+                            <input type="text" value="${dj.password}" style="padding: 4px 8px; width: 120px;" onchange="updateDJField('${dj.id}', '${companyId}', this.value)">
+                        </td>
                         <td><button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteCompanyDJ('${dj.id}', '${companyId}')">Verwijderen</button></td>
                     </tr>
                 `;
@@ -439,6 +441,18 @@
             else loadCompanyDJs(companyId);
         }
 
+        window.updateDJField = async function(djId, companyId, newPassword) {
+            const { error } = await _supabase
+                .from('company_djs')
+                .update({ password: newPassword })
+                .eq('id', djId);
+
+            if (error) {
+                alert('Fout bij bijwerken DJ wachtwoord: ' + error.message);
+                loadCompanyDJs(companyId);
+            }
+        }
+
         window.updateField = async function(id, field, value) {
             const updateObj = {};
             updateObj[field] = value === '' ? null : value;
@@ -463,7 +477,8 @@
             const password = document.getElementById('password').value.trim();
             const expiresAt = document.getElementById('expires-at').value;
 
-            const { error } = await _supabase
+            // 1. Maak het hoofdaccount aan in 'companies'
+            const { data: newCompany, error } = await _supabase
                 .from('companies')
                 .insert([
                     { 
@@ -473,16 +488,36 @@
                         password: password, 
                         expires_at: expiresAt 
                     }
-                ]);
+                ])
+                .select()
+                .single();
 
             if (error) {
                 alert('Fout bij aanmaken: ' + error.message);
-            } else {
-                alert('Account succesvol aangemaakt!');
-                document.getElementById('create-company-form').reset();
-                document.getElementById('expires-at').valueAsDate = nextYear;
-                loadCompanies();
+                return;
             }
+
+            // 2. ALS het type 'dj' (solo DJ) is, voeg hem direct toe aan 'company_djs' met dezelfde gegevens
+            if (accountType === 'dj' && newCompany) {
+                const { error: djError } = await _supabase
+                    .from('company_djs')
+                    .insert([
+                        {
+                            company_id: newCompany.id,
+                            dj_name: companyName,
+                            password: password
+                        }
+                    ]);
+
+                if (djError) {
+                    alert('Bedrijf aangemaakt, maar fout bij genereren solodj inlog: ' + djError.message);
+                }
+            }
+
+            alert('Account succesvol aangemaakt!');
+            document.getElementById('create-company-form').reset();
+            document.getElementById('expires-at').valueAsDate = nextYear;
+            loadCompanies();
         });
 
         window.deleteCompany = async function(id) {
