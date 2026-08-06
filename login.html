@@ -2,294 +2,44 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inloggen | DJ Verzoekjes Platform</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Inloggen - Bedrijfspagina</title>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --danger: #ef4444;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            position: relative;
-        }
-
-        .admin-btn-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-
-        .btn-text {
-            background: none;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-        }
-
-        .btn-text:hover {
-            border-color: var(--primary);
-            color: var(--text);
-            background-color: rgba(79, 70, 229, 0.1);
-        }
-
-        .login-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 32px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            box-sizing: border-box;
-        }
-
-        h1 {
-            margin-top: 0;
-            font-size: 1.5rem;
-            text-align: center;
-            margin-bottom: 24px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-            color: var(--text-muted);
-        }
-
-        input {
-            width: 100%;
-            padding: 12px 14px;
-            background-color: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        button.primary-btn {
-            width: 100%;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        button.primary-btn:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .error-message {
-            color: var(--danger);
-            font-size: 0.9rem;
-            text-align: center;
-            margin-top: 12px;
-            display: none;
-        }
-
-        .hidden {
-            display: none !important;
-        }
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f4f4f9; margin: 0; }
+        .login-box { background: #fff; padding: 30px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px; }
+        .login-box div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background: #007BFF; color: white; border: none; padding: 10px; width: 100%; cursor: pointer; }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
 
-    <!-- Knop rechtsboven voor Admin Inlog -->
-    <div class="admin-btn-container">
-        <button id="toggle-admin-btn" type="button" class="btn-text">Admin Inlog</button>
-    </div>
-
-    <div class="login-card">
-        <h1 id="form-title">⚡ Inloggen</h1>
-
-        <!-- STAP 1: Bedrijfscode invoeren -->
-        <form id="step1-code-form">
-            <div class="form-group">
-                <label for="company-code">Bedrijfscode of Slug</label>
-                <input type="text" id="company-code" required placeholder="Bijv. dj-tim">
+    <div class="login-box">
+        <h2>Inloggen</h2>
+        <form id="loginForm">
+            <div>
+                <label>E-mailadres:</label>
+                <input type="email" id="email" required>
             </div>
-            <button type="submit" class="primary-btn" id="code-btn">Volgende</button>
-        </form>
-
-        <!-- STAP 2: Wachtwoord invoeren voor het gevonden bedrijf -->
-        <form id="step2-password-form" class="hidden">
-            <div class="form-group">
-                <label id="password-label" for="company-password">Wachtwoord</label>
-                <input type="password" id="company-password" required placeholder="Voer wachtwoord in">
+            <div>
+                <label>Wachtwoord:</label>
+                <input type="password" id="wachtwoord" required>
             </div>
-            <button type="submit" class="primary-btn" id="password-btn">Inloggen</button>
+            <button type="submit">Inloggen</button>
         </form>
-
-        <!-- ADMIN INLOG FORMULIER -->
-        <form id="admin-login-form" class="hidden">
-            <div class="form-group">
-                <label for="admin-password">Super Admin Wachtwoord</label>
-                <input type="password" id="admin-password" required placeholder="Voer admin wachtwoord in">
-            </div>
-            <button type="submit" class="primary-btn">Inloggen als Admin</button>
-        </form>
-
-        <div id="error-msg" class="error-message"></div>
     </div>
 
     <script>
-        // Jouw Supabase configuratie
-        const SUPABASE_URL = 'https://yhitywueffetjjnoudkt.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po';
-        
-        const { createClient } = supabase;
-        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Voorkom dat de pagina direct herlaadt
 
-        const toggleAdminBtn = document.getElementById('toggle-admin-btn');
-        const formTitle = document.getElementById('form-title');
-        const step1Form = document.getElementById('step1-code-form');
-        const step2Form = document.getElementById('step2-password-form');
-        const adminForm = document.getElementById('admin-login-form');
-        const errorMsg = document.getElementById('error-msg');
-        const passwordLabel = document.getElementById('password-label');
-
-        let currentCompany = null;
-        let mode = 'code'; // 'code', 'password', of 'admin'
-
-        // Wissel naar Admin-modus via de knop rechtsboven
-        toggleAdminBtn.addEventListener('click', () => {
-            errorMsg.style.display = 'none';
-            if (mode !== 'admin') {
-                mode = 'admin';
-                formTitle.innerText = '⚡ Super-Admin Inlog';
-                step1Form.classList.add('hidden');
-                step2Form.classList.add('hidden');
-                adminForm.classList.remove('hidden');
-                toggleAdminBtn.innerText = 'Terug naar Inloggen';
-                document.getElementById('admin-password').focus();
-            } else {
-                mode = 'code';
-                formTitle.innerText = '⚡ Inloggen';
-                adminForm.classList.add('hidden');
-                step2Form.classList.add('hidden');
-                step1Form.classList.remove('hidden');
-                toggleAdminBtn.innerText = 'Admin Inlog';
-                document.getElementById('company-code').focus();
-            }
-        });
-
-        // 1. Bedrijfscode controleren
-        step1Form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const code = document.getElementById('company-code').value.trim().toLowerCase();
-            const codeBtn = document.getElementById('code-btn');
-            errorMsg.style.display = 'none';
-
-            try {
-                codeBtn.innerText = 'Zoeken...';
-                codeBtn.disabled = true;
-
-                const { data, error } = await _supabase
-                    .from('companies')
-                    .select('*')
-                    .eq('company_code', code)
-                    .single();
-
-                if (error || !data) {
-                    throw new Error('Onbekende code');
-                }
-
-                if (data.expires_at && new Date() > new Date(data.expires_at)) {
-                    errorMsg.innerText = 'Dit abonnementsaccount is verlopen.';
-                    errorMsg.style.display = 'block';
-                    codeBtn.innerText = 'Volgende';
-                    codeBtn.disabled = false;
-                    return;
-                }
-
-                currentCompany = data;
-                mode = 'password';
-
-                formTitle.innerText = data.company_name;
-                passwordLabel.innerText = `Wachtwoord voor ${data.company_name}`;
-                step1Form.classList.add('hidden');
-                step2Form.classList.remove('hidden');
-                document.getElementById('company-password').focus();
-
-            } catch (err) {
-                errorMsg.innerText = 'Bedrijfscode niet gevonden.';
-                errorMsg.style.display = 'block';
-                codeBtn.innerText = 'Volgende';
-                codeBtn.disabled = false;
-            }
-        });
-
-        // 2. Wachtwoord controleren voor het bedrijf/DJ
-        step2Form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const enteredPassword = document.getElementById('company-password').value.trim();
-            errorMsg.style.display = 'none';
-
-            if (currentCompany && enteredPassword === currentCompany.password) {
-                sessionStorage.setItem('company_logged_in', JSON.stringify({
-                    id: currentCompany.id,
-                    name: currentCompany.company_name,
-                    code: currentCompany.company_code,
-                    type: currentCompany.account_type
-                }));
-                window.location.href = 'dashboard.html';
-            } else {
-                errorMsg.innerText = 'Onjuist wachtwoord.';
-                errorMsg.style.display = 'block';
-                document.getElementById('company-password').value = '';
-            }
-        });
-
-        // 3. Admin Inlog controleren
-        adminForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const adminPassword = document.getElementById('admin-password').value.trim();
-            errorMsg.style.display = 'none';
-
-            if (adminPassword === '3977') {
-                sessionStorage.setItem('super_admin_logged_in', 'true');
-                window.location.href = 'admin.html';
-            } else {
-                errorMsg.innerText = 'Onjuist admin wachtwoord.';
-                errorMsg.style.display = 'block';
-                document.getElementById('admin-password').value = '';
-            }
+            // Hier komt normaal de controle met de database (of een beveiligde login-check).
+            // Voor nu simuleren we een succesvolle login en sturen we door naar bedrijf.html:
+            
+            window.location.href = 'bedrijf.html';
         });
     </script>
+
 </body>
 </html>
