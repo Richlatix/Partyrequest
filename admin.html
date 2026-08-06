@@ -28,7 +28,7 @@
         }
 
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -54,6 +54,12 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+        }
+
         .form-group {
             margin-bottom: 16px;
         }
@@ -65,7 +71,7 @@
             color: var(--text-muted);
         }
 
-        input, select, textarea {
+        input, select {
             width: 100%;
             padding: 10px 14px;
             background-color: var(--bg);
@@ -76,7 +82,7 @@
             box-sizing: border-box;
         }
 
-        input:focus, select:focus, textarea:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: var(--primary);
         }
@@ -85,7 +91,7 @@
             background-color: var(--primary);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 8px;
             font-size: 1rem;
             font-weight: 600;
@@ -107,6 +113,7 @@
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
         }
 
         th {
@@ -119,6 +126,7 @@
             border-radius: 4px;
             font-size: 0.85rem;
             font-weight: 500;
+            display: inline-block;
         }
 
         .badge-active {
@@ -136,6 +144,11 @@
             color: var(--danger);
         }
 
+        .badge-type {
+            background-color: rgba(79, 70, 229, 0.2);
+            color: #818cf8;
+        }
+
         .actions-cell {
             display: flex;
             gap: 8px;
@@ -143,6 +156,8 @@
 
         .btn-danger {
             background-color: var(--danger);
+            padding: 6px 12px;
+            font-size: 0.85rem;
         }
         .btn-danger:hover {
             background-color: #dc2626;
@@ -154,61 +169,86 @@
     <div class="container">
         <header>
             <h1>⚡ Super-Admin Dashboard</h1>
-            <p id="admin-status" style="color: var(--text-muted);">Verbonden</p>
+            <p id="admin-status" style="color: var(--text-muted);">Verbonden met Supabase</p>
         </header>
 
+        <!-- Formulier om toe te voegen -->
         <div class="card">
-            <h2>Nieuw Huurend Bedrijf Toevoegen</h2>
-            <form id="tenant-form" style="margin-top: 16px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <h2>Nieuw Bedrijf / Solo DJ Toevoegen</h2>
+            <form id="company-form" style="margin-top: 16px;">
+                <div class="form-grid">
                     <div class="form-group">
-                        <label for="company-name">Bedrijfsnaam / Naam DJ</label>
-                        <input type="text" id="company-name" required placeholder="Bijv. DJ Tim Verhuur">
+                        <label for="company-name">Bedrijfsnaam / DJ Naam</label>
+                        <input type="text" id="company-name" required placeholder="Bijv. DJ Tim">
                     </div>
                     <div class="form-group">
-                        <label for="company-slug">Unieke URL Slug (zonder spaties)</label>
-                        <input type="text" id="company-slug" required placeholder="Bijv. dj-tim">
+                        <label for="company-code">Unieke Company Code (Slug)</label>
+                        <input type="text" id="company-code" required placeholder="Bijv. dj-tim">
+                    </div>
+                    <div class="form-group">
+                        <label for="account-type">Type Account</label>
+                        <select id="account-type">
+                            <option value="solo_dj">Solo DJ</option>
+                            <option value="bedrijf">Bedrijf</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="subscription-months">Abonnementsduur</label>
+                        <select id="subscription-months">
+                            <option value="12">1 Jaar (Standaard)</option>
+                            <option value="24">2 Jaar</option>
+                            <option value="1">1 Maand (Test)</option>
+                        </select>
                     </div>
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+
+                <div class="form-grid">
                     <div class="form-group">
-                        <label for="primary-color">Primaire Huisstijl Kleur</label>
-                        <input type="color" id="primary-color" value="#4f46e5" style="height: 45px; padding: 4px;">
+                        <label for="email">E-mailadres</label>
+                        <input type="email" id="email" placeholder="info@djtim.nl">
                     </div>
                     <div class="form-group">
-                        <label for="contact-email">Contact E-mailadres</label>
-                        <input type="email" id="contact-email" placeholder="info@djtim.nl">
+                        <label for="whatsapp-nr">WhatsApp Nummer</label>
+                        <input type="text" id="whatsapp-nr" placeholder="31612345678">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Wachtwoord</label>
+                        <input type="password" id="password" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label for="accent-color">Accent Kleur</label>
+                        <input type="color" id="accent-color" value="#4f46e5" style="height: 42px; padding: 4px;">
                     </div>
                 </div>
+
                 <div class="form-group">
-                    <label for="subscription-months">Abonnementsduur</label>
-                    <select id="subscription-months">
-                        <option value="12">1 Jaar (Standaard)</option>
-                        <option value="24">2 Jaar</option>
-                        <option value="1">1 Maand (Test)</option>
-                    </select>
+                    <label for="logo-url">Logo URL</label>
+                    <input type="url" id="logo-url" placeholder="https://voorbeeld.nl/logo.png">
                 </div>
-                <button type="submit">Bedrijf Toevoegen</button>
+
+                <button type="submit">Account Aanmaken</button>
             </form>
         </div>
 
+        <!-- Overzichtstabel -->
         <div class="card">
-            <h2>Beheerde Bedrijven (Tenants)</h2>
+            <h2>Beheerde Accounts (`companies`)</h2>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
-                            <th>Bedrijfsnaam</th>
-                            <th>Slug (Link)</th>
+                            <th>Naam / Code</th>
+                            <th>Type</th>
+                            <th>Contact</th>
                             <th>Kleur</th>
                             <th>Abonnement tot</th>
                             <th>Status</th>
                             <th>Acties</th>
                         </tr>
                     </thead>
-                    <tbody id="tenants-table-body">
+                    <tbody id="companies-table-body">
                         <tr>
-                            <td colspan="6" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
+                            <td colspan="7" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -217,29 +257,29 @@
     </div>
 
     <script>
-        // Supabase configuratie
+        // Supabase configuratie (Vervang deze met jouw gegevens)
         const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
         const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function loadTenants() {
-            const tbody = document.getElementById('tenants-table-body');
+        async function loadCompanies() {
+            const tbody = document.getElementById('companies-table-body');
             try {
-                const { data, error } = await _supabase.from('tenants').select('*').order('created_at', { ascending: false });
+                const { data, error } = await _supabase.from('companies').select('*').order('created_at', { ascending: false });
                 
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen bedrijven toegevoegd.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Nog geen accounts toegevoegd.</td></tr>`;
                     return;
                 }
 
                 const nu = new Date();
 
-                tbody.innerHTML = data.map(tenant => {
-                    const expiresAt = tenant.expires_at ? new Date(tenant.expires_at) : null;
+                tbody.innerHTML = data.map(company => {
+                    const expiresAt = company.expires_at ? new Date(company.expires_at) : null;
                     let statusBadge = `<span class="badge badge-active">Actief</span>`;
                     
                     if (expiresAt) {
@@ -254,72 +294,92 @@
                     }
 
                     const formattedDate = expiresAt ? expiresAt.toLocaleDateString('nl-NL') : 'Onbeperkt';
+                    const typeLabel = company.account_type === 'bedrijf' ? 'Bedrijf' : 'Solo DJ';
 
                     return `
                         <tr>
-                            <td><strong>${tenant.company_name}</strong></td>
-                            <td><code>?tenant=${tenant.slug}</code></td>
-                            <td><span style="display:inline-block;width:20px;height:20px;background:${tenant.primary_color};border-radius:4px;vertical-align:middle;"></span> ${tenant.primary_color}</td>
+                            <td>
+                                <strong>${company.company_name}</strong><br>
+                                <code style="color: var(--text-muted); font-size: 0.85rem;">?company=${company.company_code}</code>
+                            </td>
+                            <td><span class="badge badge-type">${typeLabel}</span></td>
+                            <td>
+                                ${company.email || '-'}<br>
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">WA: ${company.whatsapp_nr || '-'}</span>
+                            </td>
+                            <td>
+                                <span style="display:inline-block;width:18px;height:18px;background:${company.accent_color || '#fff'};border-radius:4px;vertical-align:middle;"></span> 
+                                <span style="font-size:0.85rem;">${company.accent_color || '-'}</span>
+                            </td>
                             <td>${formattedDate}</td>
                             <td>${statusBadge}</td>
                             <td class="actions-cell">
-                                <button class="btn-danger" onclick="deleteTenant('${tenant.id}')" style="padding: 6px 12px; font-size: 0.85rem;">Verwijderen</button>
+                                <button class="btn-danger" onclick="deleteCompany('${company.id}')">Verwijderen</button>
                             </td>
                         </tr>
                     `;
                 }).join('');
 
             } catch (err) {
-                console.error('Fout bij ophalen tenants:', err);
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Fout bij laden van gegevens.</td></tr>`;
+                console.error('Fout bij ophalen companies:', err);
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger);">Fout bij laden van gegevens.</td></tr>`;
             }
         }
 
-        document.getElementById('tenant-form').addEventListener('submit', async (e) => {
+        document.getElementById('company-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
             const company_name = document.getElementById('company-name').value;
-            const slug = document.getElementById('company-slug').value.trim().toLowerCase().replace(/\s+/g, '-');
-            const primary_color = document.getElementById('primary-color').value;
-            const email = document.getElementById('contact-email').value;
+            const company_code = document.getElementById('company-code').value.trim().toLowerCase().replace(/\s+/g, '-');
+            const account_type = document.getElementById('account-type').value;
             const months = parseInt(document.getElementById('subscription-months').value);
+            const email = document.getElementById('email').value;
+            const whatsapp_nr = document.getElementById('whatsapp-nr').value;
+            const password = document.getElementById('password').value;
+            const accent_color = document.getElementById('accent-color').value;
+            const logo_url = document.getElementById('logo-url').value;
 
             // Bereken de vervaldatum op basis van gekozen maanden
             const expiresAt = new Date();
             expiresAt.setMonth(expiresAt.getMonth() + months);
 
             try {
-                const { error } = await _supabase.from('tenants').insert([{ 
+                const { error } = await _supabase.from('companies').insert([{ 
                     company_name, 
-                    slug, 
-                    primary_color, 
+                    company_code, 
+                    account_type,
                     email, 
+                    whatsapp_nr, 
+                    password, 
+                    accent_color, 
+                    logo_url,
                     expires_at: expiresAt.toISOString() 
                 }]);
                 
                 if (error) throw error;
 
-                alert('Bedrijf succesvol toegevoegd met abonnement!');
-                document.getElementById('tenant-form').reset();
-                loadTenants();
+                alert('Account succesvol aangemaakt!');
+                document.getElementById('company-form').reset();
+                loadCompanies();
             } catch (err) {
                 alert('Fout bij toevoegen: ' + err.message);
             }
         });
 
-        async function deleteTenant(id) {
-            if (!confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) return;
+        async function deleteCompany(id) {
+            if (!confirm('Weet je zeker dat je dit account wilt verwijderen?')) return;
             
             try {
-                const { error } = await _supabase.from('tenants').delete().eq('id', id);
+                const { error } = await _supabase.from('companies').delete().eq('id', id);
                 if (error) throw error;
-                loadTenants();
+                loadCompanies();
             } catch (err) {
                 alert('Fout bij verwijderen: ' + err.message);
             }
         }
 
-        // Init laden bij openen pagina
-        loadTenants();
+        // Automatisch laden bij openen pagina
+        loadCompanies();
     </script>
 </body>
 </html>
