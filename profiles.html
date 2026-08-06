@@ -1,1 +1,127 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partyrequest - Bedrijfsdashboard</title>
+  <style>
+    body { background-color: #121212; color: #fff; font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+    .card { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .btn { background-color: #FF4081; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
+    input { margin: 5px 0; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; display: block; width: 100%; box-sizing: border-box; }
+    .color-picker { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
 
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <h1 id="companyTitle">Bedrijfsdashboard</h1>
+    <button class="btn" style="background-color:#e53935;" onclick="handleLogout()">Uitloggen</button>
+  </div>
+
+  <!-- BEDRIJFS HUISSTIJL -->
+  <div class="card">
+    <h2>Bedrijfshuisstijl Instellen</h2>
+    <p><small>Deze kleuren gelden automatisch voor alle gastenpagina's van jouw DJ's.</small></p>
+    <div class="color-picker">
+      <label>Achtergrond:</label>
+      <input type="color" id="bgColor" value="#121212">
+      <label>Accent:</label>
+      <input type="color" id="accentColor" value="#FF4081">
+      <label>Tekst:</label>
+      <input type="color" id="textColor" value="#FFFFFF">
+    </div>
+    <br>
+    <button class="btn" onclick="saveCompanyBranding()">Huisstijl Opslaan</button>
+  </div>
+
+  <!-- DJ AANMAKEN -->
+  <div class="card">
+    <h2>Nieuwe DJ Aanmelden</h2>
+    <input type="text" id="djName" placeholder="Naam DJ (bijv. DJ Alex)">
+    <input type="email" id="djEmail" placeholder="E-mailadres van de DJ">
+    <input type="password" id="djPassword" placeholder="Wachtwoord">
+    <button class="btn" onclick="createCompanyDj()">DJ Account Aanmaken</button>
+  </div>
+
+  <!-- OVERZICHT DJS -->
+  <div class="card">
+    <h2>Mijn DJ's</h2>
+    <div id="companyDjsList">Laden...</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+
+  <script>
+    let currentProfile = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const auth = await checkAuthSession(['company']);
+      if (!auth) return;
+
+      currentProfile = auth.profile;
+      document.getElementById('companyTitle').innerText = `Bedrijfsdashboard - ${currentProfile.name}`;
+
+      document.getElementById('bgColor').value = currentProfile.bg_color || '#121212';
+      document.getElementById('accentColor').value = currentProfile.accent_color || '#FF4081';
+      document.getElementById('textColor').value = currentProfile.text_color || '#FFFFFF';
+
+      loadCompanyDjs();
+    });
+
+    async function saveCompanyBranding() {
+      const bg = document.getElementById('bgColor').value;
+      const accent = document.getElementById('accentColor').value;
+      const text = document.getElementById('textColor').value;
+
+      await supabase.from('profiles').update({ bg_color: bg, accent_color: accent, text_color: text }).eq('id', currentProfile.id);
+      alert('Bedrijfshuisstijl opgeslagen!');
+    }
+
+    async function createCompanyDj() {
+      const name = document.getElementById('djName').value;
+      const email = document.getElementById('djEmail').value;
+      const password = document.getElementById('djPassword').value;
+
+      if (!name || !email || !password) return alert('Vul alle velden in.');
+
+      // Gebruiker aanmaken via Supabase Auth
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      if (error) return alert('Fout bij aanmaken account: ' + error.message);
+
+      // Profiel opslaan met koppeling naar bedrijf
+      await supabase.from('profiles').insert({
+        id: data.user.id,
+        name: name,
+        role: 'company_dj',
+        company_id: currentProfile.id,
+        bg_color: currentProfile.bg_color,
+        accent_color: currentProfile.accent_color,
+        text_color: currentProfile.text_color
+      });
+
+      // DJ record aanmaken
+      await supabase.from('djs').insert({ user_id: data.user.id });
+
+      alert('DJ succesvol aangemaakt!');
+      loadCompanyDjs();
+    }
+
+    async function loadCompanyDjs() {
+      const { data } = await supabase.from('profiles').select('*').eq('company_id', currentProfile.id);
+      const container = document.getElementById('companyDjsList');
+      if (!data || data.length === 0) {
+        container.innerHTML = 'Nog geen DJ\'s aangemaakt.';
+        return;
+      }
+      container.innerHTML = data.map(dj => `
+        <div style="border-bottom: 1px solid #333; padding: 10px 0;">
+          <strong>${dj.name}</strong> (${dj.role})
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
