@@ -105,16 +105,20 @@
         <h1>⚡ Inloggen Platform</h1>
         <form id="login-form">
             <div class="form-group">
+                <label for="company-code-input">Bedrijfscode (Slug)</label>
+                <input type="text" id="company-code-input" placeholder="Bijv. dj-tim (of laat leeg voor admin)">
+            </div>
+            <div class="form-group">
                 <label for="password-input">Wachtwoord</label>
                 <input type="password" id="password-input" required placeholder="Voer je wachtwoord in">
             </div>
             <button type="submit" id="login-btn">Inloggen</button>
-            <div id="error-msg" class="error-message">Onjuist wachtwoord of abonnement verlopen.</div>
+            <div id="error-msg" class="error-message">Onjuiste gegevens of abonnement verlopen.</div>
         </form>
     </div>
 
     <script>
-        // Supabase configuratie (Zorg dat deze exact hetzelfde is als in je admin pagina)
+        // Supabase configuratie (Vervang deze met jouw gegevens)
         const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
         const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
         
@@ -123,35 +127,44 @@
 
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const companyCode = document.getElementById('company-code-input').value.trim().toLowerCase();
             const passwordInput = document.getElementById('password-input').value.trim();
             const errorMsg = document.getElementById('error-msg');
             const loginBtn = document.getElementById('login-btn');
 
             errorMsg.style.display = 'none';
 
-            // 1. Check of het de Super-Admin is
+            // 1. Check of het de Super-Admin is (wachtwoord 3977)
             if (passwordInput === '3977') {
                 sessionStorage.setItem('super_admin_logged_in', 'true');
                 window.location.href = 'admin.html';
                 return;
             }
 
-            // 2. Zoek in de database of een bedrijf dit wachtwoord heeft
+            // 2. Als het een bedrijf/DJ is, moet de bedrijfscode ingevuld zijn
+            if (!companyCode) {
+                errorMsg.innerText = 'Vul je bedrijfscode in.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
             try {
                 loginBtn.innerText = 'Controleren...';
                 loginBtn.disabled = true;
 
+                // Zoek op bedrijfscode én wachtwoord in de database
                 const { data, error } = await _supabase
                     .from('companies')
                     .select('*')
+                    .eq('company_code', companyCode)
                     .eq('password', passwordInput)
                     .single();
 
                 if (error || !data) {
-                    throw new Error('Onjuist wachtwoord');
+                    throw new Error('Onjuiste combinatie');
                 }
 
-                // 3. Controleer of het abonnement inmiddels is verlopen
+                // 3. Controleer of het abonnement is verlopen
                 if (data.expires_at) {
                     const expiresAt = new Date(data.expires_at);
                     if (new Date() > expiresAt) {
@@ -163,7 +176,7 @@
                     }
                 }
 
-                // 4. Sla de bedrijfsgegevens op in sessionStorage zodat hun eigen dashboard weet wie ingelogd is
+                // 4. Sla de bedrijfsgegevens op voor hun dashboard
                 sessionStorage.setItem('company_logged_in', JSON.stringify({
                     id: data.id,
                     name: data.company_name,
@@ -171,11 +184,11 @@
                     type: data.account_type
                 }));
 
-                // Stuur door naar het dashboard voor DJ's/Bedrijven (bijv. 'dashboard.html')
+                // Stuur door naar het bedrijfsdashboard
                 window.location.href = 'dashboard.html';
 
             } catch (err) {
-                errorMsg.innerText = 'Onjuist wachtwoord of account niet gevonden.';
+                errorMsg.innerText = 'Onjuiste bedrijfscode of wachtwoord.';
                 errorMsg.style.display = 'block';
                 loginBtn.innerText = 'Inloggen';
                 loginBtn.disabled = false;
