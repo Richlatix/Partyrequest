@@ -97,6 +97,10 @@
             margin-top: 12px;
             display: none;
         }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -104,16 +108,21 @@
     <div class="login-card">
         <h1>⚡ Inloggen Platform</h1>
         <form id="login-form">
-            <div class="form-group">
-                <label for="company-code-input">Bedrijfscode (Optioneel voor DJ / Bedrijf)</label>
-                <input type="text" id="company-code-input" placeholder="Bijv. dj-tim">
+            <!-- Stap 1: Voer Code in -->
+            <div class="form-group" id="step-code">
+                <label for="code-input">Bedrijf-, DJ- of Admincode</label>
+                <input type="text" id="code-input" required placeholder="Bijv. dj-tim of 3977">
+                <button type="button" id="next-btn" style="margin-top: 16px;">Volgende</button>
             </div>
-            <div class="form-group">
-                <label for="password-input">Wachtwoord</label>
-                <input type="password" id="password-input" required placeholder="Voer wachtwoord in">
+
+            <!-- Stap 2: Voer Wachtwoord in (verschijnt pas na detectie) -->
+            <div class="form-group hidden" id="step-password">
+                <label id="password-label" for="password-input">Wachtwoord</label>
+                <input type="password" id="password-input" placeholder="Voer je wachtwoord in">
+                <button type="submit" id="login-btn" style="margin-top: 16px;">Inloggen</button>
             </div>
-            <button type="submit" id="login-btn">Inloggen</button>
-            <div id="error-msg" class="error-message">Onjuiste gegevens of abonnement verlopen.</div>
+
+            <div id="error-msg" class="error-message"></div>
         </form>
     </div>
 
@@ -125,73 +134,103 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const companyCode = document.getElementById('company-code-input').value.trim().toLowerCase();
-            const passwordInput = document.getElementById('password-input').value.trim();
-            const errorMsg = document.getElementById('error-msg');
-            const loginBtn = document.getElementById('login-btn');
+        const codeInput = document.getElementById('code-input');
+        const passwordInput = document.getElementById('password-input');
+        const nextBtn = document.getElementById('next-btn');
+        const stepCode = document.getElementById('step-code');
+        const stepPassword = document.getElementById('step-password');
+        const errorMsg = document.getElementById('error-msg');
+        const passwordLabel = document.getElementById('password-label');
 
+        let foundCompanyData = null;
+
+        // Stap 1: Controleer de ingevoerde code
+        nextBtn.addEventListener('click', async () => {
+            const code = codeInput.value.trim().toLowerCase();
             errorMsg.style.display = 'none';
 
-            // 1. Check of het de Super-Admin is (wachtwoord 3977 onafhankelijk van bedrijfscode)
-            if (passwordInput === '3977') {
+            if (!code) {
+                errorMsg.innerText = 'Vul een code in.';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // 1. Check of het de Super-Admin code is
+            if (code === '3977') {
                 sessionStorage.setItem('super_admin_logged_in', 'true');
                 window.location.href = 'admin.html';
                 return;
             }
 
-            // 2. Als het geen admin is, is een bedrijfscode verplicht
-            if (!companyCode) {
-                errorMsg.innerText = 'Vul je bedrijfscode in.';
-                errorMsg.style.display = 'block';
-                return;
-            }
-
             try {
-                loginBtn.innerText = 'Controleren...';
-                loginBtn.disabled = true;
+                nextBtn.innerText = 'Zoeken...';
+                nextBtn.disabled = true;
 
-                // Zoek op bedrijfscode én wachtwoord in de database
+                // Zoek of het bedrijf/de DJ bestaat in de database
                 const { data, error } = await _supabase
                     .from('companies')
                     .select('*')
-                    .eq('company_code', companyCode)
-                    .eq('password', passwordInput)
+                    .eq('company_code', code)
                     .single();
 
                 if (error || !data) {
-                    throw new Error('Onjuiste combinatie');
+                    throw new Error('Onbekende code');
                 }
 
-                // 3. Controleer of het abonnement is verlopen
+                // Controleer of het abonnement is verlopen
                 if (data.expires_at) {
                     const expiresAt = new Date(data.expires_at);
                     if (new Date() > expiresAt) {
                         errorMsg.innerText = 'Dit abonnementsaccount is verlopen.';
                         errorMsg.style.display = 'block';
-                        loginBtn.innerText = 'Inloggen';
-                        loginBtn.disabled = false;
+                        nextBtn.innerText = 'Volgende';
+                        nextBtn.disabled = false;
                         return;
                     }
                 }
 
-                // 4. Sla de bedrijfsgegevens op voor hun dashboard
-                sessionStorage.setItem('company_logged_in', JSON.stringify({
-                    id: data.id,
-                    name: data.company_name,
-                    code: data.company_code,
-                    type: data.account_type
-                }));
+                // Sla de gegevens tijdelijk op en schakel over naar het wachtwoordscherm
+                foundCompanyData = data;
+                
+                // Pas label aan op basis van account type (Bedrijf of Solo DJ)
+                const typeText = data.account_type === 'bedrijf' ? 'Bedrijf' : 'Solo DJ';
+                passwordLabel.innerText = `Wachtwoord voor ${data.company_name} (${typeText})`;
 
-                // Stuur door naar het bedrijfsdashboard
-                window.location.href = 'dashboard.html';
+                stepCode.classList.add('hidden');
+                stepPassword.classList.remove('hidden');
+                passwordInput.focus();
 
             } catch (err) {
-                errorMsg.innerText = 'Onjuiste bedrijfscode of wachtwoord.';
+                errorMsg.innerText = 'Code niet gevonden of ongeldig.';
                 errorMsg.style.display = 'block';
-                loginBtn.innerText = 'Inloggen';
-                loginBtn.disabled = false;
+                nextBtn.innerText = 'Volgende';
+                nextBtn.disabled = false;
+            }
+        });
+
+        // Stap 2: Controleer het wachtwoord
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const enteredPassword = passwordInput.value.trim();
+            errorMsg.style.display = 'none';
+
+            if (!foundCompanyData) return;
+
+            if (enteredPassword === foundCompanyData.password) {
+                // Sla de bedrijfsgegevens op voor hun dashboard
+                sessionStorage.setItem('company_logged_in', JSON.stringify({
+                    id: foundCompanyData.id,
+                    name: foundCompanyData.company_name,
+                    code: foundCompanyData.company_code,
+                    type: foundCompanyData.account_type
+                }));
+
+                // Stuur door naar het dashboard voor bedrijven/DJ's
+                window.location.href = 'dashboard.html';
+            } else {
+                errorMsg.innerText = 'Onjuist wachtwoord.';
+                errorMsg.style.display = 'block';
+                passwordInput.value = '';
             }
         });
     </script>
