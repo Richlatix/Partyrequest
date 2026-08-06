@@ -34,12 +34,28 @@
     .hidden { display: none !important; }
     
     .request-item { background: #252525; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid var(--accent-color); }
-    .request-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .request-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .request-info { flex: 1; }
     
-    .action-btn { padding: 6px 12px; border-radius: 6px; font-size: 0.85em; font-weight: bold; cursor: pointer; border: none; background: #2a2a2a; color: var(--text-color); display: flex; align-items: center; gap: 5px; }
-    .like-btn { background: #2a2a2a; color: #ff4444; border: 1px solid #ff4444; }
-    .like-btn.liked { background: #ff4444; color: #fff; }
+    /* Compacte duim omhoog knop */
+    .vote-btn { 
+      background: #2a2a2a; 
+      color: var(--text-color); 
+      border: 1px solid var(--border-color); 
+      padding: 6px 12px; 
+      border-radius: 6px; 
+      font-size: 0.85em; 
+      font-weight: bold; 
+      cursor: pointer; 
+      width: auto !important; 
+      margin: 0 !important;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .vote-btn:hover { background: #333; }
+    .vote-btn.voted { background: rgba(125, 255, 0, 0.15); border-color: var(--accent-color); color: var(--accent-color); }
 
     .toast-popup {
       position: fixed;
@@ -60,11 +76,7 @@
     }
 
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    
     .library-result-item { background: #252525; padding: 10px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
-    
-    .comments-section { margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 8px; font-size: 0.85em; }
-    .comment-item { background: #181818; padding: 6px 10px; border-radius: 6px; margin-top: 4px; color: var(--subtext-color); }
   </style>
 </head>
 <body>
@@ -350,7 +362,7 @@
     async function loadGuestRequests() {
       const { data, error } = await dbClient
         .from('requests')
-        .select('*, comments(*)')
+        .select('*')
         .eq('dj_id', currentDjId)
         .eq('status', 'pending')
         .order('likes', { ascending: false })
@@ -368,13 +380,6 @@
 
       data.forEach(req => {
         const isLiked = myLikedRequests.includes(req.id);
-        
-        let commentsHtml = '';
-        if (req.comments && req.comments.length > 0) {
-          req.comments.forEach(c => {
-            commentsHtml += `<div class="comment-item">💬 <strong>${c.author || 'Gast'}:</strong> ${c.text}</div>`;
-          });
-        }
 
         listContainer.innerHTML += `
           <div class="request-item">
@@ -382,19 +387,9 @@
               <div class="request-info">
                 <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span>
               </div>
-              <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${req.id}', ${isLiked})">
-                ❤️ <span id="likes-count-${req.id}">${req.likes || 0}</span>
+              <button class="vote-btn ${isLiked ? 'voted' : ''}" onclick="toggleLike('${req.id}', ${isLiked})">
+                👍 +1 <span style="font-weight: normal; opacity: 0.8;">(${req.likes || 0})</span>
               </button>
-            </div>
-            
-            <div class="comments-section">
-              <div id="comments-list-${req.id}">
-                ${commentsHtml}
-              </div>
-              <div style="display: flex; gap: 6px; margin-top: 6px;">
-                <input type="text" id="comment-input-${req.id}" placeholder="Schrijf een reactie..." style="margin:0; padding: 6px; font-size: 0.8em;">
-                <button onclick="addComment('${req.id}')" style="width: auto; margin:0; padding: 6px 12px; font-size: 0.8em;">Reageer</button>
-              </div>
             </div>
           </div>`;
       });
@@ -422,34 +417,12 @@
       loadGuestRequests();
     }
 
-    async function addComment(requestId) {
-      const inputEl = document.getElementById(`comment-input-${requestId}`);
-      const text = inputEl.value.trim();
-      if (!text) return;
-
-      const { error } = await dbClient.from('comments').insert([{
-        request_id: requestId,
-        author: 'Gast',
-        text: text
-      }]);
-
-      if (error) {
-        toonPopup('Fout bij plaatsen reactie: ' + error.message);
-      } else {
-        inputEl.value = '';
-        loadGuestRequests();
-      }
-    }
-
     function setupRealtimeListener() {
       if (!currentDjId) return;
 
       realtimeSubscription = dbClient
         .channel('public:guest_requests')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: `dj_id=eq.${currentDjId}` }, payload => {
-          loadGuestRequests();
-        })
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, payload => {
           loadGuestRequests();
         })
         .subscribe();
