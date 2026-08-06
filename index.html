@@ -1,1 +1,115 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partyrequest</title>
+  
+  <!-- Dynamische Stijlen (aangepast via guest.js) -->
+  <style>
+    :root {
+      --bg-color: #121212;
+      --accent-color: #FF4081;
+      --text-color: #FFFFFF;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    .btn-accent {
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .request-card {
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
 
+  <!-- STEP 1: PARTYCODE INVOER -->
+  <div id="loginSection">
+    <h1>Partyrequest</h1>
+    <input type="text" id="partyCodeInput" placeholder="Voer partycode in" style="text-transform:uppercase;">
+    <button class="btn-accent" onclick="handleJoin()">Deelnemen</button>
+  </div>
+
+  <!-- STEP 2: VERZOEKJES SCHERM (Verborgen tot code klopt) -->
+  <div id="partySection" style="display:none;">
+    <h2 id="welcomeText"></h2>
+    
+    <!-- Zoekbalk & Handmatig verzoekje -->
+    <h3>Verzoekje doen</h3>
+    <input type="text" id="searchTrack" placeholder="Zoek in de library van de DJ..." onkeyup="searchLibrary()">
+    <div id="searchResults"></div>
+
+    <hr>
+
+    <!-- Live Verzoekjes & Stemmen -->
+    <h3>Live Verzoekjes Toplijst</h3>
+    <div id="requestsList"></div>
+  </div>
+
+  <!-- Supabase CDN Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Eigen Scripts -->
+  <script src="js/supabase.js"></script>
+  <script src="js/guest.js"></script>
+
+  <script>
+    async function handleJoin() {
+      const code = document.getElementById('partyCodeInput').value;
+      const success = await joinParty(code);
+      if (success) {
+        document.getElementById('loginSection').style.display = 'none';
+        document.getElementById('partySection').style.display = 'block';
+        document.getElementById('welcomeText').innerText = currentParty.djs.welcome_message;
+      }
+    }
+
+    // Render functie voor verzoekjes
+    function renderRequestsList(requests) {
+      const listDiv = document.getElementById('requestsList');
+      listDiv.innerHTML = requests.map(r => `
+        <div class="request-card">
+          <div>
+            <strong>${r.title}</strong> - ${r.artist}
+            ${r.message ? `<br><small><em>"${r.message}"</em></small>` : ''}
+          </div>
+          <button class="btn-accent" onclick="voteRequest('${r.id}')">👍 ${r.votes}</button>
+        </div>
+      `).join('');
+    }
+
+    // Zoeken in library
+    function searchLibrary() {
+      const query = document.getElementById('searchTrack').value.toLowerCase();
+      const resultsDiv = document.getElementById('searchResults');
+      
+      if (query.length < 2) { resultsDiv.innerHTML = ''; return; }
+
+      const matches = currentLibrary.filter(t => 
+        t.title.toLowerCase().includes(query) || t.artist.toLowerCase().includes(query)
+      ).slice(0, 5); // Max 5 resultaten
+
+      resultsDiv.innerHTML = matches.map(t => `
+        <div style="margin: 5px 0;">
+          ${t.title} - ${t.artist} 
+          <button onclick="submitRequest('${t.artist}', '${t.title}')">Aanvragen</button>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
