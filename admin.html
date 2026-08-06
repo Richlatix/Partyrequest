@@ -108,6 +108,7 @@
             text-align: left;
             border-bottom: 1px solid var(--border);
             font-size: 0.95rem;
+            vertical-align: middle;
         }
 
         th {
@@ -129,13 +130,13 @@
 
         .actions-cell {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
         }
 
         .btn-sm {
-            padding: 6px 10px;
-            font-size: 0.8rem;
+            padding: 6px 12px;
+            font-size: 0.85rem;
         }
 
         .btn-success { background-color: var(--success); }
@@ -183,14 +184,14 @@
                         </select>
                     </div>
                 </div>
-                <button type="submit">Bedrijf & Abonnement Toevoegen</button>
+                <button type="submit">Bedrijf Toevoegen</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>Beheerde Bedrijven & Abonnementstermijnen</h2>
+            <h2>Beheerde Bedrijven (Tenants)</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
-                Bedrijven waarvan het abonnement is verlopen, worden automatisch geblokkeerd voor gasten. Bedrijven die binnenkort of maximaal een maand geleden verlopen zijn, zie je hieronder direct terug.
+                Bedrijven waarvan het abonnement is verlopen, worden automatisch gesignaleerd. Je ziet hier direct wie vernieuwd moet worden.
             </p>
             <div style="overflow-x: auto;">
                 <table>
@@ -198,150 +199,10 @@
                         <tr>
                             <th>Bedrijfsnaam</th>
                             <th>Slug (Link)</th>
+                            <th>Kleur</th>
                             <th>Vervaldatum</th>
                             <th>Status</th>
                             <th>Acties</th>
                         </tr>
                     </thead>
-                    <tbody id="tenants-table-body">
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Supabase configuratie (Vervang met jouw gegevens)
-        const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
-        const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
-        
-        const { createClient } = supabase;
-        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        async function loadTenants() {
-            const tbody = document.getElementById('tenants-table-body');
-            try {
-                const { data, error } = await _supabase.from('tenants').select('*').order('subscription_expires_at', { ascending: true });
-                
-                if (error) throw error;
-
-                if (!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nog geen bedrijven toegevoegd.</td></tr>`;
-                    return;
-                }
-
-                const now = new Date();
-
-                tbody.innerHTML = data.map(tenant => {
-                    const expiryDate = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
-                    let badgeHTML = '<span class="badge badge-active">Actief</span>';
-                    
-                    if (expiryDate) {
-                        const diffTime = expiryDate - now;
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                        if (diffDays < 0) {
-                            // Verlopen
-                            badgeHTML = `<span class="badge badge-expired">Verlopen (${Math.abs(diffDays)}d geleden)</span>`;
-                        } else if (diffDays <= 30) {
-                            // Bijna verlopen (binnen 30 dagen)
-                            badgeHTML = `<span class="badge badge-warning">Verloopt over ${diffDays}d</span>`;
-                        }
-                    }
-
-                    const formattedDate = expiryDate ? expiryDate.toLocaleDateString('nl-NL') : 'Onbekend';
-
-                    return `
-                        <tr>
-                            <td><strong>${tenant.company_name}</strong><br><small style="color:var(--text-muted);">${tenant.email || 'Geen e-mail'}</small></td>
-                            <td><code>?tenant=${tenant.slug}</code></td>
-                            <td>${formattedDate}</td>
-                            <td>${badgeHTML}</td>
-                            <td class="actions-cell">
-                                <button class="btn-success btn-sm" onclick="renewSubscription('${tenant.id}')" title="Zet termijn 1 jaar vooruit (Betaald)">Jaar Verlengen</button>
-                                <button class="btn-danger btn-sm" onclick="deleteTenant('${tenant.id}')">Verwijderen</button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-            } catch (err) {
-                console.error('Fout bij ophalen tenants:', err);
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Fout bij laden van gegevens. Zorg dat de databasekolom 'subscription_expires_at' bestaat.</td></tr>`;
-            }
-        }
-
-        // Nieuw bedrijf toevoegen inclusief berekende vervaldatum
-        document.getElementById('tenant-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const company_name = document.getElementById('company-name').value;
-            const slug = document.getElementById('company-slug').value.trim().toLowerCase().replace(/\s+/g, '-');
-            const primary_color = document.getElementById('primary-color').value;
-            const email = document.getElementById('contact-email').value;
-            const periodYears = parseFloat(document.getElementById('subscription-period').value);
-
-            // Bereken vervaldatum
-            const expiresAt = new Date();
-            expiresAt.setFullYear(expiresAt.getFullYear() + periodYears);
-
-            try {
-                const { error } = await _supabase.from('tenants').insert([{ 
-                    company_name, 
-                    slug, 
-                    primary_color, 
-                    email,
-                    subscription_expires_at: expiresAt.toISOString()
-                }]);
-                if (error) throw error;
-
-                alert('Bedrijf succesvol toegevoegd met actieve termijn!');
-                document.getElementById('tenant-form').reset();
-                loadTenants();
-            } catch (err) {
-                alert('Fout bij toevoegen: ' + err.message);
-            }
-        });
-
-        // Verleng abonnementstermijn met 1 jaar (simuleert "Betaald")
-        async function renewSubscription(id) {
-            if (!confirm('Bevestig je dat de betaling binnen is? Het abonnement wordt met 1 jaar verlengd.')) return;
-
-            try {
-                // Haal huidige vervaldatum op of pak vandaag
-                const newExpiry = new Date();
-                newExpiry.setFullYear(newExpiry.getFullYear() + 1);
-
-                const { error } = await _supabase
-                    .from('tenants')
-                    .update({ subscription_expires_at: newExpiry.toISOString() })
-                    .eq('id', id);
-
-                if (error) throw error;
-
-                alert('Abonnement succesvol met 1 jaar verlengd!');
-                loadTenants();
-            } catch (err) {
-                alert('Fout bij verlengen: ' + err.message);
-            }
-        }
-
-        async function deleteTenant(id) {
-            if (!confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) return;
-            
-            try {
-                const { error } = await _supabase.from('tenants').delete().eq('id', id);
-                if (error) throw error;
-                loadTenants();
-            } catch (err) {
-                alert('Fout bij verwijderen: ' + err.message);
-            }
-        }
-
-        // Init laden bij openen pagina
-        loadTenants();
-    </script>
-</body>
-</html>
+                    <tbody id="tenants-
