@@ -170,6 +170,8 @@
 
       companies.forEach(comp => {
         let djsHtml = '';
+        const prefixDigits = comp.company_code.slice(2); // Pak de laatste 2 cijfers van het bedrijf (bijv. "01" uit "TS01")
+
         if (comp.djs && comp.djs.length > 0) {
           comp.djs.forEach(dj => {
             djsHtml += `
@@ -201,10 +203,16 @@
               <h4 style="margin: 0 0 8px 0; color: var(--text-color); font-size: 0.95em;">DJ's van ${comp.company_name}:</h4>
               ${djsHtml}
               
-              <div style="margin-top: 12px; display: flex; gap: 8px;">
-                <input type="text" id="dj-name-${comp.id}" placeholder="DJ Naam (bijv. DJ Lars)" style="margin:0; font-size:0.9em; padding:8px;">
-                <input type="text" id="dj-code-${comp.id}" placeholder="Code (4 cijfers, bijv. ${comp.company_code.slice(2)}55)" maxlength="4" style="margin:0; font-size:0.9em; padding:8px; width: 150px;">
-                <button class="small-btn" onclick="createDj('${comp.id}', '${comp.company_code}')">DJ Toevoegen</button>
+              <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="dj-name-${comp.id}" placeholder="DJ Naam (bijv. DJ Lars)" style="margin:0; font-size:0.9em; padding:8px; flex: 2;">
+                
+                <!-- Vaste voorvoegsel cijfers -->
+                <span style="background: #2a2a2a; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: var(--accent-color); font-weight: bold; font-family: monospace;">${prefixDigits}</span>
+                
+                <!-- Alleen de laatste 2 cijfers invoeren -->
+                <input type="text" id="dj-suffix-${comp.id}" placeholder="Laatste 2 (bijv. 55)" maxlength="2" style="margin:0; font-size:0.9em; padding:8px; width: 130px; text-align: center;">
+                
+                <button class="small-btn" onclick="createDj('${comp.id}', '${prefixDigits}')">DJ Toevoegen</button>
               </div>
             </div>
           </div>`;
@@ -246,7 +254,7 @@
         document.getElementById('new-logo').value = '';
         document.getElementById('new-whatsapp').value = '';
         document.getElementById('new-email').value = '';
-        toggleAddCompany(); // Klap het formulier weer dicht
+        toggleAddCompany();
         loadCompanies();
       }
     }
@@ -263,39 +271,35 @@
       }
     }
 
-    async function createDj(companyId, companyCode) {
+    async function createDj(companyId, prefixDigits) {
       const nameInput = document.getElementById(`dj-name-${companyId}`);
-      const codeInput = document.getElementById(`dj-code-${companyId}`);
+      const suffixInput = document.getElementById(`dj-suffix-${companyId}`);
       
       const djName = nameInput.value.trim();
-      const djCode = codeInput.value.trim();
+      const djSuffix = suffixInput.value.trim();
 
-      if (!djName || !djCode) {
-        return toonPopup('Vul zowel de DJ-naam als de DJ-code in!');
+      if (!djName || !djSuffix) {
+        return toonPopup('Vul zowel de DJ-naam als de laatste 2 cijfers in!');
       }
 
-      if (djCode.length !== 4) {
-        return toonPopup('De DJ-code moet exact 4 cijfers lang zijn!');
+      if (djSuffix.length !== 2) {
+        return toonPopup('De laatste toevoeging moet exact 2 cijfers lang zijn (bijv. 55)!');
       }
 
-      const companyDigits = companyCode.slice(2);
-      if (!djCode.startsWith(companyDigits)) {
-        if (!confirm(`Let op: De DJ-code begint niet met de cijfers van het hoofdbedrijf (${companyDigits}). Wil je doorgaan?`)) {
-          return;
-        }
-      }
+      // Combineer de bedrijfscijfers met de ingevulde achterkant tot een 4-cijferige DJ-code
+      const fullDjCode = prefixDigits + djSuffix;
 
       const { error } = await dbClient.from('djs').insert([{
         company_id: companyId,
         dj_name: djName,
-        dj_code: djCode
+        dj_code: fullDjCode
       }]);
 
       if (error) {
         toonPopup('Fout bij aanmaken DJ (mogelijk bestaat deze DJ-code al).');
         console.error(error);
       } else {
-        toonPopup(`DJ "${djName}" succesvol toegevoegd!`);
+        toonPopup(`DJ "${djName}" met code ${fullDjCode} succesvol toegevoegd!`);
         loadCompanies();
       }
     }
