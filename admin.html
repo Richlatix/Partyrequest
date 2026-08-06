@@ -32,6 +32,30 @@
             margin: 0 auto;
         }
 
+        /* Inlogscherm Styling */
+        #login-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .login-box {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .login-box h2 { margin-bottom: 20px; }
+
         header {
             display: flex;
             justify-content: space-between;
@@ -91,6 +115,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s;
+            width: 100%;
         }
 
         button:hover {
@@ -137,6 +162,7 @@
         .btn-sm {
             padding: 6px 12px;
             font-size: 0.85rem;
+            width: auto;
         }
 
         .btn-success { background-color: var(--success); }
@@ -147,10 +173,24 @@
 </head>
 <body>
 
-    <div class="container">
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2>🔒 Super-Admin Inlog</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.9rem;">Voer de pincode in om door te gaan.</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <input type="password" id="admin-passcode" placeholder="Wachtwoord (bijv. 3977)" required autofocus>
+                </div>
+                <button type="submit">Inloggen</button>
+            </form>
+            <p id="login-error" style="color: var(--danger); margin-top: 15px; font-size: 0.85rem; display: none;">Onjuist wachtwoord!</p>
+        </div>
+    </div>
+
+    <div class="container" id="admin-dashboard" style="display: none;">
         <header>
             <h1>⚡ Super-Admin Dashboard</h1>
-            <p id="admin-status" style="color: var(--text-muted);">Abonnementen Beheer</p>
+            <p id="admin-status" style="color: var(--text-muted);">Systeem Actief</p>
         </header>
 
         <div class="card">
@@ -162,8 +202,8 @@
                         <input type="text" id="company-name" required placeholder="Bijv. DJ Tim Verhuur">
                     </div>
                     <div class="form-group">
-                        <label for="company-slug">Unieke URL Slug (zonder spaties)</label>
-                        <input type="text" id="company-slug" required placeholder="Bijv. dj-tim">
+                        <label for="company-slug">URL Slug (Unieke link-code, bijv. <code>dj-tim</code>)</label>
+                        <input type="text" id="company-slug" required placeholder="Zonder spaties, bijv. dj-tim">
                     </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
@@ -178,31 +218,176 @@
                     <div class="form-group">
                         <label for="subscription-period">Abonnementstermijn</label>
                         <select id="subscription-period">
-                            <option value="1">1 Jaar (Standaard)</option>
+                            <option value="1">1 Jaar</option>
                             <option value="2">2 Jaar</option>
                             <option value="0.083">1 Maand (Test)</option>
                         </select>
                     </div>
                 </div>
-                <button type="submit">Bedrijf Toevoegen</button>
+                <button type="submit" style="width: auto;">Bedrijf Toevoegen</button>
             </form>
         </div>
 
         <div class="card">
             <h2>Beheerde Bedrijven (Tenants)</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">
-                Bedrijven waarvan het abonnement is verlopen, worden automatisch gesignaleerd. Je ziet hier direct wie vernieuwd moet worden.
-            </p>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
                         <tr>
                             <th>Bedrijfsnaam</th>
-                            <th>Slug (Link)</th>
+                            <th>URL Slug (Link)</th>
                             <th>Kleur</th>
                             <th>Vervaldatum</th>
                             <th>Status</th>
                             <th>Acties</th>
                         </tr>
                     </thead>
-                    <tbody id="tenants-
+                    <tbody id="tenants-table-body">
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuratie (Vervang deze placeholders met jouw eigen Supabase gegevens)
+        const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
+        const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
+        
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Wachtwoord beveiliging logica
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const enteredPass = document.getElementById('admin-passcode').value;
+            if (enteredPass === '3977') {
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('admin-dashboard').style.display = 'block';
+                loadTenants();
+            } else {
+                const errEl = document.getElementById('login-error');
+                errEl.style.display = 'block';
+            }
+        });
+
+        async function loadTenants() {
+            const tbody = document.getElementById('tenants-table-body');
+            try {
+                // Haal data op (gesorteerd op datum indien mogelijk)
+                const { data, error } = await _supabase.from('tenants').select('*');
+                
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen bedrijven toegevoegd.</td></tr>`;
+                    return;
+                }
+
+                const now = new Date();
+
+                tbody.innerHTML = data.map(tenant => {
+                    const expiryDate = tenant.subscription_expires_at ? new Date(tenant.subscription_expires_at) : null;
+                    let badgeHTML = '<span class="badge badge-active">Actief</span>';
+                    
+                    if (expiryDate) {
+                        const diffTime = expiryDate - now;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays < 0) {
+                            badgeHTML = `<span class="badge badge-expired">Verlopen (${Math.abs(diffDays)}d geleden)</span>`;
+                        } else if (diffDays <= 30) {
+                            badgeHTML = `<span class="badge badge-warning">Verloopt over ${diffDays}d</span>`;
+                        }
+                    }
+
+                    const formattedDate = expiryDate ? expiryDate.toLocaleDateString('nl-NL') : 'Onbekend';
+
+                    return `
+                        <tr>
+                            <td><strong>${tenant.company_name}</strong><br><small style="color:var(--text-muted);">${tenant.email || ''}</small></td>
+                            <td><code>?tenant=${tenant.slug}</code></td>
+                            <td><span style="display:inline-block;width:20px;height:20px;background:${tenant.primary_color || '#fff'};border-radius:4px;vertical-align:middle;"></span> ${tenant.primary_color || '-'}</td>
+                            <td>${formattedDate}</td>
+                            <td>${badgeHTML}</td>
+                            <td class="actions-cell">
+                                <button class="btn-success btn-sm" onclick="renewSubscription('${tenant.id}')">Jaar Verlengen</button>
+                                <button class="btn-danger btn-sm" onclick="deleteTenant('${tenant.id}')">Verwijderen</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('Fout bij ophalen tenants:', err);
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Fout bij laden. Controleer of de tabel 'tenants' in Supabase correct is ingesteld.</td></tr>`;
+            }
+        }
+
+        document.getElementById('tenant-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const company_name = document.getElementById('company-name').value;
+            const slug = document.getElementById('company-slug').value.trim().toLowerCase().replace(/\s+/g, '-');
+            const primary_color = document.getElementById('primary-color').value;
+            const email = document.getElementById('contact-email').value;
+            const periodYears = parseFloat(document.getElementById('subscription-period').value);
+
+            const expiresAt = new Date();
+            expiresAt.setFullYear(expiresAt.getFullYear() + periodYears);
+
+            try {
+                const { error } = await _supabase.from('tenants').insert([{ 
+                    company_name, 
+                    slug, 
+                    primary_color, 
+                    email,
+                    subscription_expires_at: expiresAt.toISOString()
+                }]);
+                if (error) throw error;
+
+                alert('Bedrijf succesvol toegevoegd!');
+                document.getElementById('tenant-form').reset();
+                loadTenants();
+            } catch (err) {
+                alert('Fout bij toevoegen: ' + err.message);
+            }
+        });
+
+        async function renewSubscription(id) {
+            if (!confirm('Weet je zeker dat je dit abonnement met 1 jaar wilt verlengen?')) return;
+
+            try {
+                const newExpiry = new Date();
+                newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+
+                const { error } = await _supabase
+                    .from('tenants')
+                    .update({ subscription_expires_at: newExpiry.toISOString() })
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                alert('Abonnement succesvol verlengd!');
+                loadTenants();
+            } catch (err) {
+                alert('Fout bij verlengen: ' + err.message);
+            }
+        }
+
+        async function deleteTenant(id) {
+            if (!confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) return;
+            
+            try {
+                const { error } = await _supabase.from('tenants').delete().eq('id', id);
+                if (error) throw error;
+                loadTenants();
+            } catch (err) {
+                alert('Fout bij verwijderen: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
