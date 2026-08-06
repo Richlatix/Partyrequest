@@ -16,6 +16,7 @@
             --border: #334155;
             --danger: #ef4444;
             --success: #22c55e;
+            --warning: #f59e0b;
         }
 
         body {
@@ -27,7 +28,7 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
@@ -40,7 +41,7 @@
             padding-bottom: 16px;
         }
 
-        h1, h2 {
+        h1, h2, h3 {
             margin: 0;
         }
 
@@ -56,28 +57,12 @@
             text-decoration: none;
             font-size: 0.9rem;
         }
-
-        .btn:hover {
-            background-color: var(--primary-hover);
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-        }
-        .btn-danger:hover {
-            background-color: #dc2626;
-        }
-
-        .btn-outline {
-            background: none;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-        }
-        .btn-outline:hover {
-            border-color: var(--primary);
-            color: var(--text);
-            background-color: rgba(79, 70, 229, 0.1);
-        }
+        .btn:hover { background-color: var(--primary-hover); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: #dc2626; }
+        .btn-warning { background-color: var(--warning); color: #000; }
+        .btn-outline { background: none; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--text); background-color: rgba(79, 70, 229, 0.1); }
 
         .card {
             background-color: var(--card-bg);
@@ -86,6 +71,16 @@
             padding: 24px;
             margin-bottom: 24px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        .alert-box {
+            background-color: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-weight: 500;
         }
 
         .form-grid {
@@ -115,11 +110,7 @@
             color: var(--text);
             font-size: 1rem;
         }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
 
         table {
             width: 100%;
@@ -133,11 +124,7 @@
             border-bottom: 1px solid var(--border);
             font-size: 0.95rem;
         }
-
-        th {
-            color: var(--text-muted);
-            font-weight: 600;
-        }
+        th { color: var(--text-muted); font-weight: 600; }
 
         .badge {
             padding: 4px 8px;
@@ -145,14 +132,27 @@
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
+            display: inline-block;
         }
-        .badge-bedrijf { background-color: rgba(79, 70, 229, 0.2); color: #818cf8; }
+        .badge-bedrijf { background-color: rgba(79, 70, 229, 0.2); color: #818cf8; cursor: pointer; }
         .badge-dj { background-color: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .badge-warning { background-color: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-danger { background-color: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
-        .expired {
-            color: var(--danger);
-            font-weight: 500;
+        /* Uitklapbaar gedeelte voor bedrijven */
+        .company-row { cursor: pointer; transition: background 0.2s; }
+        .company-row:hover { background-color: rgba(255, 255, 255, 0.02); }
+        .details-row { background-color: rgba(15, 23, 42, 0.6); display: none; }
+        .details-row.open { display: table-row; }
+        .details-content { padding: 20px; }
+        
+        .sub-table {
+            width: 100%;
+            margin-top: 10px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
         }
+        .sub-table th, .sub-table td { padding: 8px 12px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -162,6 +162,9 @@
             <h1>⚡ Super-Admin Dashboard</h1>
             <button id="logout-btn" class="btn btn-outline">Uitloggen</button>
         </header>
+
+        <!-- Meldingen voor bijna aflopende abonnementen -->
+        <div id="expiration-alert-container"></div>
 
         <!-- Formulier: Nieuw Bedrijf of DJ Toevoegen -->
         <div class="card">
@@ -174,7 +177,7 @@
                     </div>
                     <div class="form-group">
                         <label for="company-code">Unieke Code / Slug</label>
-                        <input type="text" id="company-code" required placeholder="Bijv. dj-tim (zonder spaties)">
+                        <input type="text" id="company-code" required placeholder="Bijv. dj-tim">
                     </div>
                     <div class="form-group">
                         <label for="account-type">Type Account</label>
@@ -185,7 +188,7 @@
                     </div>
                     <div class="form-group">
                         <label for="password">Wachtwoord</label>
-                        <input type="text" id="password" required placeholder="Korte inlogcode">
+                        <input type="text" id="password" required placeholder="Wachtwoord">
                     </div>
                     <div class="form-group">
                         <label for="expires-at">Abonnement Geldig Tot</label>
@@ -198,7 +201,8 @@
 
         <!-- Overzicht van alle bestaande accounts -->
         <div class="card">
-            <h2>Actieve Accounts</h2>
+            <h2>Beheerde Accounts</h2>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een Bedrijf-rij om de gekoppelde DJ's/gebruikers te beheren.</p>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -208,7 +212,7 @@
                             <th>Type</th>
                             <th>Wachtwoord</th>
                             <th>Verloopt op</th>
-                            <th>Actie</th>
+                            <th>Acties</th>
                         </tr>
                     </thead>
                     <tbody id="companies-table-body">
@@ -222,32 +226,28 @@
     </div>
 
     <script>
-        // 1. Beveiliging: Check of de super admin wel is ingelogd
         if (sessionStorage.getItem('super_admin_logged_in') !== 'true') {
             window.location.href = 'login.html';
         }
 
-        // Uitlog knop
         document.getElementById('logout-btn').addEventListener('click', () => {
             sessionStorage.removeItem('super_admin_logged_in');
             window.location.href = 'login.html';
         });
 
-        // 2. Supabase Configuratie (zelfde gegevens)
         const SUPABASE_URL = 'https://yhitywueffetjjnoudkt.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po';
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Standaard datum voor 'expires-at' zetten op over 1 jaar
         const nextYear = new Date();
         nextYear.setFullYear(nextYear.getFullYear() + 1);
         document.getElementById('expires-at').valueAsDate = nextYear;
 
-        // 3. Haal alle bedrijven/DJ's op en toon ze in de tabel
         async function loadCompanies() {
             const tableBody = document.getElementById('companies-table-body');
+            const alertContainer = document.getElementById('expiration-alert-container');
             
             const { data, error } = await _supabase
                 .from('companies')
@@ -261,32 +261,180 @@
 
             if (!data || data.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen accounts aangemaakt.</td></tr>`;
+                alertContainer.innerHTML = '';
                 return;
             }
 
+            // Check voor abonnementen die binnen 30 dagen aflopen
+            const now = new Date();
+            const in30Days = new Date();
+            in30Days.setDate(now.getDate() + 30);
+
+            const expiringSoon = data.filter(c => {
+                if (c.account_type === 'bedrijf' && c.expires_at) {
+                    const expDate = new Date(c.expires_at);
+                    return expDate >= now && expDate <= in30Days;
+                }
+                return false;
+            });
+
+            if (expiringSoon.length > 0) {
+                const names = expiringSoon.map(c => `<strong>${c.company_name}</strong> (${c.expires_at})`).join(', ');
+                alertContainer.innerHTML = `<div class="alert-box">⚠️ Volgende bedrijfsabonnement(en) verlopen binnen 30 dagen: ${names}</div>`;
+            } else {
+                alertContainer.innerHTML = '';
+            }
+
             tableBody.innerHTML = '';
-            data.forEach(company => {
+
+            for (const company of data) {
                 const isExpired = company.expires_at && new Date() > new Date(company.expires_at);
+                const isExpiringSoon = company.expires_at && new Date() >= new Date() && new Date(company.expires_at) <= in30Days;
                 const badgeClass = company.account_type === 'bedrijf' ? 'badge-bedrijf' : 'badge-dj';
                 
+                let statusBadge = '';
+                if (isExpired) statusBadge = `<span class="badge badge-danger">Verlopen</span>`;
+                else if (isExpiringSoon) statusBadge = `<span class="badge badge-warning">Verloopt bijna</span>`;
+
+                // Hoofdrij voor bedrijf/dj
                 const row = document.createElement('tr');
+                if (company.account_type === 'bedrijf') {
+                    row.className = 'company-row';
+                    row.title = 'Klik om DJ\'s toe te voegen/te bekijken';
+                    row.onclick = (e) => {
+                        // Voorkom dat klik op input/knop de rij inklapt
+                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+                        toggleDetails(company.id);
+                    };
+                }
+
                 row.innerHTML = `
-                    <td><strong>${company.company_name}</strong></td>
+                    <td><strong>${company.company_name}</strong> ${company.account_type === 'bedrijf' ? '🔽' : ''}</td>
                     <td><code>${company.company_code}</code></td>
                     <td><span class="badge ${badgeClass}">${company.account_type}</span></td>
-                    <td>${company.password}</td>
-                    <td class="${isExpired ? 'expired' : ''}">
-                        ${company.expires_at ? company.expires_at : 'Onbeperkt'} ${isExpired ? '(Verlopen)' : ''}
+                    <td><input type="text" value="${company.password}" style="width: 110px; padding: 4px 8px;" onchange="updateField('${company.id}', 'password', this.value)"></td>
+                    <td>
+                        <input type="date" value="${company.expires_at || ''}" style="padding: 4px 8px;" onchange="updateField('${company.id}', 'expires_at', this.value)">
+                        <br>${statusBadge}
                     </td>
                     <td>
                         <button class="btn btn-danger" style="padding: 6px 10px; font-size: 0.8rem;" onclick="deleteCompany('${company.id}')">Verwijderen</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
-            });
+
+                // Als het een bedrijf is, voegen we een verborgen rij toe voor de extra DJ's
+                if (company.account_type === 'bedrijf') {
+                    const detailsRow = document.createElement('tr');
+                    detailsRow.id = `details-${company.id}`;
+                    detailsRow.className = 'details-row';
+                    detailsRow.innerHTML = `
+                        <td colspan="6">
+                            <div class="details-content">
+                                <h3>DJ's / Gebruikers voor ${company.company_name}</h3>
+                                <div id="djs-list-${company.id}" style="margin-top: 10px;">Laden...</div>
+                                
+                                <form onsubmit="addCompanyDJ(event, '${company.id}')" style="margin-top: 15px; display: flex; gap: 10px; align-items: flex-end;">
+                                    <div class="form-group" style="margin:0;">
+                                        <label>DJ Naam</label>
+                                        <input type="text" id="dj-name-${company.id}" required placeholder="DJ Naam">
+                                    </div>
+                                    <div class="form-group" style="margin:0;">
+                                        <label>Wachtwoord</label>
+                                        <input type="text" id="dj-pass-${company.id}" required placeholder="Wachtwoord">
+                                    </div>
+                                    <button type="submit" class="btn" style="padding: 10px 14px;">DJ Toevoegen</button>
+                                </form>
+                            </div>
+                        </td>
+                    `;
+                    tableBody.appendChild(detailsRow);
+                    loadCompanyDJs(company.id);
+                }
+            }
         }
 
-        // 4. Nieuw account toevoegen aan database
+        // Uitklapfunctie voor bedrijven
+        window.toggleDetails = function(companyId) {
+            const detailsRow = document.getElementById(`details-${companyId}`);
+            detailsRow.classList.toggle('open');
+        }
+
+        // Laad DJ's van een specifiek bedrijf
+        async function loadCompanyDJs(companyId) {
+            const container = document.getElementById(`djs-list-${companyId}`);
+            const { data, error } = await _supabase
+                .from('company_djs')
+                .select('*')
+                .eq('company_id', companyId);
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">Nog geen extra DJ's toegevoegd aan dit bedrijf.</p>`;
+                return;
+            }
+
+            let html = `
+                <table class="sub-table">
+                    <thead><tr><th>DJ Naam</th><th>Wachtwoord</th><th>Actie</th></tr></thead>
+                    <tbody>
+            `;
+            data.forEach(dj => {
+                html += `
+                    <tr>
+                        <td>${dj.dj_name}</td>
+                        <td>${dj.password}</td>
+                        <td><button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteCompanyDJ('${dj.id}', '${companyId}')">Verwijderen</button></td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        // Voeg een DJ toe aan een bedrijf
+        window.addCompanyDJ = async function(e, companyId) {
+            e.preventDefault();
+            const djName = document.getElementById(`dj-name-${companyId}`).value.trim();
+            const djPass = document.getElementById(`dj-pass-${companyId}`).value.trim();
+
+            const { error } = await _supabase.from('company_djs').insert([
+                { company_id: companyId, dj_name: djName, password: djPass }
+            ]);
+
+            if (error) {
+                alert('Fout bij toevoegen DJ: ' + error.message);
+            } else {
+                document.getElementById(`dj-name-${companyId}`).value = '';
+                document.getElementById(`dj-pass-${companyId}`).value = '';
+                loadCompanyDJs(companyId);
+            }
+        }
+
+        // Verwijder een DJ gekoppeld aan een bedrijf
+        window.deleteCompanyDJ = async function(djId, companyId) {
+            if (!confirm('Weet je zeker dat je deze DJ wilt verwijderen?')) return;
+            const { error } = await _supabase.from('company_djs').delete().eq('id', djId);
+            if (error) alert('Fout bij verwijderen: ' + error.message);
+            else loadCompanyDJs(companyId);
+        }
+
+        // Direct velden (wachtwoord of datum) aanpassen via de tabel
+        window.updateField = async function(id, field, value) {
+            const updateObj = {};
+            updateObj[field] = value === '' ? null : value;
+
+            const { error } = await _supabase
+                .from('companies')
+                .update(updateObj)
+                .eq('id', id);
+
+            if (error) {
+                alert('Fout bij bijwerken: ' + error.message);
+                loadCompanies();
+            }
+        }
+
+        // Nieuw account aanmaken
         document.getElementById('create-company-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -318,9 +466,9 @@
             }
         });
 
-        // 5. Account verwijderen
+        // Account verwijderen
         window.deleteCompany = async function(id) {
-            if (!confirm('Weet je zeker dat je dit account wilt verwijderen?')) return;
+            if (!confirm('Weet je zeker dat je dit account wilt verwijderen? Alle gekoppelde DJ\'s worden ook verwijderd.')) return;
 
             const { error } = await _supabase
                 .from('companies')
@@ -334,7 +482,6 @@
             }
         }
 
-        // Laad de lijst direct bij openen
         loadCompanies();
     </script>
 </body>
