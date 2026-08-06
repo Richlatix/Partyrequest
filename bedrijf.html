@@ -10,7 +10,7 @@
       --bg-color: #121212;
       --card-bg: #1e1e1e;
       --text-color: #ffffff;
-      --accent-color: #7dff00; /* Past zich dynamisch aan naar de kleur van het bedrijf */
+      --accent-color: #7dff00;
       --border-color: #2a2a2a;
       --subtext-color: #b0b0b0;
     }
@@ -59,8 +59,11 @@
   <!-- INLOGSCHERM BEDRIJF -->
   <div id="login-view" style="max-width: 400px; margin: 60px auto; text-align: center;">
     <h2>🏢 Bedrijfsportal Inloggen</h2>
-    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer je 4-tekens hoofdbedrijfscode in (bijv. TS01):</p>
-    <input type="text" id="company-code-input" placeholder="Bijv. TS01" maxlength="4" style="text-align:center; text-transform:uppercase; font-size: 1.2em; letter-spacing: 2px;">
+    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer je bedrijfsgegevens in:</p>
+    
+    <input type="text" id="company-code-input" placeholder="Hoofdbedrijfscode (bijv. TS01)" maxlength="4" style="text-align:center; text-transform:uppercase; font-size: 1.1em; letter-spacing: 1px;">
+    <input type="password" id="company-pass-input" placeholder="Wachtwoord..." style="text-align:center; font-size: 1.1em;">
+    
     <button onclick="loginCompany()">Inloggen 🚀</button>
   </div>
 
@@ -94,6 +97,16 @@
       <button onclick="updateCompanySettings()" style="margin-top: 10px;">Instellingen Opslaan 💾</button>
     </div>
 
+    <!-- WACHTWOORD WIJZIGEN -->
+    <div class="card">
+      <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">🔑 Wachtwoord Wijzigen</h3>
+      
+      <label style="font-size:0.85em; color:var(--subtext-color);">Nieuw Wachtwoord:</label>
+      <input type="password" id="new-password-input" placeholder="Voer nieuw wachtwoord in...">
+
+      <button onclick="updatePassword()" style="margin-top: 10px; background: #333; color: var(--accent-color); border: 1px solid var(--accent-color);">Wachtwoord Aanpassen 🔒</button>
+    </div>
+
     <!-- DJ BEHEER VOOR DIT BEDRIJF -->
     <div class="card">
       <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">🎧 Jouw DJ's Beheren</h3>
@@ -105,13 +118,8 @@
         <h4 style="margin: 0 0 10px 0; font-size: 0.95em;">Nieuwe DJ Toevoegen:</h4>
         <div style="display: flex; gap: 8px; align-items: center;">
           <input type="text" id="new-dj-name" placeholder="DJ Naam (bijv. DJ Tim)" style="margin:0; font-size:0.9em; padding:10px; flex: 2;">
-          
-          <!-- Vaste voorvoegsel cijfers op basis van bedrijf -->
           <span id="dj-prefix-label" style="background: #2a2a2a; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: var(--accent-color); font-weight: bold; font-family: monospace;"></span>
-          
-          <!-- Laatste 2 cijfers -->
           <input type="text" id="new-dj-suffix" placeholder="Laatste 2 (bijv. 55)" maxlength="2" style="margin:0; font-size:0.9em; padding:10px; width: 110px; text-align: center;">
-          
           <button class="small-btn" onclick="createDj()" style="padding: 10px 15px;">Toevoegen</button>
         </div>
       </div>
@@ -121,9 +129,10 @@
   <script>
     const SUPABASE_URL = "https://yhitywueffetjjnoudkt.supabase.co";
     const SUPABASE_KEY = "sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po";
+    const MASTER_PASSWORD = "3977";
 
     let dbClient = null;
-    let currentCompany = null; // Slaat de gegevens op van de ingelogde huurder
+    let currentCompany = null;
 
     function toonPopup(bericht) {
       const oudePopup = document.getElementById('custom-toast');
@@ -144,20 +153,23 @@
       }
     }
 
-    // Controleer of er al een bedrijf was ingelogd in deze sessie
     window.onload = function() {
       initSupabase();
       const savedCode = localStorage.getItem('active_company_code');
-      if (savedCode) {
+      const savedPass = localStorage.getItem('active_company_pass');
+      if (savedCode && savedPass) {
         document.getElementById('company-code-input').value = savedCode;
+        document.getElementById('company-pass-input').value = savedPass;
         loginCompany(true);
       }
     };
 
     async function loginCompany(isAutoLogin = false) {
       const codeInput = document.getElementById('company-code-input').value.trim().toUpperCase();
-      if (!codeInput) {
-        if (!isAutoLogin) toonPopup('Voer je hoofdbedrijfscode in!');
+      const passInput = document.getElementById('company-pass-input').value.trim();
+
+      if (!codeInput || !passInput) {
+        if (!isAutoLogin) toonPopup('Vul zowel de bedrijfscode als het wachtwoord in!');
         return;
       }
 
@@ -167,18 +179,26 @@
       if (error || !data) {
         if (!isAutoLogin) toonPopup('Bedrijf niet gevonden. Controleer je code.');
         localStorage.removeItem('active_company_code');
+        localStorage.removeItem('active_company_pass');
+        return;
+      }
+
+      // Check of het wachtwoord klopt (of het hoofdwachtwoord 3977 is)
+      if (passInput !== data.password && passInput !== MASTER_PASSWORD) {
+        if (!isAutoLogin) toonPopup('Onjuist wachtwoord!');
+        localStorage.removeItem('active_company_code');
+        localStorage.removeItem('active_company_pass');
         return;
       }
 
       currentCompany = data;
       localStorage.setItem('active_company_code', data.company_code);
+      localStorage.setItem('active_company_pass', passInput);
 
-      // Pas de accentkleur dynamisch toe in de CSS variabele
       if (data.accent_color) {
         document.documentElement.style.setProperty('--accent-color', data.accent_color);
       }
 
-      // Vul formulier in met huidige data
       document.getElementById('portal-title').innerText = data.company_name;
       document.getElementById('portal-code').innerText = data.company_code;
       document.getElementById('edit-name').value = data.company_name;
@@ -186,12 +206,11 @@
       document.getElementById('edit-color').value = data.accent_color || '#7dff00';
       document.getElementById('edit-whatsapp').value = data.whatsapp_nr || '';
       document.getElementById('edit-email').value = data.email || '';
+      document.getElementById('new-password-input').value = '';
 
-      // Zet de prefix voor nieuwe DJ's (laatste 2 cijfers van hoofdbedrijfscode)
       const prefix = data.company_code.slice(2);
       document.getElementById('dj-prefix-label').innerText = prefix;
 
-      // Schakel schermen om
       document.getElementById('login-view').classList.add('hidden');
       document.getElementById('company-dashboard').classList.remove('hidden');
 
@@ -200,10 +219,12 @@
 
     function logout() {
       localStorage.removeItem('active_company_code');
+      localStorage.removeItem('active_company_pass');
       currentCompany = null;
       document.getElementById('company-dashboard').classList.add('hidden');
       document.getElementById('login-view').classList.remove('hidden');
       document.getElementById('company-code-input').value = '';
+      document.getElementById('company-pass-input').value = '';
     }
 
     async function updateCompanySettings() {
@@ -215,9 +236,7 @@
       const whatsapp = document.getElementById('edit-whatsapp').value.trim();
       const email = document.getElementById('edit-email').value.trim();
 
-      if (!name) {
-        return toonPopup('Bedrijfsnaam is verplicht!');
-      }
+      if (!name) return toonPopup('Bedrijfsnaam is verplicht!');
 
       const { error } = await dbClient.from('companies').update({
         company_name: name,
@@ -229,13 +248,31 @@
 
       if (error) {
         toonPopup('Fout bij opslaan van instellingen.');
-        console.error(error);
       } else {
         toonPopup('Instellingen succesvol opgeslagen! ✨');
         currentCompany.company_name = name;
         currentCompany.accent_color = color;
         document.getElementById('portal-title').innerText = name;
         document.documentElement.style.setProperty('--accent-color', color);
+      }
+    }
+
+    async function updatePassword() {
+      if (!currentCompany) return;
+
+      const newPass = document.getElementById('new-password-input').value.trim();
+      if (!newPass) return toonPopup('Vul een nieuw wachtwoord in!');
+
+      const { error } = await dbClient.from('companies').update({
+        password: newPass
+      }).eq('id', currentCompany.id);
+
+      if (error) {
+        toonPopup('Fout bij bijwerken wachtwoord.');
+      } else {
+        toonPopup('Wachtwoord succesvol gewijzigd! 🔒');
+        localStorage.setItem('active_company_pass', newPass);
+        document.getElementById('new-password-input').value = '';
       }
     }
 
@@ -270,13 +307,8 @@
       const djName = nameInput.value.trim();
       const djSuffix = suffixInput.value.trim();
 
-      if (!djName || !djSuffix) {
-        return toonPopup('Vul zowel de DJ-naam als de laatste 2 cijfers in!');
-      }
-
-      if (djSuffix.length !== 2) {
-        return toonPopup('De toevoeging moet exact 2 cijfers lang zijn!');
-      }
+      if (!djName || !djSuffix) return toonPopup('Vul zowel de DJ-naam als de laatste 2 cijfers in!');
+      if (djSuffix.length !== 2) return toonPopup('De toevoeging moet exact 2 cijfers lang zijn!');
 
       const prefix = currentCompany.company_code.slice(2);
       const fullDjCode = prefix + djSuffix;
@@ -289,7 +321,6 @@
 
       if (error) {
         toonPopup('Fout bij aanmaken DJ (mogelijk bestaat deze DJ-code al).');
-        console.error(error);
       } else {
         toonPopup(`DJ "${djName}" met code ${fullDjCode} toegevoegd!`);
         nameInput.value = '';
