@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Partyrequest - DJ Dashboard</title>
+</head>
+<body>
+
+  <h1>DJ Dashboard</h1>
+  
+  <!-- XML Uploader -->
+  <label for="xmlInput">Upload Rekordbox XML:</label>
+  <input type="file" id="xmlInput" accept=".xml">
+
+  <!-- Supabase CDN Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Eigen JavaScript Bestanden -->
+  <script src="js/supabase.js"></script>
+  <script src="js/xmlParser.js"></script>
+  
+  <script>
+    // Event listener voor de file input
+    document.getElementById('xmlInput').addEventListener('change', (e) => {
+      // djId ophalen van de momenteel ingelogde DJ
+      const currentDjId = "jouw-dj-uuid"; 
+      handleFileUpload(e, currentDjId);
+    });
+  </script>
+</body>
+</html>
