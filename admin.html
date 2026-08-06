@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partyrequest - Platform Admin</title>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #ff0055;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    
+    h1, h2, h3 { color: var(--text); }
+    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; }
+    
+    label { display: block; margin-top: 10px; color: var(--text-muted); font-size: 0.9em; }
+    input, select { width: 100%; padding: 10px; margin-top: 5px; background: #0f172a; border: 1px solid var(--border); border-radius: 6px; color: #fff; }
+    
+    button { background: var(--accent); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 15px; width: 100%; }
+    button:hover { opacity: 0.9; }
+    button.secondary { background: transparent; border: 1px solid var(--border); }
+    
+    .hidden { display: none !important; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.9em; }
+    th { color: var(--text-muted); }
+    .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold; }
+    .badge-company { background: #3b82f6; color: white; }
+    .badge-dj { background: #10b981; color: white; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎛️ Partyrequest Platform Admin</h1>
+
+  <!-- INLOGSCHERM ADMIN -->
+  <div id="login-section" class="card">
+    <h2>Admin Inloggen</h2>
+    <form id="login-form">
+      <label>E-mailadres</label>
+      <input type="email" id="admin-email" required placeholder="admin@partyrequest.nl">
+      
+      <label>Wachtwoord</label>
+      <input type="password" id="admin-password" required placeholder="••••••••">
+      
+      <button type="submit">Inloggen op Dashboard</button>
+    </form>
+  </div>
+
+  <!-- ADMIN DASHBOARD (Na inloggen) -->
+  <div id="dashboard-section" class="hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center;" class="card">
+      <div>Ingelogd als: <strong id="user-email-display"></strong></div>
+      <button onclick="logout()" class="secondary" style="width:auto; margin:0;">Uitloggen</button>
+    </div>
+
+    <div class="grid">
+      <!-- FORMULIER: BEDRIJF AANMAKEN -->
+      <div class="card">
+        <h3>🏢 Nieuw Bedrijf Aanmaken</h3>
+        <form id="create-company-form">
+          <label>Bedrijfsnaam</label>
+          <input type="text" id="comp-name" required placeholder="bijv. Drive-in Show Extreme">
+
+          <label>E-mail Eigenaar (Inlog)</label>
+          <input type="email" id="comp-email" required placeholder="info@driveinshow.nl">
+
+          <label>Wachtwoord</label>
+          <input type="password" id="comp-password" required placeholder="Tijdelijk wachtwoord">
+
+          <button type="submit">Bedrijf Registreren</button>
+        </form>
+      </div>
+
+      <!-- FORMULIER: SOLO DJ AANMAKEN -->
+      <div class="card">
+        <h3>🎧 Nieuwe Solo DJ Aanmaken</h3>
+        <form id="create-dj-form">
+          <label>Artiestennaam DJ</label>
+          <input type="text" id="dj-name" required placeholder="bijv. DJ Marc">
+
+          <label>E-mail DJ (Inlog)</label>
+          <input type="email" id="dj-email" required placeholder="marc@dj.nl">
+
+          <label>Wachtwoord</label>
+          <input type="password" id="dj-password" required placeholder="Tijdelijk wachtwoord">
+
+          <button type="submit">Solo DJ Registreren</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- OVERZICHT OVERKOEPELENDE ACCOUNTS -->
+    <div class="card">
+      <h3>📋 Geregistreerde Accounts</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Naam / Artiest</th>
+            <th>E-mail</th>
+            <th>ID</th>
+          </tr>
+        </thead>
+        <tbody id="accounts-table-body">
+          <!-- Dynamisch gevuld -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 1. SUPABASE CONFIGURATIE (Vul hier je eigen Supabase URL en Key in)
+  const SUPABASE_URL = 'https://jouw-project-id.supabase.co';
+  const SUPABASE_KEY = 'jouw-anon-key-hier';
+  const dbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Client voor het aanmaken van sub-accounts zonder de admin sessie te verbreken
+  const tempAuthClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false }
+  });
+
+  // 2. INLOGGEN EN SESSIE BEHEER
+  window.onload = async () => {
+    const { data: { session } } = await dbClient.auth.getSession();
+    if (session) {
+      checkAdminRole(session.user);
+    }
+  };
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('admin-email').value;
+    const password = document.getElementById('admin-password').value;
+
+    const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
+    if (error) return alert('Inloggen mislukt: ' + error.message);
+    
+    checkAdminRole(data.user);
+  });
+
+  async function checkAdminRole(user) {
+    // Controleer of de gebruiker de rol 'admin' heeft in de database
+    const { data: profile } = await dbClient
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile && profile.role === 'admin') {
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('dashboard-section').classList.remove('hidden');
+      document.getElementById('user-email-display').innerText = user.email;
+      loadAccounts();
+    } else {
+      alert('Toegang geweigerd: Je bent geen Platform Admin!');
+      await dbClient.auth.signOut();
+    }
+  }
+
+  async function logout() {
+    await dbClient.auth.signOut();
+    location.reload();
+  }
+
+  // 3. BEDRIJF AANMAKEN
+  document.getElementById('create-company-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('comp-name').value;
+    const email = document.getElementById('comp-email').value;
+    const password = document.getElementById('comp-password').value;
+
+    // 1. Maak Auth user aan met de rol 'company'
+    const { data: authData, error: authError } = await tempAuthClient.auth.signUp({
+      email,
+      password,
+      options: { data: { role: 'company' } }
+    });
+
+    if (authError) return alert('Fout bij maken account: ' + authError.message);
+
+    // 2. Maak entry in 'companies' tabel
+    const { error: compError } = await dbClient.from('companies').insert([{
+      admin_id: authData.user.id,
+      name: name
+    }]);
+
+    if (compError) return alert('Fout bij opslaan bedrijf: ' + compError.message);
+
+    alert(`Bedrijf "${name}" succesvol aangemaakt!`);
+    document.getElementById('create-company-form').reset();
+    loadAccounts();
+  });
+
+  // 4. SOLO DJ AANMAKEN
+  document.getElementById('create-dj-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const displayName = document.getElementById('dj-name').value;
+    const email = document.getElementById('dj-email').value;
+    const password = document.getElementById('dj-password').value;
+
+    // 1. Maak Auth user aan met de rol 'dj' en geef display_name mee voor de trigger
+    const { error: authError } = await tempAuthClient.auth.signUp({
+      email,
+      password,
+      options: { 
+        data: { 
+          role: 'dj',
+          display_name: displayName 
+        } 
+      }
+    });
+
+    if (authError) return alert('Fout bij maken DJ account: ' + authError.message);
+
+    alert(`Solo DJ "${displayName}" succesvol aangemaakt!`);
+    document.getElementById('create-dj-form').reset();
+    loadAccounts();
+  });
+
+  // 5. OVERZICHT DYNAMISCH LADEN
+  async function loadAccounts() {
+    const tableBody = document.getElementById('accounts-table-body');
+    tableBody.innerHTML = '<tr><td colspan="4">Laden...</td></tr>';
+
+    const { data: profiles, error } = await dbClient.from('profiles').select('*');
+    const { data: companies } = await dbClient.from('companies').select('*');
+    const { data: djs } = await dbClient.from('djs').select('*');
+
+    if (error) return alert('Fout bij laden overzicht: ' + error.message);
+
+    tableBody.innerHTML = '';
+    
+    profiles.forEach(p => {
+      if (p.role === 'admin') return; // Sla de admin zelf over in de lijst
+
+      let typeBadge = '';
+      let name = '-';
+
+      if (p.role === 'company') {
+        typeBadge = '<span class="badge badge-company">Bedrijf</span>';
+        const comp = companies?.find(c => c.admin_id === p.id);
+        if (comp) name = comp.name;
+      } else if (p.role === 'dj') {
+        const dj = djs?.find(d => d.id === p.id);
+        if (dj && dj.company_id) {
+          typeBadge = '<span class="badge badge-company">Bedrijfs-DJ</span>';
+        } else {
+          typeBadge = '<span class="badge badge-dj">Solo DJ</span>';
+        }
+        if (dj) name = dj.display_name;
+      }
+
+      tableBody.innerHTML += `
+        <tr>
+          <td>${typeBadge}</td>
+          <td><strong>${name}</strong></td>
+          <td>${p.email}</td>
+          <td><small style="color:var(--text-muted);">${p.id.slice(0, 8)}...</small></td>
+        </tr>
+      `;
+    });
+  }
+</script>
+</body>
+</html>
