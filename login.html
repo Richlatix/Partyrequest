@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super-Admin Login | DJ Verzoekjes Platform</title>
+    <title>Inloggen | DJ Verzoekjes Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #4f46e5;
@@ -101,33 +102,83 @@
 <body>
 
     <div class="login-card">
-        <h1>⚡ Super-Admin Login</h1>
+        <h1>⚡ Inloggen Platform</h1>
         <form id="login-form">
             <div class="form-group">
-                <label for="admin-password">Wachtwoord</label>
-                <input type="password" id="admin-password" required placeholder="Voer wachtwoord in">
+                <label for="password-input">Wachtwoord</label>
+                <input type="password" id="password-input" required placeholder="Voer je wachtwoord in">
             </div>
-            <button type="submit">Inloggen</button>
-            <div id="error-msg" class="error-message">Onjuist wachtwoord, probeer het opnieuw.</div>
+            <button type="submit" id="login-btn">Inloggen</button>
+            <div id="error-msg" class="error-message">Onjuist wachtwoord of abonnement verlopen.</div>
         </form>
     </div>
 
     <script>
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const password = document.getElementById('admin-password').value;
-            const errorMsg = document.getElementById('error-msg');
+        // Supabase configuratie (Zorg dat deze exact hetzelfde is als in je admin pagina)
+        const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
+        const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
+        
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-            // Het ingestelde wachtwoord is 3977
-            if (password === '3977') {
-                // Sla een sessie op in sessionStorage zodat de admin ingelogd blijft zolang de tab open is
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const passwordInput = document.getElementById('password-input').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            const loginBtn = document.getElementById('login-btn');
+
+            errorMsg.style.display = 'none';
+
+            // 1. Check of het de Super-Admin is
+            if (passwordInput === '3977') {
                 sessionStorage.setItem('super_admin_logged_in', 'true');
-                
-                // Stuur door naar het dashboard (zorg dat je het dashboard bestand bijvoorbeeld 'admin.html' noemt)
                 window.location.href = 'admin.html';
-            } else {
+                return;
+            }
+
+            // 2. Zoek in de database of een bedrijf dit wachtwoord heeft
+            try {
+                loginBtn.innerText = 'Controleren...';
+                loginBtn.disabled = true;
+
+                const { data, error } = await _supabase
+                    .from('companies')
+                    .select('*')
+                    .eq('password', passwordInput)
+                    .single();
+
+                if (error || !data) {
+                    throw new Error('Onjuist wachtwoord');
+                }
+
+                // 3. Controleer of het abonnement inmiddels is verlopen
+                if (data.expires_at) {
+                    const expiresAt = new Date(data.expires_at);
+                    if (new Date() > expiresAt) {
+                        errorMsg.innerText = 'Dit abonnementsaccount is verlopen.';
+                        errorMsg.style.display = 'block';
+                        loginBtn.innerText = 'Inloggen';
+                        loginBtn.disabled = false;
+                        return;
+                    }
+                }
+
+                // 4. Sla de bedrijfsgegevens op in sessionStorage zodat hun eigen dashboard weet wie ingelogd is
+                sessionStorage.setItem('company_logged_in', JSON.stringify({
+                    id: data.id,
+                    name: data.company_name,
+                    code: data.company_code,
+                    type: data.account_type
+                }));
+
+                // Stuur door naar het dashboard voor DJ's/Bedrijven (bijv. 'dashboard.html')
+                window.location.href = 'dashboard.html';
+
+            } catch (err) {
+                errorMsg.innerText = 'Onjuist wachtwoord of account niet gevonden.';
                 errorMsg.style.display = 'block';
-                document.getElementById('admin-password').value = '';
+                loginBtn.innerText = 'Inloggen';
+                loginBtn.disabled = false;
             }
         });
     </script>
