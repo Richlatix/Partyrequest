@@ -3,90 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super-Admin Dashboard - Verzoekjes App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Super-Admin | DJ Verzoekjes Platform</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1, h2 {
+            margin: 0;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background-color: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-active {
+            background-color: rgba(34, 197, 94, 0.2);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background-color: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .badge-expired {
+            background-color: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+<body>
 
-    <div id="login-screen" class="fixed inset-0 bg-slate-950 z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
-            <div class="text-center mb-6">
-                <span class="text-3xl">🔒</span>
-                <h1 class="text-2xl font-bold mt-2">Super-Admin Beveiliging</h1>
-                <p class="text-slate-400 text-sm mt-1">Voer het wachtwoord in om door te gaan.</p>
-            </div>
-            
-            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Wachtwoord</label>
-                    <input type="password" id="password-input" required placeholder="Voer wachtwoord in..." 
-                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                </div>
-                <button type="submit" 
-                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl transition-colors shadow-lg shadow-indigo-600/20">
-                    Inloggen
-                </button>
-                <p id="login-error" class="text-rose-500 text-sm text-center hidden font-medium">Onjuist wachtwoord. Probeer het opnieuw.</p>
-            </form>
-        </div>
-    </div>
-
-    <div id="admin-dashboard" class="hidden max-w-6xl mx-auto p-4 md:p-8">
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 mb-8 gap-4">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Super-Admin Dashboard</h1>
-                <p class="text-slate-400 text-sm">Beheer alle huurende bedrijven (tenants) en hun licenties.</p>
-            </div>
-            <button onclick="location.reload()" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 px-4 py-2 rounded-xl text-sm font-medium transition-colors">
-                Uitloggen
-            </button>
+    <div class="container">
+        <header>
+            <h1>⚡ Super-Admin Dashboard</h1>
+            <p id="admin-status" style="color: var(--text-muted);">Verbonden</p>
         </header>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-8 shadow-xl">
-            <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
-                <span>➕</span> Nieuw Bedrijf / Huurder Toevoegen
-            </h2>
-            <form id="tenant-form" onsubmit="saveTenant(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Bedrijfsnaam</label>
-                    <input type="text" id="tenant-name" required placeholder="Bijv. Café de Burcht" 
-                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
+        <div class="card">
+            <h2>Nieuw Huurend Bedrijf Toevoegen</h2>
+            <form id="tenant-form" style="margin-top: 16px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="company-name">Bedrijfsnaam / Naam DJ</label>
+                        <input type="text" id="company-name" required placeholder="Bijv. DJ Tim Verhuur">
+                    </div>
+                    <div class="form-group">
+                        <label for="company-slug">Unieke URL Slug (zonder spaties)</label>
+                        <input type="text" id="company-slug" required placeholder="Bijv. dj-tim">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">URL Slug (Uniekecode)</label>
-                    <input type="text" id="tenant-slug" required placeholder="Bijv. cafe-de-burcht" 
-                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
-                    <span class="text-[11px] text-slate-500 mt-1 block">Wordt gebruikt in de webadres link (geen spaties).</span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label for="primary-color">Primaire Huisstijl Kleur</label>
+                        <input type="color" id="primary-color" value="#4f46e5" style="height: 45px; padding: 4px;">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email">Contact E-mailadres</label>
+                        <input type="email" id="contact-email" placeholder="info@djtim.nl">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Abonnement tot</label>
-                    <input type="date" id="tenant-expires" required 
-                           class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-indigo-500">
+                <div class="form-group">
+                    <label for="subscription-months">Abonnementsduur</label>
+                    <select id="subscription-months">
+                        <option value="12">1 Jaar (Standaard)</option>
+                        <option value="24">2 Jaar</option>
+                        <option value="1">1 Maand (Test)</option>
+                    </select>
                 </div>
-                <div class="md:col-span-3 flex justify-end">
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
-                        Opslaan & Aanmaken
-                    </button>
-                </div>
+                <button type="submit">Bedrijf Toevoegen</button>
             </form>
         </div>
 
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-            <h2 class="text-lg font-bold mb-4">📋 Overzicht Actieve Bedrijven</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+        <div class="card">
+            <h2>Beheerde Bedrijven (Tenants)</h2>
+            <div style="overflow-x: auto;">
+                <table>
                     <thead>
-                        <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
-                            <th class="py-3 px-4">Bedrijfsnaam</th>
-                            <th class="py-3 px-4">URL Slug</th>
-                            <th class="py-3 px-4">Abonnement Verloopt</th>
-                            <th class="py-3 px-4 text-right">Acties</th>
+                        <tr>
+                            <th>Bedrijfsnaam</th>
+                            <th>Slug (Link)</th>
+                            <th>Kleur</th>
+                            <th>Abonnement tot</th>
+                            <th>Status</th>
+                            <th>Acties</th>
                         </tr>
                     </thead>
-                    <tbody id="tenants-table-body" class="divide-y divide-slate-800/60 text-sm">
+                    <tbody id="tenants-table-body">
                         <tr>
-                            <td colspan="4" class="py-6 text-center text-slate-500">Gegevens inladen...</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -95,93 +217,109 @@
     </div>
 
     <script>
-        // Vaste inlogfunctionaliteit via formulier submit
-        function handleLogin(event) {
-            event.preventDefault();
-            const passwordInput = document.getElementById('password-input').value;
-            const errorElement = document.getElementById('login-error');
-            
-            // Het vaste super-admin wachtwoord
-            if (passwordInput === '3977') {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('admin-dashboard').classList.remove('hidden');
-                loadTenants(); // Laad direct de data als er ingelogd is
-            } else {
-                errorElement.classList.remove('hidden');
-            }
-        }
-
-        // Koppeling met Supabase (pas aan met je eigen keys indien nodig)
-        const SUPABASE_URL = https://yhitywueffetjjnoudkt.supabase.co;
-        const SUPABASE_ANON_KEY = sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po;
+        // Supabase configuratie
+        const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
+        const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
         
-        let supabaseClient = null;
-        if (window.supabase && SUPABASE_URL !== 'JOUW_SUPABASE_URL') {
-            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
+        const { createClient } = supabase;
+        const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function loadTenants() {
             const tbody = document.getElementById('tenants-table-body');
-            if (!supabaseClient) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-rose-500">Supabase URL of Key is niet ingesteld in de code.</td></tr>`;
-                return;
-            }
-
             try {
-                const { data, error } = await supabaseClient.from('tenants').select('*');
+                const { data, error } = await _supabase.from('tenants').select('*').order('created_at', { ascending: false });
+                
                 if (error) throw error;
 
                 if (!data || data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-500">Nog geen bedrijven toegevoegd.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen bedrijven toegevoegd.</td></tr>`;
                     return;
                 }
 
-                tbody.innerHTML = data.map(tenant => `
-                    <tr class="hover:bg-slate-800/40 transition-colors">
-                        <td class="py-3 px-4 font-medium">${tenant.name || 'Onbekend'}</td>
-                        <td class="py-3 px-4 text-indigo-400 font-mono text-xs">${tenant.slug || ''}</td>
-                        <td class="py-3 px-4">${tenant.expires_at ? tenant.expires_at.split('T')[0] : 'Onbeperkt'}</td>
-                        <td class="py-3 px-4 text-right">
-                            <button onclick="deleteTenant('${tenant.id}')" class="text-rose-400 hover:text-rose-300 text-xs font-semibold">Verwijderen</button>
-                        </td>
-                    </tr>
-                `).join('');
+                const nu = new Date();
+
+                tbody.innerHTML = data.map(tenant => {
+                    const expiresAt = tenant.expires_at ? new Date(tenant.expires_at) : null;
+                    let statusBadge = `<span class="badge badge-active">Actief</span>`;
+                    
+                    if (expiresAt) {
+                        const diffTime = expiresAt - nu;
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays < 0) {
+                            statusBadge = `<span class="badge badge-expired">Verlopen</span>`;
+                        } else if (diffDays <= 30) {
+                            statusBadge = `<span class="badge badge-warning" title="Verloopt over ${diffDays} dagen!">⚠️ Verloopt bijna</span>`;
+                        }
+                    }
+
+                    const formattedDate = expiresAt ? expiresAt.toLocaleDateString('nl-NL') : 'Onbeperkt';
+
+                    return `
+                        <tr>
+                            <td><strong>${tenant.company_name}</strong></td>
+                            <td><code>?tenant=${tenant.slug}</code></td>
+                            <td><span style="display:inline-block;width:20px;height:20px;background:${tenant.primary_color};border-radius:4px;vertical-align:middle;"></span> ${tenant.primary_color}</td>
+                            <td>${formattedDate}</td>
+                            <td>${statusBadge}</td>
+                            <td class="actions-cell">
+                                <button class="btn-danger" onclick="deleteTenant('${tenant.id}')" style="padding: 6px 12px; font-size: 0.85rem;">Verwijderen</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
             } catch (err) {
-                console.error(err);
-                tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-rose-500">Fout bij ophalen van gegevens uit de database.</td></tr>`;
+                console.error('Fout bij ophalen tenants:', err);
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Fout bij laden van gegevens.</td></tr>`;
             }
         }
 
-        async function saveTenant(event) {
-            event.preventDefault();
-            if (!supabaseClient) return alert('Supabase is niet gekoppeld.');
+        document.getElementById('tenant-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const company_name = document.getElementById('company-name').value;
+            const slug = document.getElementById('company-slug').value.trim().toLowerCase().replace(/\s+/g, '-');
+            const primary_color = document.getElementById('primary-color').value;
+            const email = document.getElementById('contact-email').value;
+            const months = parseInt(document.getElementById('subscription-months').value);
 
-            const name = document.getElementById('tenant-name').value;
-            const slug = document.getElementById('tenant-slug').value.trim().toLowerCase().replace(/\s+/g, '-');
-            const expires_at = document.getElementById('tenant-expires').value;
+            // Bereken de vervaldatum op basis van gekozen maanden
+            const expiresAt = new Date();
+            expiresAt.setMonth(expiresAt.getMonth() + months);
 
             try {
-                const { error } = await supabaseClient.from('tenants').insert([{ name, slug, expires_at }]);
+                const { error } = await _supabase.from('tenants').insert([{ 
+                    company_name, 
+                    slug, 
+                    primary_color, 
+                    email, 
+                    expires_at: expiresAt.toISOString() 
+                }]);
+                
                 if (error) throw error;
 
+                alert('Bedrijf succesvol toegevoegd met abonnement!');
                 document.getElementById('tenant-form').reset();
                 loadTenants();
-                alert('Bedrijf succesvol toegevoegd!');
             } catch (err) {
-                alert('Fout bij opslaan: ' + err.message);
+                alert('Fout bij toevoegen: ' + err.message);
             }
-        }
+        });
 
         async function deleteTenant(id) {
             if (!confirm('Weet je zeker dat je dit bedrijf wilt verwijderen?')) return;
+            
             try {
-                const { error } = await supabaseClient.from('tenants').delete().eq('id', id);
+                const { error } = await _supabase.from('tenants').delete().eq('id', id);
                 if (error) throw error;
                 loadTenants();
             } catch (err) {
                 alert('Fout bij verwijderen: ' + err.message);
             }
         }
+
+        // Init laden bij openen pagina
+        loadTenants();
     </script>
 </body>
 </html>
