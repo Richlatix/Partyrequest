@@ -37,6 +37,8 @@
     .request-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .request-info { flex: 1; }
     
+    .request-comment { font-size: 0.85em; color: var(--subtext-color); margin-top: 6px; font-style: italic; }
+
     /* Compacte duim omhoog knop */
     .vote-btn { 
       background: #2a2a2a; 
@@ -114,6 +116,9 @@
         <p style="color:var(--subtext-color); font-size:0.85em; text-align:center;">Typ hierboven om te zoeken in de bibliotheek van de DJ...</p>
       </div>
 
+      <!-- ALGEMENE COMMENT VOOR BIBLIOTHEEK AANVRAGEN -->
+      <input type="text" id="library-comment-input" placeholder="Optioneel: Voeg een berichtje toe (bijv. Voor de bruidegom!)" style="font-size: 0.9em; margin-bottom: 8px;">
+
       <!-- KNOP VOOR HANDMATIG INVOEREN -->
       <button onclick="toggleManualInput()" id="toggle-manual-btn" style="background: #2a2a2a; color: var(--accent-color); border: 1px dashed var(--accent-color); font-size: 0.85em; padding: 10px; margin-top: 5px;">
         Staat het nummer niet in de bibliotheek? Klik dan hier ✍️
@@ -122,7 +127,8 @@
       <!-- HANDMATIG VERZOEKJE FORMULIER (STANDAARD VERBORGEN) -->
       <div id="manual-form-container" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
         <input type="text" id="manual-song" placeholder="Nummer (titel)" style="font-size: 0.9em; margin-bottom: 6px;">
-        <input type="text" id="manual-artist" placeholder="Artiest" style="font-size: 0.9em; margin-bottom: 10px;">
+        <input type="text" id="manual-artist" placeholder="Artiest" style="font-size: 0.9em; margin-bottom: 6px;">
+        <input type="text" id="manual-comment" placeholder="Optioneel: Voeg een berichtje toe..." style="font-size: 0.9em; margin-bottom: 10px;">
         <button onclick="submitManualRequest()" style="padding: 10px; font-size: 0.9em;">Handmatig Versturen 🎶</button>
       </div>
     </div>
@@ -316,10 +322,13 @@
     }
 
     async function requestFromLibrary(title, artist) {
+      const comment = document.getElementById('library-comment-input').value.trim();
+
       const { error } = await dbClient.from('requests').insert([{
         dj_id: currentDjId,
         song_title: title,
         artist: artist,
+        comment: comment || null,
         status: 'pending',
         likes: 0
       }]);
@@ -329,6 +338,7 @@
       } else {
         toonPopup('Verzoekje succesvol verzonden naar de DJ! 🎶');
         document.getElementById('library-search-input').value = '';
+        document.getElementById('library-comment-input').value = '';
         document.getElementById('library-results').innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; text-align:center;">Nummer aangevraagd!</p>';
         loadGuestRequests();
       }
@@ -337,6 +347,7 @@
     async function submitManualRequest() {
       const song = document.getElementById('manual-song').value.trim();
       const artist = document.getElementById('manual-artist').value.trim();
+      const comment = document.getElementById('manual-comment').value.trim();
 
       if (!song || !artist) return toonPopup('Vul minimaal de titel en artiest in!');
 
@@ -344,6 +355,7 @@
         dj_id: currentDjId,
         song_title: song,
         artist: artist,
+        comment: comment || null,
         status: 'pending',
         likes: 0
       }]);
@@ -354,6 +366,7 @@
         toonPopup('Verzoekje verzonden naar de DJ! 🎉');
         document.getElementById('manual-song').value = '';
         document.getElementById('manual-artist').value = '';
+        document.getElementById('manual-comment').value = '';
         toggleManualInput();
         loadGuestRequests();
       }
@@ -380,12 +393,14 @@
 
       data.forEach(req => {
         const isLiked = myLikedRequests.includes(req.id);
+        const commentHtml = req.comment ? `<div class="request-comment">💬 "${req.comment}"</div>` : '';
 
         listContainer.innerHTML += `
           <div class="request-item">
             <div class="request-header">
               <div class="request-info">
                 <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span>
+                ${commentHtml}
               </div>
               <button class="vote-btn ${isLiked ? 'voted' : ''}" onclick="toggleLike('${req.id}', ${isLiked})">
                 👍 +1 <span style="font-weight: normal; opacity: 0.8;">(${req.likes || 0})</span>
