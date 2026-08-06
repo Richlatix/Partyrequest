@@ -212,7 +212,7 @@
         <!-- Overzicht van alle bestaande accounts -->
         <div class="card">
             <h2>Beheerde Accounts</h2>
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een rij (Bedrijf of DJ) om de instellingen te wijzigen of extra's te beheren.</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Klik op een rij om details te openen en wachtwoorden of vervaldatums aan te passen.</p>
             <div style="overflow-x: auto;">
                 <table>
                     <thead>
@@ -220,13 +220,14 @@
                             <th>Naam</th>
                             <th>Code (Slug)</th>
                             <th>Type</th>
+                            <th>Hoofdwachtwoord</th>
                             <th>Verloopt op</th>
                             <th>Acties</th>
                         </tr>
                     </thead>
                     <tbody id="companies-table-body">
                         <tr>
-                            <td colspan="5" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
+                            <td colspan="6" style="text-align: center; color: var(--text-muted);">Gegevens laden...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -264,12 +265,12 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Fout bij laden: ${error.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger);">Fout bij laden: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nog geen accounts aangemaakt.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Nog geen accounts aangemaakt.</td></tr>`;
                 alertContainer.innerHTML = '';
                 return;
             }
@@ -318,6 +319,7 @@
                     <td><strong>${company.company_name}</strong> 🔽</td>
                     <td><code>${company.company_code}</code></td>
                     <td><span class="badge ${badgeClass}">${company.account_type}</span></td>
+                    <td><code>${company.password}</code></td>
                     <td>
                         ${company.expires_at ? company.expires_at : 'Onbeperkt'} 
                         ${statusBadge}
@@ -328,7 +330,7 @@
                 `;
                 tableBody.appendChild(row);
 
-                // Uitklapbare details rij voor ALLE accounts
+                // Uitklapbare details rij voor ALLE accounts (hier kan het hoofdwachtwoord/vervaldatum aangepast worden)
                 const detailsRow = document.createElement('tr');
                 detailsRow.id = `details-${company.id}`;
                 detailsRow.className = 'details-row';
@@ -354,12 +356,12 @@
                 }
 
                 detailsRow.innerHTML = `
-                    <td colspan="5">
+                    <td colspan="6">
                         <div class="details-content">
                             <h3>Instellingen voor ${company.company_name}</h3>
                             <div class="settings-grid" style="margin-top: 12px;">
                                 <div class="form-group" style="margin:0;">
-                                    <label>Wachtwoord</label>
+                                    <label>Hoofdwachtwoord</label>
                                     <input type="text" value="${company.password}" onchange="updateField('${company.id}', 'password', this.value)">
                                 </div>
                                 <div class="form-group" style="margin:0;">
@@ -497,7 +499,7 @@
                 return;
             }
 
-            // 2. ALS het type 'dj' (solo DJ) is, voeg hem direct toe aan 'company_djs' met dezelfde gegevens
+            // 2. ALS het type 'dj' (solo DJ) is, voeg hem direct toe aan 'company_djs'
             if (accountType === 'dj' && newCompany) {
                 const { error: djError } = await _supabase
                     .from('company_djs')
@@ -510,7 +512,7 @@
                     ]);
 
                 if (djError) {
-                    alert('Bedrijf aangemaakt, maar fout bij genereren solodj inlog: ' + djError.message);
+                    alert('Account aangemaakt, maar fout bij genereren solodj inlog: ' + djError.message);
                 }
             }
 
