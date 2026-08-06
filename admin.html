@@ -31,9 +31,10 @@
     button:hover { opacity: 0.9; }
     
     .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
-    .company-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
+    .company-header { display: flex; justify-content: space-between; align-items: center; }
     .danger-btn { background: #ff4444; color: #ffffff; width: auto; padding: 6px 12px; }
     .small-btn { background: #333; color: var(--accent-color); border: 1px solid var(--accent-color); width: auto; padding: 6px 12px; font-size: 0.85em; }
+    .toggle-btn { background: #2a2a2a; color: var(--text-color); border: 1px solid var(--border-color); width: auto; padding: 6px 12px; font-size: 0.85em; }
     .hidden { display: none !important; }
     
     .dj-list-item { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 8px 12px; border-radius: 6px; margin-top: 6px; font-size: 0.9em; }
@@ -70,9 +71,13 @@
     <h2>⚡ Super-Admin Dashboard</h2>
     <p style="text-align:center; color:var(--subtext-color);">Beheer hier alle huurende bedrijven en hun DJ's.</p>
 
-    <!-- FORMULIER BEDRIJF TOEVOEGEN -->
-    <div style="background:var(--card-bg); padding:20px; border-radius:12px; border:1px dashed var(--accent-color); margin-bottom:25px;">
-      <h3 style="margin-top:0; text-align:left;">➕ Nieuw Bedrijf Toevoegen</h3>
+    <!-- UITKLAPBAAR FORMULIER: NIEUW BEDRIJF TOEVOEGEN -->
+    <button onclick="toggleAddCompany()" style="background:var(--card-bg); color:var(--accent-color); border:1px dashed var(--accent-color); margin-bottom:20px;">
+      ➕ Nieuw Bedrijf Toevoegen (Uitklappen)
+    </button>
+
+    <div id="new-company-section" class="hidden" style="background:var(--card-bg); padding:20px; border-radius:12px; border:1px solid var(--accent-color); margin-bottom:25px;">
+      <h3 style="margin-top:0; text-align:left;">Nieuw Bedrijf Registreren</h3>
       
       <label style="font-size:0.85em; color:var(--subtext-color);">Bedrijfsnaam:</label>
       <input type="text" id="new-name" placeholder="Bijv. Tim's Drive-in Show">
@@ -92,7 +97,7 @@
       <label style="font-size:0.85em; color:var(--subtext-color);">E-mailadres:</label>
       <input type="email" id="new-email" placeholder="info@bedrijf.nl">
 
-      <button onclick="createCompany()" style="margin-top:15px;">Bedrijf Aanmaken 🚀</button>
+      <button onclick="createCompany()" style="margin-top:15px;">Bedrijf Opslaan 🚀</button>
     </div>
 
     <h3>📋 Actieve Huurders & DJ Beheer</h3>
@@ -100,12 +105,11 @@
   </div>
 
   <script>
-    // VERVANG DIT MET JOUW NIEUWE SUPABASE PROJECT GEGEVENS
     const SUPABASE_URL = "https://yhitywueffetjjnoudkt.supabase.co";
     const SUPABASE_KEY = "sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po";
 
     let dbClient = null;
-    const SUPER_ADMIN_PASSWORD = "superadmin123"; // Pas dit aan naar wens!
+    const SUPER_ADMIN_PASSWORD = "superadmin123";
 
     function toonPopup(bericht) {
       const oudePopup = document.getElementById('custom-toast');
@@ -141,10 +145,19 @@
       }
     }
 
+    function toggleAddCompany() {
+      const section = document.getElementById('new-company-section');
+      section.classList.toggle('hidden');
+    }
+
+    function toggleCompanyDetails(companyId) {
+      const detailsDiv = document.getElementById(`company-details-${companyId}`);
+      detailsDiv.classList.toggle('hidden');
+    }
+
     async function loadCompanies() {
       if (!dbClient) return;
       
-      // Haal bedrijven en direct al hun DJ's op via Supabase relatie
       const { data: companies, error: compError } = await dbClient.from('companies').select('*, djs(*)').order('created_at', { ascending: false });
       
       const listContainer = document.getElementById('companies-list');
@@ -156,7 +169,6 @@
       }
 
       companies.forEach(comp => {
-        // Bouw de lijst van DJ's voor dit bedrijf
         let djsHtml = '';
         if (comp.djs && comp.djs.length > 0) {
           comp.djs.forEach(dj => {
@@ -178,20 +190,21 @@
                 <span style="background:rgba(125,255,0,0.1); color:var(--accent-color); padding:2px 6px; border-radius:4px; font-size:0.8em; border:1px solid var(--accent-color);">${comp.company_code}</span><br>
                 <small style="color:var(--subtext-color);">E-mail: ${comp.email || 'Niet opgegeven'} | WhatsApp: ${comp.whatsapp_nr || 'Niet opgegeven'}</small>
               </div>
-              <div>
-                <button class="danger-btn" onclick="deleteCompany('${comp.id}')">Bedrijf Verwijderen</button>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <button class="toggle-btn" onclick="toggleCompanyDetails('${comp.id}')">📂 Details & DJ's</button>
+                <button class="danger-btn" onclick="deleteCompany('${comp.id}')">Verwijderen</button>
               </div>
             </div>
 
-            <div style="margin-top: 15px; background: #181818; padding: 12px; border-radius: 6px;">
+            <!-- INKLAPBAAR GEDEELTE VOOR DJ'S EN BEHEER -->
+            <div id="company-details-${comp.id}" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 12px;">
               <h4 style="margin: 0 0 8px 0; color: var(--text-color); font-size: 0.95em;">DJ's van ${comp.company_name}:</h4>
               ${djsHtml}
               
-              <!-- Inline formulier om direct een DJ toe te voegen voor dit bedrijf -->
-              <div style="margin-top: 10px; display: flex; gap: 8px;">
+              <div style="margin-top: 12px; display: flex; gap: 8px;">
                 <input type="text" id="dj-name-${comp.id}" placeholder="DJ Naam (bijv. DJ Lars)" style="margin:0; font-size:0.9em; padding:8px;">
                 <input type="text" id="dj-code-${comp.id}" placeholder="Code (4 cijfers, bijv. ${comp.company_code.slice(2)}55)" maxlength="4" style="margin:0; font-size:0.9em; padding:8px; width: 150px;">
-                <button class="small-btn" onclick="createDj('${comp.id}', '${comp.company_code}')">Toevoegen</button>
+                <button class="small-btn" onclick="createDj('${comp.id}', '${comp.company_code}')">DJ Toevoegen</button>
               </div>
             </div>
           </div>`;
@@ -233,6 +246,7 @@
         document.getElementById('new-logo').value = '';
         document.getElementById('new-whatsapp').value = '';
         document.getElementById('new-email').value = '';
+        toggleAddCompany(); // Klap het formulier weer dicht
         loadCompanies();
       }
     }
@@ -264,8 +278,7 @@
         return toonPopup('De DJ-code moet exact 4 cijfers lang zijn!');
       }
 
-      // Optionele controle: check of de DJ-code begint met de cijfers van het hoofdbedrijf
-      const companyDigits = companyCode.slice(2); // bijv. "TS01" geeft "01"
+      const companyDigits = companyCode.slice(2);
       if (!djCode.startsWith(companyDigits)) {
         if (!confirm(`Let op: De DJ-code begint niet met de cijfers van het hoofdbedrijf (${companyDigits}). Wil je doorgaan?`)) {
           return;
