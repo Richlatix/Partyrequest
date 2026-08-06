@@ -26,7 +26,7 @@
 
     h1, h2, h3 { color: var(--accent-color); text-align: center; }
     
-    input, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
+    input, button, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
     button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
     button:hover { opacity: 0.9; }
     
@@ -85,9 +85,20 @@
       <button onclick="saveWelcomeText()" style="width: auto; padding: 8px 16px; font-size: 0.9em;">Opslaan</button>
     </div>
 
-    <!-- INKOMENDE VERZOEKJES -->
+    <!-- INKOMENDE VERZOEKJES & SORTERING -->
     <div class="card">
-      <h3 style="margin-top:0; text-align:left; font-size: 1.1em;">📋 Ontvangen Verzoekjes</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="margin:0; text-align:left; font-size: 1.1em;">📋 Ontvangen Verzoekjes</h3>
+        <div style="display: flex; align-items: center; gap: 8px; width: 220px;">
+          <span style="font-size: 0.85em; color: var(--subtext-color); white-space: nowrap;">Sorteer op:</span>
+          <select id="sort-select" onchange="loadDjRequests()" style="margin:0; padding: 6px; font-size: 0.85em;">
+            <option value="likes">Meeste Likes</option>
+            <option value="newest">Nieuwste eerst</option>
+            <option value="oldest">Oudste eerst</option>
+          </select>
+        </div>
+      </div>
+      
       <div id="dj-requests-list">
         <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes ontvangen...</p>
       </div>
@@ -139,7 +150,6 @@
 
       initSupabase();
 
-      // Haal DJ gegevens op inclusief gekoppeld bedrijf (voor de huisstijlkleur)
       const { data: djData, error } = await dbClient
         .from('djs')
         .select('*, companies(*)')
@@ -155,7 +165,6 @@
       currentDjId = djData.id;
       localStorage.setItem('active_dj_code', djCode);
 
-      // Dynamisch de huisstijlkleur van het bedrijf toepassen als deze bestaat
       if (djData.companies && djData.companies.accent_color) {
         document.documentElement.style.setProperty('--accent-color', djData.companies.accent_color);
       }
@@ -191,13 +200,23 @@
     }
 
     async function loadDjRequests() {
-      const { data, error } = await dbClient
+      const sortBy = document.getElementById('sort-select').value;
+      
+      let query = dbClient
         .from('requests')
         .select('*')
         .eq('dj_id', currentDjId)
-        .eq('status', 'pending')
-        .order('likes', { ascending: false })
-        .order('created_at', { ascending: false });
+        .eq('status', 'pending');
+
+      if (sortBy === 'likes') {
+        query = query.order('likes', { ascending: false }).order('created_at', { ascending: false });
+      } else if (sortBy === 'newest') {
+        query = query.order('created_at', { ascending: false });
+      } else if (sortBy === 'oldest') {
+        query = query.order('created_at', { ascending: true });
+      }
+
+      const { data, error } = await query;
 
       const listContainer = document.getElementById('dj-requests-list');
       listContainer.innerHTML = '';
