@@ -85,6 +85,9 @@
       <label style="font-size:0.85em; color:var(--subtext-color);">Hoofdbedrijfscode (2 letters + 2 cijfers, uniek, bijv. TS01):</label>
       <input type="text" id="new-code" placeholder="Bijv. TS01" maxlength="4" style="text-transform: uppercase;">
 
+      <label style="font-size:0.85em; color:var(--subtext-color);">Startwachtwoord:</label>
+      <input type="text" id="new-password" placeholder="Standaard wachtwoord voor bedrijf" value="welkom123">
+
       <label style="font-size:0.85em; color:var(--subtext-color);">Logo URL (Optioneel):</label>
       <input type="text" id="new-logo" placeholder="https://jouwsite.nl/logo.png">
 
@@ -170,7 +173,7 @@
 
       companies.forEach(comp => {
         let djsHtml = '';
-        const prefixDigits = comp.company_code.slice(2); // Pak de laatste 2 cijfers van het bedrijf (bijv. "01" uit "TS01")
+        const prefixDigits = comp.company_code.slice(2);
 
         if (comp.djs && comp.djs.length > 0) {
           comp.djs.forEach(dj => {
@@ -190,6 +193,7 @@
               <div>
                 <strong style="font-size: 1.1em;">${comp.company_name}</strong> 
                 <span style="background:rgba(125,255,0,0.1); color:var(--accent-color); padding:2px 6px; border-radius:4px; font-size:0.8em; border:1px solid var(--accent-color);">${comp.company_code}</span><br>
+                <small style="color:var(--subtext-color);">Wachtwoord: <code style="color:#ffffff; background:#2a2a2a; padding:2px 6px; border-radius:4px;">${comp.password || 'welkom123'}</code></small><br>
                 <small style="color:var(--subtext-color);">E-mail: ${comp.email || 'Niet opgegeven'} | WhatsApp: ${comp.whatsapp_nr || 'Niet opgegeven'}</small>
               </div>
               <div style="display: flex; gap: 8px; align-items: center;">
@@ -205,13 +209,8 @@
               
               <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
                 <input type="text" id="dj-name-${comp.id}" placeholder="DJ Naam (bijv. DJ Lars)" style="margin:0; font-size:0.9em; padding:8px; flex: 2;">
-                
-                <!-- Vaste voorvoegsel cijfers -->
                 <span style="background: #2a2a2a; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: var(--accent-color); font-weight: bold; font-family: monospace;">${prefixDigits}</span>
-                
-                <!-- Alleen de laatste 2 cijfers invoeren -->
                 <input type="text" id="dj-suffix-${comp.id}" placeholder="Laatste 2 (bijv. 55)" maxlength="2" style="margin:0; font-size:0.9em; padding:8px; width: 130px; text-align: center;">
-                
                 <button class="small-btn" onclick="createDj('${comp.id}', '${prefixDigits}')">DJ Toevoegen</button>
               </div>
             </div>
@@ -222,13 +221,14 @@
     async function createCompany() {
       const name = document.getElementById('new-name').value.trim();
       const code = document.getElementById('new-code').value.trim().toUpperCase();
+      const password = document.getElementById('new-password').value.trim();
       const logo = document.getElementById('new-logo').value.trim();
       const color = document.getElementById('new-color').value;
       const whatsapp = document.getElementById('new-whatsapp').value.trim();
       const email = document.getElementById('new-email').value.trim();
 
-      if (!name || !code) {
-        return toonPopup('Bedrijfsnaam en hoofdbedrijfscode zijn verplicht!');
+      if (!name || !code || !password) {
+        return toonPopup('Bedrijfsnaam, hoofdbedrijfscode en wachtwoord zijn verplicht!');
       }
 
       if (code.length !== 4) {
@@ -238,6 +238,7 @@
       const { error } = await dbClient.from('companies').insert([{
         company_name: name,
         company_code: code,
+        password: password,
         logo_url: logo,
         accent_color: color,
         whatsapp_nr: whatsapp,
@@ -251,6 +252,7 @@
         toonPopup(`Bedrijf "${name}" succesvol aangemaakt!`);
         document.getElementById('new-name').value = '';
         document.getElementById('new-code').value = '';
+        document.getElementById('new-password').value = 'welkom123';
         document.getElementById('new-logo').value = '';
         document.getElementById('new-whatsapp').value = '';
         document.getElementById('new-email').value = '';
@@ -286,7 +288,6 @@
         return toonPopup('De laatste toevoeging moet exact 2 cijfers lang zijn (bijv. 55)!');
       }
 
-      // Combineer de bedrijfscijfers met de ingevulde achterkant tot een 4-cijferige DJ-code
       const fullDjCode = prefixDigits + djSuffix;
 
       const { error } = await dbClient.from('djs').insert([{
