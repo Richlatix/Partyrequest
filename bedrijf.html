@@ -1,345 +1,101 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bedrijfsportal | Verzoekjes SaaS</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root {
-      --bg-color: #121212;
-      --card-bg: #1e1e1e;
-      --text-color: #ffffff;
-      --accent-color: #7dff00;
-      --border-color: #2a2a2a;
-      --subtext-color: #b0b0b0;
-    }
-
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      background: var(--bg-color); 
-      color: var(--text-color); 
-      padding: 20px; 
-      max-width: 600px; 
-      margin: auto; 
-    }
-
-    h1, h2, h3 { color: var(--accent-color); text-align: center; }
-    
-    input, button, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
-    button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
-    button:hover { opacity: 0.9; }
-    
-    .card { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--border-color); }
-    .danger-btn { background: #ff4444; color: #ffffff; width: auto; padding: 6px 12px; }
-    .small-btn { background: #333; color: var(--accent-color); border: 1px solid var(--accent-color); width: auto; padding: 6px 12px; font-size: 0.85em; }
-    .hidden { display: none !important; }
-    
-    .dj-item { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 10px 15px; border-radius: 6px; margin-top: 8px; font-size: 0.9em; border-left: 3px solid var(--accent-color); }
-
-    .toast-popup {
-      position: fixed;
-      bottom: 25px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1e1e1e;
-      color: #ffffff;
-      border: 1.5px solid var(--accent-color);
-      padding: 12px 24px;
-      border-radius: 30px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
-      z-index: 9999;
-      font-weight: bold;
-      text-align: center;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Bedrijfspagina Beheer</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f9; }
+        nav { background: #333; color: #fff; padding: 10px; display: flex; gap: 15px; }
+        nav a { color: #fff; text-decoration: none; cursor: pointer; }
+        .section { display: none; background: #fff; padding: 20px; margin-top: 20px; border-radius: 5px; }
+        .section.active { display: block; }
+        form div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { background: #007BFF; color: white; border: none; padding: 10px 15px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
 </head>
 <body>
 
-  <!-- INLOGSCHERM BEDRIJF -->
-  <div id="login-view" style="max-width: 400px; margin: 60px auto; text-align: center;">
-    <h2>🏢 Bedrijfsportal Inloggen</h2>
-    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer je bedrijfsgegevens in:</p>
+    <h1>Beheeromgeving Bedrijf</h1>
     
-    <input type="text" id="company-code-input" placeholder="Hoofdbedrijfscode (bijv. TS01)" maxlength="4" style="text-align:center; text-transform:uppercase; font-size: 1.1em; letter-spacing: 1px;">
-    <input type="password" id="company-pass-input" placeholder="Wachtwoord..." style="text-align:center; font-size: 1.1em;">
-    
-    <button onclick="loginCompany()">Inloggen 🚀</button>
-  </div>
+    <!-- Menubalk om te schakelen tussen onderdelen op dezelfde pagina -->
+    <nav>
+        <a onclick="toonSectie('huisstijl')">Huisstijl</a>
+        <a onclick="toonSectie('contact')">Contactgegevens</a>
+        <a onclick="toonSectie('djs')">DJ's Beheren</a>
+        <a onclick="toonSectie('wachtwoord')">Wachtwoord Wijzigen</a>
+    </nav>
 
-  <!-- DASHBOARD BEDRIJF -->
-  <div id="company-dashboard" class="hidden">
-    <div style="text-align: center; margin-bottom: 20px;">
-      <h2 id="portal-title" style="margin-bottom: 5px;">Bedrijfsbeheer</h2>
-      <p style="color:var(--subtext-color); margin:0;">Hoofdbedrijfscode: <span id="portal-code" style="color:var(--accent-color); font-weight: bold;"></span></p>
-      <button onclick="logout()" style="background: transparent; color: var(--subtext-color); border: none; width: auto; font-size: 0.85em; margin-top: 10px; cursor: pointer; text-decoration: underline;">Uitloggen</button>
+    <!-- 1. Huisstijl Sectie -->
+    <div id="huisstijl" class="section active">
+        <h2>Huisstijl Aanpassen</h2>
+        <form>
+            <div>
+                <label>Bedrijfslogo uploaden:</label>
+                <input type="file" accept="image/*">
+            </div>
+            <div>
+                <label>Primairekleur:</label>
+                <input type="color" value="#007BFF">
+            </div>
+            <button type="submit">Opslaan</button>
+        </form>
     </div>
 
-    <!-- INSTELLINGEN BEHEREN -->
-    <div class="card">
-      <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">⚙️ Bedrijfsinstellingen & Huisstijl</h3>
-      
-      <label style="font-size:0.85em; color:var(--subtext-color);">Bedrijfsnaam:</label>
-      <input type="text" id="edit-name">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">Logo URL:</label>
-      <input type="text" id="edit-logo" placeholder="https://...">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">Accentkleur:</label>
-      <input type="color" id="edit-color" style="height: 45px; padding: 4px;">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">WhatsApp nummer (voor boekingen promo-kaart):</label>
-      <input type="text" id="edit-whatsapp">
-
-      <label style="font-size:0.85em; color:var(--subtext-color);">E-mailadres:</label>
-      <input type="email" id="edit-email">
-
-      <button onclick="updateCompanySettings()" style="margin-top: 10px;">Instellingen Opslaan 💾</button>
+    <!-- 2. Contactgegevens Sectie -->
+    <div id="contact" class="section">
+        <h2>Contactgegevens Aanpassen</h2>
+        <form>
+            <div>
+                <label>E-mailadres:</label>
+                <input type="email" value="info@jouwbedrijf.nl">
+            </div>
+            <div>
+                <label>Telefoonnummer:</label>
+                <input type="tel" value="0612345678">
+            </div>
+            <button type="submit">Opslaan</button>
+        </form>
     </div>
 
-    <!-- WACHTWOORD WIJZIGEN -->
-    <div class="card">
-      <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">🔑 Wachtwoord Wijzigen</h3>
-      
-      <label style="font-size:0.85em; color:var(--subtext-color);">Nieuw Wachtwoord:</label>
-      <input type="password" id="new-password-input" placeholder="Voer nieuw wachtwoord in...">
-
-      <button onclick="updatePassword()" style="margin-top: 10px; background: #333; color: var(--accent-color); border: 1px solid var(--accent-color);">Wachtwoord Aanpassen 🔒</button>
+    <!-- 3. DJ's Beheren Sectie -->
+    <div id="djs" class="section">
+        <h2>DJ's Beheren</h2>
+        <p>Hier zie je een overzicht van je solo-dj's. Je kunt er hier een toevoegen of verwijderen.</p>
+        <button type="button">+ DJ Toevoegen</button>
+        <!-- Lijst met bestaande DJ's komt hier -->
     </div>
 
-    <!-- DJ BEHEER VOOR DIT BEDRIJF -->
-    <div class="card">
-      <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">🎧 Jouw DJ's Beheren</h3>
-      <p style="color:var(--subtext-color); font-size: 0.85em; margin-top:0;">Elke DJ krijgt een code die begint met jullie bedrijfscijfers.</p>
-      
-      <div id="djs-list"></div>
-
-      <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-        <h4 style="margin: 0 0 10px 0; font-size: 0.95em;">Nieuwe DJ Toevoegen:</h4>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <input type="text" id="new-dj-name" placeholder="DJ Naam (bijv. DJ Tim)" style="margin:0; font-size:0.9em; padding:10px; flex: 2;">
-          <span id="dj-prefix-label" style="background: #2a2a2a; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border-color); color: var(--accent-color); font-weight: bold; font-family: monospace;"></span>
-          <input type="text" id="new-dj-suffix" placeholder="Laatste 2 (bijv. 55)" maxlength="2" style="margin:0; font-size:0.9em; padding:10px; width: 110px; text-align: center;">
-          <button class="small-btn" onclick="createDj()" style="padding: 10px 15px;">Toevoegen</button>
-        </div>
-      </div>
+    <!-- 4. Wachtwoord Wijzigen Sectie -->
+    <div id="wachtwoord" class="section">
+        <h2>Wachtwoord Wijzigen</h2>
+        <form>
+            <div>
+                <label>Huidig wachtwoord:</label>
+                <input type="password" required>
+            </div>
+            <div>
+                <label>Nieuw wachtwoord:</label>
+                <input type="password" required>
+            </div>
+            <div>
+                <label>Bevestig nieuw wachtwoord:</label>
+                <input type="password" required>
+            </div>
+            <button type="submit">Wachtwoord Wijzigen</button>
+        </form>
     </div>
-  </div>
 
-  <script>
-    const SUPABASE_URL = "https://yhitywueffetjjnoudkt.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_UVo2rR8P1p3eH6Un0Mn1rw_4AnBv1po";
-    const MASTER_PASSWORD = "3977";
+    <script>
+        // Simpele JavaScript functie om te wisselen tussen de tabbladen
+        function toonSectie(id) {
+            const secties = document.querySelectorAll('.section');
+            secties.forEach(sec => sec.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
 
-    let dbClient = null;
-    let currentCompany = null;
-
-    function toonPopup(bericht) {
-      const oudePopup = document.getElementById('custom-toast');
-      if (oudePopup) oudePopup.remove();
-
-      const popup = document.createElement('div');
-      popup.id = 'custom-toast';
-      popup.className = 'toast-popup';
-      popup.innerText = bericht;
-
-      document.body.appendChild(popup);
-      setTimeout(() => { if (popup) popup.remove(); }, 3000);
-    }
-
-    function initSupabase() {
-      if (!dbClient) {
-        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      }
-    }
-
-    window.onload = function() {
-      initSupabase();
-      const savedCode = localStorage.getItem('active_company_code');
-      const savedPass = localStorage.getItem('active_company_pass');
-      if (savedCode && savedPass) {
-        document.getElementById('company-code-input').value = savedCode;
-        document.getElementById('company-pass-input').value = savedPass;
-        loginCompany(true);
-      }
-    };
-
-    async function loginCompany(isAutoLogin = false) {
-      const codeInput = document.getElementById('company-code-input').value.trim().toUpperCase();
-      const passInput = document.getElementById('company-pass-input').value.trim();
-
-      if (!codeInput || !passInput) {
-        if (!isAutoLogin) toonPopup('Vul zowel de bedrijfscode als het wachtwoord in!');
-        return;
-      }
-
-      initSupabase();
-      const { data, error } = await dbClient.from('companies').select('*').eq('company_code', codeInput).single();
-
-      if (error || !data) {
-        if (!isAutoLogin) toonPopup('Bedrijf niet gevonden. Controleer je code.');
-        localStorage.removeItem('active_company_code');
-        localStorage.removeItem('active_company_pass');
-        return;
-      }
-
-      // Check of het wachtwoord klopt (of het hoofdwachtwoord 3977 is)
-      if (passInput !== data.password && passInput !== MASTER_PASSWORD) {
-        if (!isAutoLogin) toonPopup('Onjuist wachtwoord!');
-        localStorage.removeItem('active_company_code');
-        localStorage.removeItem('active_company_pass');
-        return;
-      }
-
-      currentCompany = data;
-      localStorage.setItem('active_company_code', data.company_code);
-      localStorage.setItem('active_company_pass', passInput);
-
-      if (data.accent_color) {
-        document.documentElement.style.setProperty('--accent-color', data.accent_color);
-      }
-
-      document.getElementById('portal-title').innerText = data.company_name;
-      document.getElementById('portal-code').innerText = data.company_code;
-      document.getElementById('edit-name').value = data.company_name;
-      document.getElementById('edit-logo').value = data.logo_url || '';
-      document.getElementById('edit-color').value = data.accent_color || '#7dff00';
-      document.getElementById('edit-whatsapp').value = data.whatsapp_nr || '';
-      document.getElementById('edit-email').value = data.email || '';
-      document.getElementById('new-password-input').value = '';
-
-      const prefix = data.company_code.slice(2);
-      document.getElementById('dj-prefix-label').innerText = prefix;
-
-      document.getElementById('login-view').classList.add('hidden');
-      document.getElementById('company-dashboard').classList.remove('hidden');
-
-      loadCompanyDjs();
-    }
-
-    function logout() {
-      localStorage.removeItem('active_company_code');
-      localStorage.removeItem('active_company_pass');
-      currentCompany = null;
-      document.getElementById('company-dashboard').classList.add('hidden');
-      document.getElementById('login-view').classList.remove('hidden');
-      document.getElementById('company-code-input').value = '';
-      document.getElementById('company-pass-input').value = '';
-    }
-
-    async function updateCompanySettings() {
-      if (!currentCompany) return;
-
-      const name = document.getElementById('edit-name').value.trim();
-      const logo = document.getElementById('edit-logo').value.trim();
-      const color = document.getElementById('edit-color').value;
-      const whatsapp = document.getElementById('edit-whatsapp').value.trim();
-      const email = document.getElementById('edit-email').value.trim();
-
-      if (!name) return toonPopup('Bedrijfsnaam is verplicht!');
-
-      const { error } = await dbClient.from('companies').update({
-        company_name: name,
-        logo_url: logo,
-        accent_color: color,
-        whatsapp_nr: whatsapp,
-        email: email
-      }).eq('id', currentCompany.id);
-
-      if (error) {
-        toonPopup('Fout bij opslaan van instellingen.');
-      } else {
-        toonPopup('Instellingen succesvol opgeslagen! ✨');
-        currentCompany.company_name = name;
-        currentCompany.accent_color = color;
-        document.getElementById('portal-title').innerText = name;
-        document.documentElement.style.setProperty('--accent-color', color);
-      }
-    }
-
-    async function updatePassword() {
-      if (!currentCompany) return;
-
-      const newPass = document.getElementById('new-password-input').value.trim();
-      if (!newPass) return toonPopup('Vul een nieuw wachtwoord in!');
-
-      const { error } = await dbClient.from('companies').update({
-        password: newPass
-      }).eq('id', currentCompany.id);
-
-      if (error) {
-        toonPopup('Fout bij bijwerken wachtwoord.');
-      } else {
-        toonPopup('Wachtwoord succesvol gewijzigd! 🔒');
-        localStorage.setItem('active_company_pass', newPass);
-        document.getElementById('new-password-input').value = '';
-      }
-    }
-
-    async function loadCompanyDjs() {
-      if (!currentCompany) return;
-
-      const { data, error } = await dbClient.from('djs').select('*').eq('company_id', currentCompany.id).order('created_at', { ascending: false });
-      
-      const listContainer = document.getElementById('djs-list');
-      listContainer.innerHTML = '';
-
-      if (error || !data || data.length === 0) {
-        listContainer.innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; margin:5px 0;">Nog geen DJ\'s toegevoegd.</p>';
-        return;
-      }
-
-      data.forEach(dj => {
-        listContainer.innerHTML += `
-          <div class="dj-item">
-            <span>🎧 <strong>${dj.dj_name}</strong> (Code: <code style="color:var(--accent-color);">${dj.dj_code}</code>)</span>
-            <button class="danger-btn" style="padding: 2px 8px; font-size: 0.8em;" onclick="deleteDj('${dj.id}')">✕</button>
-          </div>`;
-      });
-    }
-
-    async function createDj() {
-      if (!currentCompany) return;
-
-      const nameInput = document.getElementById('new-dj-name');
-      const suffixInput = document.getElementById('new-dj-suffix');
-      
-      const djName = nameInput.value.trim();
-      const djSuffix = suffixInput.value.trim();
-
-      if (!djName || !djSuffix) return toonPopup('Vul zowel de DJ-naam als de laatste 2 cijfers in!');
-      if (djSuffix.length !== 2) return toonPopup('De toevoeging moet exact 2 cijfers lang zijn!');
-
-      const prefix = currentCompany.company_code.slice(2);
-      const fullDjCode = prefix + djSuffix;
-
-      const { error } = await dbClient.from('djs').insert([{
-        company_id: currentCompany.id,
-        dj_name: djName,
-        dj_code: fullDjCode
-      }]);
-
-      if (error) {
-        toonPopup('Fout bij aanmaken DJ (mogelijk bestaat deze DJ-code al).');
-      } else {
-        toonPopup(`DJ "${djName}" met code ${fullDjCode} toegevoegd!`);
-        nameInput.value = '';
-        suffixInput.value = '';
-        loadCompanyDjs();
-      }
-    }
-
-    async function deleteDj(djId) {
-      if (!confirm("Weet je zeker dat je deze DJ wilt verwijderen?")) return;
-
-      const { error } = await dbClient.from('djs').delete().eq('id', djId);
-      if (error) {
-        toonPopup('Fout bij verwijderen DJ.');
-      } else {
-        toonPopup('DJ verwijderd.');
-        loadCompanyDjs();
-      }
-    }
-  </script>
 </body>
 </html>
