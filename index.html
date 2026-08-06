@@ -55,6 +55,8 @@
       z-index: 9999;
       font-weight: bold;
       text-align: center;
+      max-width: 90%;
+      word-break: break-word;
     }
 
     .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -108,8 +110,7 @@
       <!-- HANDMATIG VERZOEKJE FORMULIER (STANDAARD VERBORGEN) -->
       <div id="manual-form-container" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
         <input type="text" id="manual-song" placeholder="Nummer (titel)" style="font-size: 0.9em; margin-bottom: 6px;">
-        <input type="text" id="manual-artist" placeholder="Artiest" style="font-size: 0.9em; margin-bottom: 6px;">
-        <input type="text" id="manual-message" placeholder="Persoonlijk berichtje voor de DJ (optioneel)" style="font-size: 0.9em; margin-bottom: 10px;">
+        <input type="text" id="manual-artist" placeholder="Artiest" style="font-size: 0.9em; margin-bottom: 10px;">
         <button onclick="submitManualRequest()" style="padding: 10px; font-size: 0.9em;">Handmatig Versturen 🎶</button>
       </div>
     </div>
@@ -147,7 +148,7 @@
       popup.innerText = bericht;
 
       document.body.appendChild(popup);
-      setTimeout(() => { if (popup) popup.remove(); }, 3000);
+      setTimeout(() => { if (popup) popup.remove(); }, 5000);
     }
 
     function initSupabase() {
@@ -307,13 +308,12 @@
         dj_id: currentDjId,
         song_title: title,
         artist: artist,
-        sender_name: 'Anoniem',
         status: 'pending',
         likes: 0
       }]);
 
       if (error) {
-        toonPopup('Fout bij aanvragen nummer.');
+        toonPopup('Supabase Fout: ' + error.message);
       } else {
         toonPopup('Verzoekje succesvol verzonden! 🎶');
         document.getElementById('library-search-input').value = '';
@@ -324,7 +324,6 @@
     async function submitManualRequest() {
       const song = document.getElementById('manual-song').value.trim();
       const artist = document.getElementById('manual-artist').value.trim();
-      const message = document.getElementById('manual-message').value.trim();
 
       if (!song || !artist) return toonPopup('Vul minimaal de titel en artiest in!');
 
@@ -332,19 +331,16 @@
         dj_id: currentDjId,
         song_title: song,
         artist: artist,
-        sender_name: 'Anoniem',
-        message: message,
         status: 'pending',
         likes: 0
       }]);
 
       if (error) {
-        toonPopup('Fout bij versturen verzoekje.');
+        toonPopup('Supabase Fout: ' + error.message);
       } else {
         toonPopup('Verzoekje verzonden naar de DJ! 🎉');
         document.getElementById('manual-song').value = '';
         document.getElementById('manual-artist').value = '';
-        document.getElementById('manual-message').value = '';
         toggleManualInput();
       }
     }
@@ -382,8 +378,7 @@
           <div class="request-item">
             <div class="request-header">
               <div class="request-info">
-                <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span><br>
-                <small style="color:var(--subtext-color);">${req.message ? `"${req.message}"` : ''}</small>
+                <strong>🎵 ${req.song_title}</strong> - <span style="color:var(--subtext-color);">${req.artist}</span>
               </div>
               <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike('${req.id}', ${isLiked})">
                 ❤️ <span id="likes-count-${req.id}">${req.likes || 0}</span>
@@ -437,7 +432,7 @@
       }]);
 
       if (error) {
-        toonPopup('Fout bij plaatsen reactie.');
+        toonPopup('Supabase Fout (reactie): ' + error.message);
       } else {
         inputEl.value = '';
         loadGuestRequests();
