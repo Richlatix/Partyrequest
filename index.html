@@ -148,7 +148,7 @@
       popup.innerText = bericht;
 
       document.body.appendChild(popup);
-      setTimeout(() => { if (popup) popup.remove(); }, 5000);
+      setTimeout(() => { if (popup) popup.remove(); }, 4000);
     }
 
     function initSupabase() {
@@ -313,11 +313,12 @@
       }]);
 
       if (error) {
-        toonPopup('Supabase Fout: ' + error.message);
+        toonPopup('Fout bij aanvragen: ' + error.message);
       } else {
-        toonPopup('Verzoekje succesvol verzonden! 🎶');
+        toonPopup('Verzoekje succesvol verzonden naar de DJ! 🎶');
         document.getElementById('library-search-input').value = '';
         document.getElementById('library-results').innerHTML = '<p style="color:var(--subtext-color); font-size:0.85em; text-align:center;">Nummer aangevraagd!</p>';
+        loadGuestRequests();
       }
     }
 
@@ -336,12 +337,13 @@
       }]);
 
       if (error) {
-        toonPopup('Supabase Fout: ' + error.message);
+        toonPopup('Fout bij handmatig verzenden: ' + error.message);
       } else {
         toonPopup('Verzoekje verzonden naar de DJ! 🎉');
         document.getElementById('manual-song').value = '';
         document.getElementById('manual-artist').value = '';
         toggleManualInput();
+        loadGuestRequests();
       }
     }
 
@@ -432,7 +434,7 @@
       }]);
 
       if (error) {
-        toonPopup('Supabase Fout (reactie): ' + error.message);
+        toonPopup('Fout bij plaatsen reactie: ' + error.message);
       } else {
         inputEl.value = '';
         loadGuestRequests();
