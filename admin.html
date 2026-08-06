@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super-Admin Beheer | Verzoekjes SaaS</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #ffffff;
+      --accent-color: #7dff00;
+      --border-color: #2a2a2a;
+      --subtext-color: #b0b0b0;
+    }
+
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background: var(--bg-color); 
+      color: var(--text-color); 
+      padding: 20px; 
+      max-width: 600px; 
+      margin: auto; 
+    }
+
+    h1, h2, h3 { color: var(--accent-color); text-align: center; }
+    
+    input, button, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--card-bg); color: var(--text-color); }
+    button { background: var(--accent-color); color: #121212; font-weight: bold; cursor: pointer; border: none; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    
+    .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+    .danger-btn { background: #ff4444; color: #ffffff; width: auto; padding: 6px 12px; }
+    .hidden { display: none !important; }
+    
+    .toast-popup {
+      position: fixed;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e1e;
+      color: #ffffff;
+      border: 1.5px solid var(--accent-color);
+      padding: 12px 24px;
+      border-radius: 30px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- INLOGSCHERM SUPER ADMIN -->
+  <div id="login-view" style="max-width: 400px; margin: 40px auto; text-align: center;">
+    <h2>🔐 Super-Admin Login</h2>
+    <p style="color:var(--subtext-color); font-size: 0.9em;">Voer het beheerwachtwoord in:</p>
+    <input type="password" id="admin-pass-input" placeholder="Wachtwoord..." style="text-align:center;">
+    <button onclick="verifyAdminPass()">Inloggen</button>
+  </div>
+
+  <!-- DASHBOARD BEHEER SCHERM -->
+  <div id="admin-dashboard" class="hidden">
+    <h2>⚡ Super-Admin Dashboard</h2>
+    <p style="text-align:center; color:var(--subtext-color);">Beheer hier alle huurende bedrijven (tenants).</p>
+
+    <!-- FORMULIER BEDRIJF TOEVOEGEN -->
+    <div style="background:var(--card-bg); padding:20px; border-radius:12px; border:1px dashed var(--accent-color); margin-bottom:25px;">
+      <h3 style="margin-top:0; text-align:left;">➕ Nieuw Bedrijf Toevoegen</h3>
+      
+      <label style="font-size:0.85em; color:var(--subtext-color);">Bedrijfsnaam:</label>
+      <input type="text" id="new-name" placeholder="Bijv. Tim's Drive-in Show">
+
+      <label style="font-size:0.85em; color:var(--subtext-color);">Hoofdbedrijfscode (2 letters + 2 cijfers, uniek):</label>
+      <input type="text" id="new-code" placeholder="Bijv. TS01" maxlength="4" style="text-transform: uppercase;">
+
+      <label style="font-size:0.85em; color:var(--subtext-color);">Logo URL (Optioneel):</label>
+      <input type="text" id="new-logo" placeholder="https://jouwsite.nl/logo.png">
+
+      <label style="font-size:0.85em; color:var(--subtext-color);">Accentkleur:</label>
+      <input type="color" id="new-color" value="#7dff00" style="height: 45px; padding: 4px;">
+
+      <label style="font-size:0.85em; color:var(--subtext-color);">WhatsApp nummer (voor boekingen promo-kaart):</label>
+      <input type="text" id="new-whatsapp" placeholder="31612345678">
+
+      <label style="font-size:0.85em; color:var(--subtext-color);">E-mailadres:</label>
+      <input type="email" id="new-email" placeholder="info@bedrijf.nl">
+
+      <button onclick="createCompany()" style="margin-top:15px;">Bedrijf Aanmaken 🚀</button>
+    </div>
+
+    <h3>📋 Actieve Huurders / Bedrijven</h3>
+    <div id="companies-list"></div>
+  </div>
+
+  <script>
+    // VERVANG DIT MET JOUW NIEUWE SUPABASE PROJECT GEGEVENS
+    const SUPABASE_URL = "JOUW_NIEUWE_SUPABASE_URL";
+    const SUPABASE_KEY = "JOUW_NIEUWE_SUPABASE_ANON_KEY";
+
+    let dbClient = null;
+    const SUPER_ADMIN_PASSWORD = "superadmin123"; // Pas dit aan naar wens!
+
+    function toonPopup(bericht) {
+      const oudePopup = document.getElementById('custom-toast');
+      if (oudePopup) oudePopup.remove();
+
+      const popup = document.createElement('div');
+      popup.id = 'custom-toast';
+      popup.className = 'toast-popup';
+      popup.innerText = bericht;
+
+      document.body.appendChild(popup);
+      setTimeout(() => { if (popup) popup.remove(); }, 3000);
+    }
+
+    function initSupabase() {
+      try {
+        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      } catch (err) {
+        toonPopup('Fout bij verbinden met Supabase!');
+      }
+    }
+
+    function verifyAdminPass() {
+      const pass = document.getElementById('admin-pass-input').value;
+      if (pass === SUPER_ADMIN_PASSWORD) {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        initSupabase();
+        loadCompanies();
+      } else {
+        toonPopup('Onjuist wachtwoord!');
+        document.getElementById('admin-pass-input').value = '';
+      }
+    }
+
+    async function loadCompanies() {
+      if (!dbClient) return;
+      const { data, error } = await dbClient.from('companies').select('*').order('created_at', { ascending: false });
+      
+      const listContainer = document.getElementById('companies-list');
+      listContainer.innerHTML = '';
+
+      if (error || !data || data.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color:var(--subtext-color);">Nog geen bedrijven aangemaakt.</p>';
+        return;
+      }
+
+      data.forEach(comp => {
+        listContainer.innerHTML += `
+          <div class="card">
+            <div>
+              <strong>${comp.company_name}</strong> <span style="background:rgba(125,255,0,0.1); color:var(--accent-color); padding:2px 6px; border-radius:4px; font-size:0.8em; border:1px solid var(--accent-color);">${comp.company_code}</span><br>
+              <small style="color:var(--subtext-color);">E-mail: ${comp.email || 'Niet opgegeven'} | WhatsApp: ${comp.whatsapp_nr || 'Niet opgegeven'}</small>
+            </div>
+            <div>
+              <button class="danger-btn" onclick="deleteCompany('${comp.id}')">Verwijderen</button>
+            </div>
+          </div>`;
+      });
+    }
+
+    async function createCompany() {
+      const name = document.getElementById('new-name').value.trim();
+      const code = document.getElementById('new-code').value.trim().toUpperCase();
+      const logo = document.getElementById('new-logo').value.trim();
+      const color = document.getElementById('new-color').value;
+      const whatsapp = document.getElementById('new-whatsapp').value.trim();
+      const email = document.getElementById('new-email').value.trim();
+
+      if (!name || !code) {
+        return toonPopup('Bedrijfsnaam en hoofdbedrijfscode zijn verplicht!');
+      }
+
+      // Check of code exact 4 tekens is (2 letters + 2 cijfers)
+      if (code.length !== 4) {
+        return toonPopup('De hoofdbedrijfscode moet exact 4 tekens zijn (bijv. TS01)!');
+      }
+
+      const { error } = await dbClient.from('companies').insert([{
+        company_name: name,
+        company_code: code,
+        logo_url: logo,
+        accent_color: color,
+        whatsapp_nr: whatsapp,
+        email: email
+      }]);
+
+      if (error) {
+        toonPopup('Fout bij aanmaken (mogelijk bestaat de code al).');
+        console.error(error);
+      } else {
+        toonPopup(`Bedrijf "${name}" succesvol aangemaakt!`);
+        document.getElementById('new-name').value = '';
+        document.getElementById('new-code').value = '';
+        document.getElementById('new-logo').value = '';
+        document.getElementById('new-whatsapp').value = '';
+        document.getElementById('new-email').value = '';
+        loadCompanies();
+      }
+    }
+
+    async function deleteCompany(id) {
+      if (!confirm("Weet je zeker dat je dit bedrijf wilt verwijderen?")) return;
+
+      const { error } = await dbClient.from('companies').delete().eq('id', id);
+      if (error) {
+        toonPopup('Fout bij verwijderen.');
+      } else {
+        toonPopup('Bedrijf verwijderd.');
+        loadCompanies();
+      }
+    }
+  </script>
+</body>
+</html>
