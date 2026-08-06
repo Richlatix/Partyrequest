@@ -57,7 +57,7 @@
       text-align: center;
     }
 
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
   </style>
 </head>
 <body>
@@ -72,6 +72,17 @@
 
   <!-- DASHBOARD DJ -->
   <div id="dj-dashboard" class="hidden">
+    
+    <!-- KLEINE FEESTCODE & LIVE TELLERS BOVENIN -->
+    <div style="background: #1a1a1a; border: 1px solid var(--border-color); padding: 8px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.85em;">
+      <div>
+        Feestcode: <span id="party-code-display" style="color: var(--accent-color); font-weight: bold; font-family: monospace; letter-spacing: 1px;">------</span>
+      </div>
+      <div style="color: var(--subtext-color);">
+        👥 Online luisteraars/publiek: <span id="online-count" style="color: #fff; font-weight: bold;">0</span>
+      </div>
+    </div>
+
     <div class="top-bar">
       <div>
         <h2 id="dj-portal-title" style="margin:0; text-align:left;">DJ Dashboard</h2>
@@ -83,10 +94,16 @@
       </div>
     </div>
 
-    <!-- TANDWIEL MENU (INSTELLINGEN & XML) -->
+    <!-- TANDWIEL MENU (INSTELLINGEN, NIEUW FEEST & XML) -->
     <div id="settings-menu" class="card hidden" style="border: 1px solid var(--accent-color);">
       <h3 style="margin-top:0; text-align:left; color:var(--accent-color);">⚙️ DJ Instellingen & Bestanden</h3>
       
+      <!-- NIEUW FEEST STARTEN -->
+      <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color);">
+        <label style="font-size:0.85em; color:var(--subtext-color); display:block; margin-bottom:5px;">Sessie / Feest Beheer:</label>
+        <button onclick="startNewParty()" style="background: #ff4444; color: #fff; font-size: 0.85em; padding: 8px;">🎉 Start Nieuw Feest (Nieuwe Code)</button>
+      </div>
+
       <label style="font-size:0.85em; color:var(--subtext-color);">Welkomsttekst voor publiek:</label>
       <textarea id="edit-welcome-text" rows="2" placeholder="Welkom bij mijn feestje! Vraag hier je favoriete nummer aan..."></textarea>
       <button onclick="saveWelcomeText()" style="font-size:0.85em; padding:8px; margin-bottom:15px;">Tekst Opslaan 💾</button>
@@ -101,14 +118,6 @@
           <p style="color:var(--subtext-color); font-size:0.8em;">Geen bestanden.</p>
         </div>
       </div>
-    </div>
-
-    <!-- FEESTCODE & NIEUW FEEST CARD -->
-    <div class="card" style="text-align: center; background: linear-gradient(135deg, #1e1e1e, #252525);">
-      <h3 style="margin-top:0; font-size: 1em; color: var(--subtext-color);">HUIDIGE FEESTCODE</h3>
-      <div id="party-code-display" style="font-size: 2.5em; font-weight: bold; letter-spacing: 6px; color: var(--accent-color); margin: 10px 0; font-family: monospace;">------</div>
-      <p style="color: var(--subtext-color); font-size: 0.8em; margin-bottom: 15px;">Het publiek gebruikt deze 6-cijferige code om in te loggen.</p>
-      <button onclick="startNewParty()" style="background: #ff4444; color: #fff; width: auto; padding: 10px 20px; font-size: 0.9em;">🎉 Start Nieuw Feest</button>
     </div>
 
     <!-- ZELF NUMMER TOEVOEGEN -->
@@ -136,14 +145,12 @@
       </div>
     </div>
 
-    <!-- GEDRAAIDE VERZOEKJES -->
+    <!-- GEDRAAIDE VERZOEKJES (ALTIJD ZICHTBAAR) -->
     <div class="card">
-      <details>
-        <summary style="cursor: pointer; color: var(--subtext-color); font-weight: bold; font-size: 1em;">🎧 Gedraaide Verzoekjes (<span id="played-count">0</span>)</summary>
-        <div id="played-requests-list" style="margin-top: 10px;">
-          <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes gedraaid.</p>
-        </div>
-      </details>
+      <h3 style="margin-top:0; text-align:left; color:var(--subtext-color); font-size:1.1em;">🎧 Gedraaide Verzoekjes (<span id="played-count">0</span>)</h3>
+      <div id="played-requests-list" style="margin-top: 10px;">
+        <p style="color:var(--subtext-color); font-size:0.85em;">Nog geen verzoekjes gedraaid.</p>
+      </div>
     </div>
   </div>
 
@@ -155,6 +162,7 @@
     let currentDj = null;
     let currentCompany = null;
     let realtimeSubscription = null;
+    let presenceChannel = null;
 
     function toonPopup(bericht) {
       const oudePopup = document.getElementById('custom-toast');
@@ -215,7 +223,6 @@
 
       document.getElementById('dj-name-display').innerText = currentDj.dj_name;
       
-      // Controleer of er al een actieve feestcode is opgeslagen in localStorage of haal op
       let activePartyCode = localStorage.getItem(`party_code_${currentDj.id}`);
       if (!activePartyCode) {
         activePartyCode = generatePartyCode(currentDj.dj_code);
@@ -223,7 +230,6 @@
       }
       document.getElementById('party-code-display').innerText = activePartyCode;
 
-      // Laad instellingen in tandwielmenu
       document.getElementById('edit-welcome-text').value = currentDj.welcome_text || '';
 
       document.getElementById('login-view').classList.add('hidden');
@@ -232,22 +238,44 @@
       loadRequests();
       loadXmlFiles();
       setupRealtimeListener();
+      setupPresenceTracker(activePartyCode);
     }
 
     function generatePartyCode(djCode) {
-      const randomSuffix = Math.floor(10 + Math.random() * 90); // 2 willekeurige cijfers
+      const randomSuffix = Math.floor(10 + Math.random() * 90);
       return djCode + randomSuffix;
     }
 
     async function startNewParty() {
-      if (!confirm("Weet je zeker dat je een nieuw feest wilt starten? Er wordt een nieuwe 6-cijferige feestcode gegenereerd.")) return;
+      if (!confirm("Weet je zeker dat je een nieuw feest wilt starten? Er wordt een nieuwe feestcode gegenereerd.")) return;
 
       const newPartyCode = generatePartyCode(currentDj.dj_code);
       localStorage.setItem(`party_code_${currentDj.id}`, newPartyCode);
       document.getElementById('party-code-display').innerText = newPartyCode;
       
       toonPopup(`Nieuw feest gestart! Code: ${newPartyCode}`);
+      
+      if (presenceChannel) dbClient.removeChannel(presenceChannel);
+      setupPresenceTracker(newPartyCode);
       loadRequests();
+    }
+
+    function setupPresenceTracker(partyCode) {
+      presenceChannel = dbClient.channel(`party_${partyCode}`, {
+        config: { presence: { key: 'dj_admin' } }
+      });
+
+      presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+          const state = presenceChannel.presenceState();
+          const totalUsers = Object.keys(state).length;
+          document.getElementById('online-count').innerText = totalUsers;
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await presenceChannel.track({ online_at: new Date().toISOString(), role: 'dj' });
+          }
+        });
     }
 
     function logout() {
@@ -255,6 +283,7 @@
       currentDj = null;
       currentCompany = null;
       if (realtimeSubscription) dbClient.removeChannel(realtimeSubscription);
+      if (presenceChannel) dbClient.removeChannel(presenceChannel);
       
       document.getElementById('dj-dashboard').classList.add('hidden');
       document.getElementById('login-view').classList.remove('hidden');
@@ -413,7 +442,6 @@
       reader.onload = async function(e) {
         const fileContent = e.target.result;
 
-        // Opslaan in Supabase (tabel `xml_files` of direct gekoppeld aan dj)
         const { error } = await dbClient.from('xml_files').insert([{
           dj_id: currentDj.id,
           file_name: file.name,
@@ -421,7 +449,7 @@
         }]);
 
         if (error) {
-          toonPopup('Fout bij opslaan XML in database. (Zorg dat de xml_files tabel bestaat)');
+          toonPopup('Fout bij opslaan XML in database.');
           console.error(error);
         } else {
           toonPopup('XML bestand succesvol geüpload! 📂');
