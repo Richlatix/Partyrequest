@@ -45,6 +45,28 @@
             margin: 0;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-secondary {
+            background-color: var(--border);
+            color: var(--text);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--border);
@@ -87,7 +109,7 @@
             border-color: var(--primary);
         }
 
-        button {
+        button[type="submit"] {
             background-color: var(--primary);
             color: white;
             border: none;
@@ -99,7 +121,7 @@
             transition: background-color 0.2s;
         }
 
-        button:hover {
+        button[type="submit"]:hover {
             background-color: var(--primary-hover);
         }
 
@@ -156,8 +178,12 @@
 
         .btn-danger {
             background-color: var(--danger);
+            color: white;
+            border: none;
             padding: 6px 12px;
+            border-radius: 6px;
             font-size: 0.85rem;
+            cursor: pointer;
         }
         .btn-danger:hover {
             background-color: #dc2626;
@@ -166,10 +192,20 @@
 </head>
 <body>
 
+    <script>
+        // Beveiligingscheck: Als niet ingelogd, direct terugsturen naar login.html
+        if (sessionStorage.getItem('super_admin_logged_in') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+
     <div class="container">
         <header>
             <h1>⚡ Super-Admin Dashboard</h1>
-            <p id="admin-status" style="color: var(--text-muted);">Verbonden met Supabase</p>
+            <div class="header-actions">
+                <p id="admin-status" style="color: var(--text-muted); margin: 0;">Verbonden</p>
+                <button class="btn-secondary" onclick="logout()">Uitloggen</button>
+            </div>
         </header>
 
         <!-- Formulier om toe te voegen -->
@@ -257,12 +293,17 @@
     </div>
 
     <script>
-        // Supabase configuratie (Vervang deze met jouw gegevens)
+        // Supabase configuratie (Vervang deze met jouw eigen gegevens)
         const SUPABASE_URL = 'JOUW_SUPABASE_PROJECT_URL';
         const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY';
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function logout() {
+            sessionStorage.removeItem('super_admin_logged_in');
+            window.location.href = 'login.html';
+        }
 
         async function loadCompanies() {
             const tbody = document.getElementById('companies-table-body');
@@ -377,10 +418,7 @@
                 alert('Fout bij verwijderen: ' + err.message);
             }
         }
-// Controleer of de admin is ingelogd, zo niet: stuur terug naar de loginpagina
-if (sessionStorage.getItem('super_admin_logged_in') !== 'true') {
-    window.location.href = 'login.html';
-}
+
         // Automatisch laden bij openen pagina
         loadCompanies();
     </script>
