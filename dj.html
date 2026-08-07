@@ -108,6 +108,7 @@
 
         let partyData = null;
         const dbKey = (user.role === 'company_dj' && user.company) ? user.company : user.username;
+        let lastActionTime = 0; // Voorkomt dat de polling direct lokale wijzigingen overschrijft
 
         async function applyLatestBranding() {
             try {
@@ -172,6 +173,7 @@
         }
 
         window.generateNewPartyCode = async function() {
+            lastActionTime = Date.now(); // Blokkeer de polling tijdelijk zodat de database tijd heeft
             const newCode = Math.floor(100000 + Math.random() * 900000).toString();
             if (!partyData) partyData = { requests: [], played: [], library: [] };
             
@@ -179,19 +181,21 @@
             partyData.requests = [];
             partyData.played = [];
 
+            // Direct UI updaten zodat je het meteen ziet
+            document.getElementById('currentPartyCode').innerText = newCode;
+            renderLiveRequests();
+
             try {
                 await PartyApp.db.updateSession(dbKey, partyData);
-                const codeEl = document.getElementById('currentPartyCode');
-                if (codeEl) codeEl.innerText = newCode;
-                renderLiveRequests();
-                alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
+                alert('Nieuwe partycode gegenereerd en opgeslagen!');
             } catch (err) {
                 console.error("Fout bij genereren partycode:", err);
-                alert("Kon geen nieuwe partycode opslaan.");
+                alert("Opslaan mislukt: " + (err.message || err));
             }
         };
 
         window.saveWelcomeText = async function() {
+            lastActionTime = Date.now();
             const text = document.getElementById('welcomeText').value;
             if (!partyData) partyData = {};
             partyData.welcome_text = text;
@@ -200,10 +204,12 @@
                 alert('Welkomsttekst opgeslagen!');
             } catch (err) {
                 console.error("Fout bij opslaan welkomsttekst:", err);
+                alert("Opslaan mislukt: " + (err.message || err));
             }
         };
 
         window.saveSoloBranding = async function() {
+            lastActionTime = Date.now();
             const primaryColor = document.getElementById('soloPrimary').value;
             const backgroundColor = document.getElementById('soloBg').value;
             if (!partyData) partyData = {};
@@ -215,6 +221,7 @@
                 alert('Huisstijl opgeslagen!');
             } catch (err) {
                 console.error("Fout bij opslaan huisstijl:", err);
+                alert("Opslaan mislukt: " + (err.message || err));
             }
         };
 
@@ -224,6 +231,7 @@
             
             const reader = new FileReader();
             reader.onload = async function() {
+                lastActionTime = Date.now();
                 const dummyTracks = [
                     { artist: "David Guetta", title: "Titanium" },
                     { artist: "Swedish House Mafia", title: "Don't You Worry Child" },
@@ -239,6 +247,7 @@
                     alert('Library succesvol geïmporteerd!');
                 } catch (err) {
                     console.error("Fout bij importeren library:", err);
+                    alert("Opslaan mislukt: " + (err.message || err));
                 }
             };
             reader.readAsText(fileInput.files[0]);
@@ -249,6 +258,7 @@
             const title = document.getElementById('manualTitle').value.trim();
             if(!artist || !title) { alert('Vul artiest en titel in.'); return; }
             
+            lastActionTime = Date.now();
             if (!partyData) partyData = {};
             if (!partyData.library) partyData.library = [];
             partyData.library.push({ artist, title });
@@ -261,6 +271,7 @@
                 alert('Nummer toegevoegd aan library!');
             } catch (err) {
                 console.error("Fout bij toevoegen nummer:", err);
+                alert("Opslaan mislukt: " + (err.message || err));
             }
         };
 
@@ -325,6 +336,7 @@
             if (!partyData || !partyData.requests) return;
             const idx = partyData.requests.findIndex(r => r.id === requestId);
             if (idx !== -1) {
+                lastActionTime = Date.now();
                 const item = partyData.requests.splice(idx, 1)[0];
                 if (!partyData.played) partyData.played = [];
                 partyData.played.push(item);
@@ -335,13 +347,15 @@
 
         window.removeRequest = async function(requestId) {
             if (!partyData || !partyData.requests) return;
+            lastActionTime = Date.now();
             partyData.requests = partyData.requests.filter(r => r.id !== requestId);
             await PartyApp.db.updateSession(dbKey, partyData);
-            renderLiveRequests();
+                renderLiveRequests();
         };
 
         window.deletePlayed = async function(requestId) {
             if (!partyData || !partyData.played) return;
+            lastActionTime = Date.now();
             partyData.played = partyData.played.filter(r => r.id !== requestId);
             await PartyApp.db.updateSession(dbKey, partyData);
             renderLiveRequests();
@@ -349,6 +363,7 @@
 
         window.clearAllRequests = async function() {
             if (confirm('Weet je zeker dat je alle verzoekjes wilt wissen?')) {
+                lastActionTime = Date.now();
                 if (!partyData) partyData = {};
                 partyData.requests = [];
                 await PartyApp.db.updateSession(dbKey, partyData);
@@ -356,8 +371,12 @@
             }
         };
 
+        // Live polling met lock om directe overschrijving na acties tegen te gaan
         setInterval(async () => {
             if (user) {
+                // Als we minder dan 4 seconden geleden een actie deden, even niet pollen
+                if (Date.now() - lastActionTime < 4000) return;
+
                 let freshData = await PartyApp.db.getSession(dbKey);
                 if (freshData) {
                     partyData = freshData;
