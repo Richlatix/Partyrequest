@@ -108,24 +108,18 @@
 
         let partyData = null;
 
-        // Bedrijfs-DJ's gebruiken exact dezelfde sessie/code als hun moederbedrijf
-        const sessionUsername = (user.role === 'company_dj' && user.company) ? user.company : user.username;
+        // Bepaal de juiste database-sleutel: company_dj leest/schrijft altijd naar het moederbedrijf
+        const dbKey = (user.role === 'company_dj' && user.company) ? user.company : user.username;
 
         async function applyLatestBranding() {
             try {
-                if (user.role === 'company_dj' && user.company) {
-                    const headerTitle = document.getElementById('brandHeaderTitle');
-                    if (headerTitle) {
-                        headerTitle.innerText = user.company.toUpperCase();
-                    }
-                } else if (user.role === 'company') {
-                    const headerTitle = document.getElementById('brandHeaderTitle');
-                    if (headerTitle) {
-                        headerTitle.innerText = user.username.toUpperCase();
-                    }
+                const displayUsername = (user.role === 'company_dj' && user.company) ? user.company : user.username;
+                const headerTitle = document.getElementById('brandHeaderTitle');
+                if (headerTitle) {
+                    headerTitle.innerText = displayUsername.toUpperCase();
                 }
 
-                let freshSession = await PartyApp.db.getSession(sessionUsername);
+                let freshSession = await PartyApp.db.getSession(dbKey);
                 if (freshSession) {
                     PartyApp.applyBranding({ 
                         primaryColor: freshSession.primary_color, 
@@ -139,8 +133,11 @@
 
         async function initDj() {
             try {
-                partyData = await PartyApp.db.getSession(sessionUsername);
-                if (!partyData) return;
+                partyData = await PartyApp.db.getSession(dbKey);
+                if (!partyData) {
+                    partyData = { party_code: "123456", requests: [], played: [], library: [] };
+                    await PartyApp.db.updateSession(dbKey, partyData);
+                }
 
                 const codeEl = document.getElementById('currentPartyCode');
                 if (codeEl) codeEl.innerText = partyData.party_code || '------';
@@ -178,10 +175,11 @@
 
         window.generateNewPartyCode = async function() {
             const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+            if (!partyData) partyData = {};
             partyData.party_code = newCode;
             partyData.requests = [];
             partyData.played = [];
-            await PartyApp.db.updateSession(sessionUsername, { party_code: newCode, requests: [], played: [] });
+            await PartyApp.db.updateSession(dbKey, { party_code: newCode, requests: [], played: [] });
             document.getElementById('currentPartyCode').innerText = newCode;
             renderLiveRequests();
             alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
@@ -189,17 +187,19 @@
 
         window.saveWelcomeText = async function() {
             const text = document.getElementById('welcomeText').value;
+            if (!partyData) partyData = {};
             partyData.welcome_text = text;
-            await PartyApp.db.updateSession(sessionUsername, { welcome_text: text });
+            await PartyApp.db.updateSession(dbKey, { welcome_text: text });
             alert('Welkomsttekst opgeslagen!');
         };
 
         window.saveSoloBranding = async function() {
             const primaryColor = document.getElementById('soloPrimary').value;
             const backgroundColor = document.getElementById('soloBg').value;
+            if (!partyData) partyData = {};
             partyData.primary_color = primaryColor;
             partyData.background_color = backgroundColor;
-            await PartyApp.db.updateSession(sessionUsername, { primary_color: primaryColor, background_color: backgroundColor });
+            await PartyApp.db.updateSession(dbKey, { primary_color: primaryColor, background_color: backgroundColor });
             PartyApp.applyBranding({ primaryColor, backgroundColor });
             alert('Huisstijl opgeslagen!');
         };
@@ -215,9 +215,10 @@
                     { artist: "Swedish House Mafia", title: "Don't You Worry Child" },
                     { artist: "Avicii", title: "Levels" }
                 ];
+                if (!partyData) partyData = {};
                 if (!partyData.library) partyData.library = [];
                 partyData.library = partyData.library.concat(dummyTracks);
-                await PartyApp.db.updateSession(sessionUsername, { library: partyData.library });
+                await PartyApp.db.updateSession(dbKey, { library: partyData.library });
                 updateLibraryCount();
                 alert('Library succesvol geïmporteerd!');
             };
@@ -229,9 +230,10 @@
             const title = document.getElementById('manualTitle').value.trim();
             if(!artist || !title) { alert('Vul artiest en titel in.'); return; }
             
+            if (!partyData) partyData = {};
             if (!partyData.library) partyData.library = [];
             partyData.library.push({ artist, title });
-            await PartyApp.db.updateSession(sessionUsername, { library: partyData.library });
+            await PartyApp.db.updateSession(dbKey, { library: partyData.library });
             document.getElementById('manualArtist').value = '';
             document.getElementById('manualTitle').value = '';
             updateLibraryCount();
@@ -296,45 +298,51 @@
         }
 
         window.markAsPlayed = async function(requestId) {
-            if (!partyData.requests) return;
+            if (!partyData || !partyData.requests) return;
             const idx = partyData.requests.findIndex(r => r.id === requestId);
             if (idx !== -1) {
                 const item = partyData.requests.splice(idx, 1)[0];
                 if (!partyData.played) partyData.played = [];
                 partyData.played.push(item);
-                await PartyApp.db.updateSession(sessionUsername, { requests: partyData.requests, played: partyData.played });
+                await PartyApp.db.updateSession(dbKey, { requests: partyData.requests, played: partyData.played });
                 renderLiveRequests();
             }
         };
 
         window.removeRequest = async function(requestId) {
-            if (!partyData.requests) return;
+            if (!partyData || !partyData.requests) return;
             partyData.requests = partyData.requests.filter(r => r.id !== requestId);
-            await PartyApp.db.updateSession(sessionUsername, { requests: partyData.requests });
+            await PartyApp.db.updateSession(dbKey, { requests: partyData.requests });
             renderLiveRequests();
         };
 
         window.deletePlayed = async function(requestId) {
-            if (!partyData.played) return;
+            if (!partyData || !partyData.played) return;
             partyData.played = partyData.played.filter(r => r.id !== requestId);
-            await PartyApp.db.updateSession(sessionUsername, { played: partyData.played });
+            await PartyApp.db.updateSession(dbKey, { played: partyData.played });
             renderLiveRequests();
         };
 
         window.clearAllRequests = async function() {
             if (confirm('Weet je zeker dat je alle verzoekjes wilt wissen?')) {
+                if (!partyData) partyData = {};
                 partyData.requests = [];
-                await PartyApp.db.updateSession(sessionUsername, { requests: [] });
+                await PartyApp.db.updateSession(dbKey, { requests: [] });
                 renderLiveRequests();
             }
         };
 
+        // Live polling voor updates én huisstijl (elke 2 seconden)
         setInterval(async () => {
             if (user) {
-                let freshData = await PartyApp.db.getSession(sessionUsername);
+                let freshData = await PartyApp.db.getSession(dbKey);
                 if (freshData) {
                     partyData = freshData;
                     renderLiveRequests();
+                    const codeEl = document.getElementById('currentPartyCode');
+                    if (codeEl && partyData.party_code) {
+                        codeEl.innerText = partyData.party_code;
+                    }
                 }
                 await applyLatestBranding();
             }
