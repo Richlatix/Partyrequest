@@ -161,10 +161,28 @@ const PartyApp = {
             return true;
         },
         async getSessionByCode(code) {
-            if (!supabaseClient) return null;
-            const { data, error } = await supabaseClient.from('party_sessions').select('*').eq('party_code', code).single();
-            if (error || !data) return null;
+            if (!supabaseClient || !code) return null;
+            // Maak de code schoon (verwijder per ongeluk meegekopieerde spaties)
+            const cleanCode = code.toString().trim();
+            
+            const { data, error } = await supabaseClient
+                .from('party_sessions')
+                .select('*')
+                .eq('party_code', cleanCode)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Supabase zoekfout op code:', error);
+                return null;
+            }
+            
+            if (!data) {
+                console.warn('Geen sessie gevonden voor partycode:', cleanCode);
+                return null;
+            }
+
             return data;
+        
         }
     }
 };
