@@ -1,4 +1,106 @@
-<script>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partyrequest - DJ Dashboard</title>
+    <script src="style.js"></script>
+</head>
+<body>
+    <div class="container" style="padding-top: 30px; max-width: 900px;">
+        
+        <!-- Bovenste Branding / Logo Titel -->
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h1 id="brandHeaderTitle" style="font-size: 36px; font-weight: 800; letter-spacing: 1px; color: var(--primary-color);">PARTYREQUEST</h1>
+            <p id="brandSubTitle" style="font-size: 13px; color: #888; margin-top: 4px;">Licht - Geluid - AV - DJ - Support</p>
+        </div>
+
+        <!-- DJ Topbar -->
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; margin-bottom: 25px;">
+            <div style="display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 16px; color: var(--primary-color);">
+                <span>🎧</span> DJ Live Dashboard
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: #090d16; padding: 6px 12px; border-radius: 6px; font-size: 11px; text-align: center; border: 1px solid #1e293b;">
+                    <span style="color: #888; display: block; font-size: 9px; font-weight: bold;">INGELOGD</span>
+                    👥 <span id="guestCount">0</span>
+                </div>
+                <div style="background: #090d16; padding: 6px 12px; border-radius: 6px; font-size: 11px; text-align: center; border: 1px solid var(--primary-color);">
+                    <span style="color: #888; display: block; font-size: 9px; font-weight: bold;">CODE</span>
+                    <span id="currentPartyCode" style="color: var(--primary-color); font-weight: bold; font-size: 13px;">------</span>
+                </div>
+                <button onclick="toggleSettingsModal()" style="background: #090d16; border: 1px solid #1e293b; color: white; padding: 9px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Instellingen & Partycode">⚙️</button>
+                <button onclick="PartyApp.logout()" style="background: #ef4444; border: none; color: white; padding: 9px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Uitloggen</button>
+            </div>
+        </div>
+
+        <!-- Instellingen Modal -->
+        <div id="settingsModal" class="card" style="display: none; margin-bottom: 25px; border: 1px solid var(--primary-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>Sessie & Systeem Instellingen</h3>
+                <button onclick="toggleSettingsModal()" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            <button class="btn-primary" onclick="generateNewPartyCode()" style="background-color: var(--accent-color); margin-bottom: 15px;">Nieuwe Partycode Maken (Einde Evenement)</button>
+            
+            <label>Welkomsttekst voor Gastenpagina:</label>
+            <textarea id="welcomeText" rows="3" placeholder="Welkom! Vraag hier je favoriete nummer aan..."></textarea>
+            <button class="btn-primary" onclick="saveWelcomeText()" style="margin-bottom: 15px;">Welkomsttekst Opslaan</button>
+
+            <div id="soloBrandingCard" style="display: none; border-top: 1px solid #1e293b; padding-top: 15px;">
+                <h4>Huisstijl Aanpassen (Solo DJ)</h4>
+                <div style="display: flex; gap: 15px; margin-top: 10px;">
+                    <div style="flex: 1;"><label>Primair Kleur:</label><input type="color" id="soloPrimary" value="#3b82f6" style="height: 40px; padding: 2px;"></div>
+                    <div style="flex: 1;"><label>Achtergrond:</label><input type="color" id="soloBg" value="#0a0f1d" style="height: 40px; padding: 2px;"></div>
+                </div>
+                <button class="btn-primary" onclick="saveSoloBranding()" style="margin-top: 10px;">Huisstijl Opslaan</button>
+            </div>
+        </div>
+
+        <!-- Live Verzoekjes Sectie -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="display: flex; align-items: center; gap: 8px; font-size: 18px;">🔥 Live Verzoekjes</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="sortFilter" onchange="renderLiveRequests()" style="margin: 0; padding: 6px 12px; width: auto; font-size: 13px;">
+                    <option value="votes">🔥 Meeste stemmen</option>
+                    <option value="newest">🕒 Nieuwste</option>
+                </select>
+                <button onclick="clearAllRequests()" style="background: #ef4444; color: white; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">🗑️ Wis</button>
+            </div>
+        </div>
+
+        <div id="liveRequests" style="margin-bottom: 30px;">
+            <div class="card" style="text-align: center; color: #888; padding: 25px;">Geen verzoekjes in de wachtrij 🎉</div>
+        </div>
+
+        <!-- Reeds Gedraaid Sectie -->
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 18px;">🎉 Reeds Gedraaid</h3>
+        <div id="playedRequests" class="card" style="margin-bottom: 30px; text-align: center; color: #888; padding: 25px;">
+            Nog geen nummers afgevinkt.
+        </div>
+
+        <!-- Muziekbibliotheek / XML Beheren -->
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 40px;">
+            <button onclick="toggleLibraryAccordion()" style="width: 100%; background: #131b2e; color: var(--primary-color); border: none; padding: 16px 20px; font-weight: bold; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px;">
+                📁 Muziekbibliotheek / XML Beheren (Uitklappen)
+            </button>
+            <div id="libraryContent" style="display: none; padding: 20px; border-top: 1px solid #1e293b; background: #090d16;">
+                <label>Upload Rekordbox / Nummer XML:</label>
+                <input type="file" id="xmlFile" accept=".xml">
+                <button class="btn-primary" onclick="uploadXml()" style="margin-bottom: 20px;">Library Importeren</button>
+                
+                <hr style="border: 0; border-top: 1px solid #1e293b; margin: 15px 0;">
+                
+                <label>Handmatig Nummer Toevoegen:</label>
+                <input type="text" id="manualArtist" placeholder="Artiest">
+                <input type="text" id="manualTitle" placeholder="Titel">
+                <button class="btn-primary" onclick="addManualTrack()">Toevoegen</button>
+                <p id="libraryCount" style="margin-top: 15px; font-size: 13px; color: #aaa;"></p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
         const user = PartyApp.getCurrentUser();
         if (!user || (user.role !== 'dj' && user.role !== 'solo_dj' && user.role !== 'company_dj' && user.role !== 'company')) {
             window.location.href = 'login.html';
@@ -6,50 +108,239 @@
 
         let partyData = null;
 
-        // Haalt feilloos de juiste kleuren en bedrijfsnaam op per specifiek profiel
         async function applyLatestBranding() {
-            let targetUsername = user.username;
-            
-            if (user.role === 'company_dj' && user.company) {
-                // Bedrijfs-DJ gebruikt de instellingen van het specifieke moederbedrijf
-                targetUsername = user.company;
-                const headerTitle = document.getElementById('brandHeaderTitle');
-                if (headerTitle) {
-                    headerTitle.innerText = user.company.toUpperCase();
+            try {
+                let targetUsername = user.username;
+                
+                if (user.role === 'company_dj' && user.company) {
+                    targetUsername = user.company;
+                    const headerTitle = document.getElementById('brandHeaderTitle');
+                    if (headerTitle) {
+                        headerTitle.innerText = user.company.toUpperCase();
+                    }
+                } else if (user.role === 'company') {
+                    const headerTitle = document.getElementById('brandHeaderTitle');
+                    if (headerTitle) {
+                        headerTitle.innerText = user.username.toUpperCase();
+                    }
                 }
-            } else if (user.role === 'company') {
-                const headerTitle = document.getElementById('brandHeaderTitle');
-                if (headerTitle) {
-                    headerTitle.innerText = user.username.toUpperCase();
-                }
-            }
 
-            // Haal de sessie op van dit specifieke profiel
-            let freshSession = await PartyApp.db.getSession(targetUsername);
-            if (freshSession) {
-                PartyApp.applyBranding({ 
-                    primaryColor: freshSession.primary_color, 
-                    backgroundColor: freshSession.background_color 
-                });
+                let freshSession = await PartyApp.db.getSession(targetUsername);
+                if (freshSession) {
+                    PartyApp.applyBranding({ 
+                        primaryColor: freshSession.primary_color, 
+                        backgroundColor: freshSession.background_color 
+                    });
+                }
+            } catch (err) {
+                console.error("Fout bij toepassen huisstijl:", err);
             }
         }
 
         async function initDj() {
-            // Bepaal de juiste sessie-data om te laden
-            let sessionTarget = (user.role === 'company_dj' && user.company) ? user.username : user.username;
-            partyData = await PartyApp.db.getSession(sessionTarget);
-            if (!partyData) return;
+            try {
+                partyData = await PartyApp.db.getSession(user.username);
+                if (!partyData) return;
 
-            document.getElementById('currentPartyCode').innerText = partyData.party_code;
-            document.getElementById('welcomeText').value = partyData.welcome_text || '';
-            updateLibraryCount();
+                const codeEl = document.getElementById('currentPartyCode');
+                if (codeEl) codeEl.innerText = partyData.party_code || '------';
+                
+                const welcomeEl = document.getElementById('welcomeText');
+                if (welcomeEl) welcomeEl.value = partyData.welcome_text || '';
+                
+                updateLibraryCount();
+                renderLiveRequests();
+
+                if (user.role === 'solo_dj') {
+                    const soloCard = document.getElementById('soloBrandingCard');
+                    if (soloCard) soloCard.style.display = 'block';
+                    const soloPri = document.getElementById('soloPrimary');
+                    if (soloPri) soloPri.value = partyData.primary_color || '#3b82f6';
+                    const soloBg = document.getElementById('soloBg');
+                    if (soloBg) soloBg.value = partyData.background_color || '#0a0f1d';
+                }
+
+                await applyLatestBranding();
+            } catch (err) {
+                console.error("Fout bij initialiseren DJ dashboard:", err);
+            }
+        }
+
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleLibraryAccordion() {
+            const content = document.getElementById('libraryContent');
+            if (content) content.style.display = content.style.display === 'none' ? 'block' : 'none';
+        }
+
+        window.generateNewPartyCode = async function() {
+            const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+            partyData.party_code = newCode;
+            partyData.requests = [];
+            partyData.played = [];
+            await PartyApp.db.updateSession(user.username, { party_code: newCode, requests: [], played: [] });
+            document.getElementById('currentPartyCode').innerText = newCode;
             renderLiveRequests();
+            alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
+        };
 
-            if (user.role === 'solo_dj') {
-                document.getElementById('soloBrandingCard').style.display = 'block';
-                document.getElementById('soloPrimary').value = partyData.primary_color || '#3b82f6';
-                document.getElementById('soloBg').value = partyData.background_color || '#0a0f1d';
+        window.saveWelcomeText = async function() {
+            const text = document.getElementById('welcomeText').value;
+            partyData.welcome_text = text;
+            await PartyApp.db.updateSession(user.username, { welcome_text: text });
+            alert('Welkomsttekst opgeslagen!');
+        };
+
+        window.saveSoloBranding = async function() {
+            const primaryColor = document.getElementById('soloPrimary').value;
+            const backgroundColor = document.getElementById('soloBg').value;
+            partyData.primary_color = primaryColor;
+            partyData.background_color = backgroundColor;
+            await PartyApp.db.updateSession(user.username, { primary_color: primaryColor, background_color: backgroundColor });
+            PartyApp.applyBranding({ primaryColor, backgroundColor });
+            alert('Huisstijl opgeslagen!');
+        };
+
+        window.uploadXml = async function() {
+            const fileInput = document.getElementById('xmlFile');
+            if(fileInput.files.length === 0) { alert('Kies eerst een XML-bestand.'); return; }
+            
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const dummyTracks = [
+                    { artist: "David Guetta", title: "Titanium" },
+                    { artist: "Swedish House Mafia", title: "Don't You Worry Child" },
+                    { artist: "Avicii", title: "Levels" }
+                ];
+                if (!partyData.library) partyData.library = [];
+                partyData.library = partyData.library.concat(dummyTracks);
+                await PartyApp.db.updateSession(user.username, { library: partyData.library });
+                updateLibraryCount();
+                alert('Library succesvol geïmporteerd!');
+            };
+            reader.readAsText(fileInput.files[0]);
+        };
+
+        window.addManualTrack = async function() {
+            const artist = document.getElementById('manualArtist').value.trim();
+            const title = document.getElementById('manualTitle').value.trim();
+            if(!artist || !title) { alert('Vul artiest en titel in.'); return; }
+            
+            if (!partyData.library) partyData.library = [];
+            partyData.library.push({ artist, title });
+            await PartyApp.db.updateSession(user.username, { library: partyData.library });
+            document.getElementById('manualArtist').value = '';
+            document.getElementById('manualTitle').value = '';
+            updateLibraryCount();
+            alert('Nummer toegevoegd aan library!');
+        };
+
+        function updateLibraryCount() {
+            const count = partyData && partyData.library ? partyData.library.length : 0;
+            const countEl = document.getElementById('libraryCount');
+            if (countEl) countEl.innerText = `Aantal nummers in library: ${count}`;
+        }
+
+        function renderLiveRequests() {
+            const container = document.getElementById('liveRequests');
+            const playedContainer = document.getElementById('playedRequests');
+            if (!container || !playedContainer) return;
+            
+            container.innerHTML = '';
+            playedContainer.innerHTML = '';
+            
+            if(!partyData || !partyData.requests || partyData.requests.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align: center; color: #888; padding: 25px;">Geen verzoekjes in de wachtrij 🎉</div>';
+            } else {
+                const sortSelect = document.getElementById('sortFilter');
+                const sortBy = sortSelect ? sortSelect.value : 'votes';
+                let sortedReqs = [...partyData.requests];
+                if (sortBy === 'votes') {
+                    sortedReqs.sort((a, b) => b.votes - a.votes);
+                } else {
+                    sortedReqs.sort((a, b) => b.id - a.id);
+                }
+
+                sortedReqs.forEach((req) => {
+                    container.innerHTML += `
+                        <div class="card" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; padding: 15px;">
+                            <div>
+                                <b style="font-size: 15px;">${req.artist} - ${req.title}</b>
+                                ${req.message ? `<br><small style="color: var(--primary-color);">Bericht: "${req.message}"</small>` : ''}
+                                <br><span style="font-size: 13px; color: var(--accent-color); font-weight: bold; margin-top: 4px; display: inline-block;">👍 ${req.votes} stemmen</span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="markAsPlayed(${req.id})" style="background: var(--accent-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Gedraaid</button>
+                                <button onclick="removeRequest(${req.id})" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Wis</button>
+                            </div>
+                        </div>
+                    `;
+                });
             }
 
-            await applyLatestBranding();
+            if (!partyData || !partyData.played || partyData.played.length === 0) {
+                playedContainer.innerHTML = 'Nog geen nummers afgevinkt.';
+            } else {
+                partyData.played.forEach((req) => {
+                    playedContainer.innerHTML += `
+                        <div style="background: #090d16; padding: 10px 15px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b;">
+                            <span style="text-decoration: line-through; color: #888;">${req.artist} - ${req.title}</span>
+                            <button onclick="deletePlayed(${req.id})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px;">Verwijderen</button>
+                        </div>
+                    `;
+                });
+            }
         }
+
+        window.markAsPlayed = async function(requestId) {
+            if (!partyData.requests) return;
+            const idx = partyData.requests.findIndex(r => r.id === requestId);
+            if (idx !== -1) {
+                const item = partyData.requests.splice(idx, 1)[0];
+                if (!partyData.played) partyData.played = [];
+                partyData.played.push(item);
+                await PartyApp.db.updateSession(user.username, { requests: partyData.requests, played: partyData.played });
+                renderLiveRequests();
+            }
+        };
+
+        window.removeRequest = async function(requestId) {
+            if (!partyData.requests) return;
+            partyData.requests = partyData.requests.filter(r => r.id !== requestId);
+            await PartyApp.db.updateSession(user.username, { requests: partyData.requests });
+            renderLiveRequests();
+        };
+
+        window.deletePlayed = async function(requestId) {
+            if (!partyData.played) return;
+            partyData.played = partyData.played.filter(r => r.id !== requestId);
+            await PartyApp.db.updateSession(user.username, { played: partyData.played });
+            renderLiveRequests();
+        };
+
+        window.clearAllRequests = async function() {
+            if (confirm('Weet je zeker dat je alle verzoekjes wilt wissen?')) {
+                partyData.requests = [];
+                await PartyApp.db.updateSession(user.username, { requests: [] });
+                renderLiveRequests();
+            }
+        };
+
+        setInterval(async () => {
+            if (user) {
+                let freshData = await PartyApp.db.getSession(user.username);
+                if (freshData) {
+                    partyData = freshData;
+                    renderLiveRequests();
+                }
+                await applyLatestBranding();
+            }
+        }, 2000);
+
+        setTimeout(initDj, 500);
+    </script>
+</body>
+</html>
