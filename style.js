@@ -2,24 +2,12 @@
 // PARTYREQUEST - SUPABASE & STIJL CONFIGURATIE (style.js)
 // ==========================================
 
-// 1. Laad automatisch de Supabase SDK
-const scriptTag = document.createElement('script');
-scriptTag.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-document.head.appendChild(scriptTag);
-
-// ==========================================
-// VUL HIER JOUW SUPABASE GEGEVENS IN:
-// ==========================================
 const SUPABASE_URL = 'https://vuwrolizqvogvjwhbytc.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_Yk-N-MiANRyOHXwJtFVkDA_Nd9NUTp5';
 
-let supabaseClient = null;
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-scriptTag.onload = function() {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-};
-
-// 2. Injecteer CSS (Donkerblauwe Huisstijl)
+// Injecteer CSS
 function initPartyStyles() {
     const globalStyles = `
         :root {
@@ -29,6 +17,8 @@ function initPartyStyles() {
             --card-background: #131b2e;
             --text-color: #f8fafc;
             --accent-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -86,7 +76,6 @@ if (document.readyState === 'loading') {
     initPartyStyles();
 }
 
-// 3. Centrale PartyApp Database Helpers voor Supabase
 const PartyApp = {
     getCurrentUser: function() {
         return JSON.parse(localStorage.getItem('party_current_user')) || null;
@@ -129,6 +118,12 @@ const PartyApp = {
             if (error) { alert('Fout: ' + error.message); return false; }
             return true;
         },
+        async updateSubscription(username, expiresAt) {
+            if (!supabaseClient) return false;
+            const { error } = await supabaseClient.from('party_users').update({ expires_at: expiresAt }).eq('username', username);
+            if (error) { alert('Fout: ' + error.message); return false; }
+            return true;
+        },
         async getSession(username) {
             if (!supabaseClient) return null;
             let { data, error } = await supabaseClient.from('party_sessions').select('*').eq('username', username).single();
@@ -160,30 +155,20 @@ const PartyApp = {
             return true;
         },
         async getSessionByCode(code) {
-            if (!supabaseClient || !code) {
-                console.warn('Geen code meegegeven aan getSessionByCode');
-                return null;
-            }
+            if (!supabaseClient || !code) return null;
             const cleanCode = code.toString().trim();
-            console.log('Zoeken naar partycode in database:', cleanCode);
-
             const { data, error } = await supabaseClient
                 .from('party_sessions')
                 .select('*')
                 .eq('party_code', cleanCode)
                 .maybeSingle();
-
-            if (error) {
-                console.error('Supabase zoekfout:', error);
-                return null;
-            }
-
-            if (!data) {
-                console.warn('Geen sessie gevonden met code:', cleanCode);
-                return null;
-            }
-
-            console.log('Sessie succesvol gevonden:', data);
+            if (error || !data) return null;
+            return data;
+        },
+        async getAllSessions() {
+            if (!supabaseClient) return [];
+            const { data, error } = await supabaseClient.from('party_sessions').select('*');
+            if (error) return [];
             return data;
         }
     }
