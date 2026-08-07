@@ -1,88 +1,104 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Partyrequest - Superadmin</title>
-  <style>
-    body { background-color: #121212; color: #fff; font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-    .card { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-    .btn { background-color: #FF4081; color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-    input, select { margin: 5px 0; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; display: block; width: 100%; box-sizing: border-box; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partyrequest - Admin Dashboard</title>
+    <script src="style.js"></script>
 </head>
 <body>
-
-  <div style="display:flex; justify-content:space-between; align-items:center;">
-    <h1>Admin Dashboard</h1>
-    <button class="btn" style="background-color:#e53935;" onclick="handleLogout()">Uitloggen</button>
-  </div>
-
-  <div class="card">
-    <h2>Nieuw Account Aanmaken</h2>
-    <label>Type Account:</label>
-    <select id="roleSelect">
-      <option value="company">Bedrijf</option>
-      <option value="solo_dj">Solo DJ</option>
-    </select>
-    <input type="text" id="accName" placeholder="Naam Bedrijf of Solo DJ">
-    <input type="email" id="accEmail" placeholder="E-mailadres">
-    <input type="password" id="accPassword" placeholder="Wachtwoord">
-    <button class="btn" onclick="createAccount()">Account Aanmaken</button>
-  </div>
-
-  <div class="card">
-    <h2>Bestaande Accounts</h2>
-    <div id="accountsList">Laden...</div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/auth.js"></script>
-
-  <script>
-    window.addEventListener('DOMContentLoaded', async () => {
-      const auth = await checkAuthSession(['admin']);
-      if (!auth) return;
-      loadAccounts();
-    });
-
-    async function createAccount() {
-      const role = document.getElementById('roleSelect').value;
-      const name = document.getElementById('accName').value;
-      const email = document.getElementById('accEmail').value;
-      const password = document.getElementById('accPassword').value;
-
-      if (!name || !email || !password) return alert('Vul alle velden in.');
-
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) return alert('Fout: ' + error.message);
-
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        name: name,
-        role: role
-      });
-
-      // Als het een Solo DJ is, koppel een DJ record
-      if (role === 'solo_dj') {
-        await supabase.from('djs').insert({ user_id: data.user.id });
-      }
-
-      alert('Account succesvol aangemaakt!');
-      loadAccounts();
-    }
-
-    async function loadAccounts() {
-      const { data } = await supabase.from('profiles').select('*');
-      const container = document.getElementById('accountsList');
-      if (!data) return;
-      container.innerHTML = data.map(a => `
-        <div style="border-bottom: 1px solid #333; padding: 10px 0;">
-          <strong>${a.name}</strong> - Type: <em>${a.role}</em>
+    <div class="container" style="padding-top: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>Admin Dashboard</h1>
+            <button class="btn-primary" onclick="PartyApp.logout()" style="width: auto;">Uitloggen</button>
         </div>
-      `).join('');
-    }
-  </script>
+        
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Bedrijf of Solo DJ Aanmaken</h3>
+            <form id="createUserForm">
+                <label>Type Account:</label>
+                <select id="roleSelect">
+                    <option value="company">Bedrijf</option>
+                    <option value="solo_dj">Solo DJ</option>
+                </select>
+                
+                <label>Gebruikersnaam:</label>
+                <input type="text" id="newUsername" required>
+                
+                <label>Wachtwoord:</label>
+                <input type="password" id="newPassword" required>
+                
+                <button type="submit" class="btn-primary">Account Aanmaken</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Beheer Bestaande Accounts</h3>
+            <div id="userList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Beveiliging: alleen toegankelijk voor admin
+        const user = PartyApp.getCurrentUser();
+        if (!user || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+
+        function loadUsers() {
+            let users = JSON.parse(localStorage.getItem('party_users')) || [];
+            const listDiv = document.getElementById('userList');
+            listDiv.innerHTML = '';
+            
+            const managedUsers = users.filter(u => u.role === 'company' || u.role === 'solo_dj');
+            
+            if(managedUsers.length === 0) {
+                listDiv.innerHTML = '<p style="color: #aaa;">Geen bedrijven of solo DJ\'s gevonden.</p>';
+                return;
+            }
+            
+            managedUsers.forEach((u) => {
+                listDiv.innerHTML += `
+                    <div style="background: #0f0e17; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <b>${u.username}</b> <span style="font-size: 12px; color: var(--primary-color);">(${u.role === 'company' ? 'Bedrijf' : 'Solo DJ'})</span>
+                        </div>
+                        <button onclick="deleteUser('${u.username}')" style="background: #ff3366; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Verwijderen</button>
+                    </div>`;
+            });
+        }
+
+        document.getElementById('createUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const role = document.getElementById('roleSelect').value;
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+
+            let users = JSON.parse(localStorage.getItem('party_users')) || [];
+            if(users.some(u => u.username === username)) {
+                alert('Deze gebruikersnaam bestaat al!');
+                return;
+            }
+
+            users.push({ username, password, role });
+            localStorage.setItem('party_users', JSON.stringify(users));
+
+            alert('Account succesvol aangemaakt!');
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newPassword').value = '';
+            loadUsers();
+        });
+
+        function deleteUser(username) {
+            if(confirm(`Weet je zeker dat je ${username} wilt verwijderen?`)) {
+                let users = JSON.parse(localStorage.getItem('party_users')) || [];
+                users = users.filter(u => u.username !== username);
+                localStorage.setItem('party_users', JSON.stringify(users));
+                loadUsers();
+            }
+        }
+
+        loadUsers();
+    </script>
 </body>
 </html>
