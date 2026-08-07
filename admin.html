@@ -36,21 +36,20 @@
             </div>
         </div>
         
-        <!-- Account Aanmaken Card -->
+        <!-- Hoofaccount Aanmaken Card -->
         <div class="card" style="margin-bottom: 25px;">
-            <h3 style="margin-bottom: 15px; font-size: 18px;">Nieuw Account of DJ Aanmaken</h3>
+            <h3 style="margin-bottom: 15px; font-size: 18px;">Bedrijf of Solo DJ Aanmaken</h3>
             <form id="createUserForm">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div>
                         <label>Type Account:</label>
-                        <select id="roleSelect" onchange="toggleCompanyInput()">
+                        <select id="roleSelect">
                             <option value="company">Bedrijf</option>
                             <option value="solo_dj">Solo DJ</option>
-                            <option value="sub_dj">DJ onder Bedrijf of Solo DJ</option>
                         </select>
                     </div>
                     <div>
-                        <label>Abonnementsduur (voor Bedrijf/Solo DJ):</label>
+                        <label>Abonnementsduur:</label>
                         <select id="subscriptionDuration">
                             <option value="1_month">1 Maand</option>
                             <option value="1_year" selected>1 Jaar</option>
@@ -58,27 +57,20 @@
                         </select>
                     </div>
                 </div>
-
-                <div id="companyContainer" style="display: none;">
-                    <label>Koppel aan Bedrijf / Solo DJ:</label>
-                    <select id="parentAccountSelect">
-                        <!-- Wordt dynamisch gevuld -->
-                    </select>
-                </div>
                 
                 <label>Gebruikersnaam:</label>
-                <input type="text" id="newUsername" placeholder="Bijv. dj_mark of subdj_jan" required>
+                <input type="text" id="newUsername" placeholder="Bijv. dj_mark of party-rent" required>
                 
                 <label>Wachtwoord:</label>
                 <input type="password" id="newPassword" placeholder="Minimaal 6 tekens" required>
                 
-                <button type="submit" class="btn-primary" style="margin-top: 5px;">Account / DJ Aanmaken</button>
+                <button type="submit" class="btn-primary" style="margin-top: 5px;">Account Aanmaken & Abonnement Starten</button>
             </form>
         </div>
 
         <!-- Account Beheer Card -->
         <div class="card">
-            <h3 style="margin-bottom: 15px; font-size: 18px;">Beheer Accounts & Inklapbare DJ's</h3>
+            <h3 style="margin-bottom: 15px; font-size: 18px;">Beheer Accounts & DJ's</h3>
             <div id="userList">
                 <p style="color: #888; text-align: center; padding: 15px;">Accounts laden...</p>
             </div>
@@ -92,44 +84,6 @@
         }
 
         let cachedUsers = [];
-
-        async function toggleCompanyInput() {
-            const role = document.getElementById('roleSelect').value;
-            const container = document.getElementById('companyContainer');
-            const durationSelect = document.getElementById('subscriptionDuration').parentElement;
-
-            if (role === 'sub_dj') {
-                container.style.display = 'block';
-                durationSelect.style.display = 'none';
-                await populateParentDropdown();
-            } else {
-                container.style.display = 'none';
-                durationSelect.style.display = 'block';
-            }
-        }
-
-        async function populateParentDropdown() {
-            const select = document.getElementById('parentAccountSelect');
-            select.innerHTML = '<option value="">Laden...</option>';
-            
-            try {
-                cachedUsers = await PartyApp.db.getUsers();
-                const mainAccounts = cachedUsers.filter(u => u.role === 'company' || u.role === 'solo_dj');
-                
-                select.innerHTML = '';
-                if (mainAccounts.length === 0) {
-                    select.innerHTML = '<option value="">Geen bedrijven of solo DJ\'s beschikbaar</option>';
-                    return;
-                }
-
-                mainAccounts.forEach(acc => {
-                    const typeText = acc.role === 'company' ? 'Bedrijf' : 'Solo DJ';
-                    select.innerHTML += `<option value="${acc.username}">${acc.username} (${typeText})</option>`;
-                });
-            } catch (err) {
-                console.error("Fout bij ophalen hoofdaccounts:", err);
-            }
-        }
 
         async function loadAdminData() {
             const listDiv = document.getElementById('userList');
@@ -181,18 +135,18 @@
 
                     const children = subDjs.filter(sub => sub.company === u.username);
 
-                    let expandButtonHtml = '';
-                    let childrenContainerHtml = '';
-
+                    let expandButtonHtml = `<button onclick="toggleSubDjs('${u.username}', ${children.length})" id="btn-toggle-${u.username}" style="background: #334155; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">DJ's beheren (${children.length})</button>`;
+                    
+                    let childrenContainerHtml = `<div id="sub-djs-${u.username}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #1e293b;">`;
+                    
+                    // Bestaande DJ's tonen
                     if (children.length > 0) {
-                        expandButtonHtml = `<button onclick="toggleSubDjs('${u.username}', ${children.length})" id="btn-toggle-${u.username}" style="background: #334155; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">DJ's tonen (${children.length})</button>`;
-                        
-                        childrenContainerHtml = `<div id="sub-djs-${u.username}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #1e293b;">`;
+                        childrenContainerHtml += `<div style="margin-bottom: 12px;"><b style="font-size: 13px; color: #94a3b8;">Gekoppelde DJ's:</b></div>`;
                         children.forEach(child => {
                             childrenContainerHtml += `
-                                <div style="background: #04060b; padding: 10px 14px; border-radius: 6px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed #1e293b;">
+                                <div style="background: #04060b; padding: 10px 14px; border-radius: 6px; margin-top: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed #1e293b;">
                                     <div>
-                                        <span style="font-size: 13px; color: #94a3b8;">↳ DJ: <b>${child.username}</b></span>
+                                        <span style="font-size: 13px;">↳ DJ: <b>${child.username}</b></span>
                                     </div>
                                     <div style="display: flex; gap: 6px;">
                                         <button onclick="promptChangePassword('${child.username}')" style="background: #1e3a8a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Wachtwoord</button>
@@ -200,8 +154,23 @@
                                     </div>
                                 </div>`;
                         });
-                        childrenContainerHtml += `</div>`;
+                    } else {
+                        childrenContainerHtml += `<p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">Nog geen DJ's gekoppeld aan ${u.username}.</p>`;
                     }
+
+                    // Formulier om direct een DJ toe te voegen in deze uitgevouwen weergave
+                    childrenContainerHtml += `
+                        <div style="background: #0f172a; padding: 12px; border-radius: 8px; margin-top: 12px; border: 1px solid #1e293b;">
+                            <b style="font-size: 12px; color: var(--primary-color);">+ Nieuwe DJ toevoegen aan ${u.username}</b>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-top: 8px;">
+                                <input type="text" id="inline-user-${u.username}" placeholder="Gebruikersnaam DJ" style="margin: 0; padding: 8px; font-size: 12px;">
+                                <input type="password" id="inline-pass-${u.username}" placeholder="Wachtwoord" style="margin: 0; padding: 8px; font-size: 12px;">
+                                <button onclick="createSubDjInline('${u.username}', '${u.expires_at || ''}')" style="background: var(--primary-color); color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Toevoegen</button>
+                            </div>
+                        </div>
+                    `;
+
+                    childrenContainerHtml += `</div>`;
 
                     listDiv.innerHTML += `
                         <div style="background: #090d16; padding: 15px 18px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #1e293b;">
@@ -224,21 +193,6 @@
                         </div>`;
                 });
 
-                const orphanDjs = subDjs.filter(sub => !mainAccounts.some(m => m.username === sub.company));
-                orphanDjs.forEach(child => {
-                    listDiv.innerHTML += `
-                        <div style="background: #090d16; padding: 15px 18px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <b style="font-size: 15px;">${child.username}</b> 
-                                <span style="font-size: 11px; color: #f59e0b; background: rgba(245,158,11,0.1); padding: 3px 8px; border-radius: 4px;">DJ (Geen geldig moederbedrijf)</span>
-                            </div>
-                            <div style="display: flex; gap: 6px;">
-                                <button onclick="promptChangePassword('${child.username}')" style="background: #1e3a8a; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">Wachtwoord</button>
-                                <button onclick="deleteUserAccount('${child.username}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px;">Verwijderen</button>
-                            </div>
-                        </div>`;
-                });
-
             } catch (err) {
                 console.error("Fout bij laden admin data:", err);
                 listDiv.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 15px;">Fout bij laden van gegevens.</p>';
@@ -250,38 +204,22 @@
             const btn = document.getElementById(`btn-toggle-${username}`);
             if (container.style.display === 'none') {
                 container.style.display = 'block';
-                btn.innerText = 'DJ\'s verbergen';
+                btn.innerText = 'DJ\'s inklappen';
             } else {
                 container.style.display = 'none';
-                btn.innerText = `DJ\'s tonen (${count})`;
+                btn.innerText = `DJ's beheren (${count})`;
             }
         };
 
-        document.getElementById('createUserForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const role = document.getElementById('roleSelect').value;
-            const username = document.getElementById('newUsername').value.trim();
-            const password = document.getElementById('newPassword').value.trim();
-            let company = null;
-            let expiresAt = new Date();
+        window.createSubDjInline = async function(parentUsername, parentExpiresAt) {
+            const usernameInput = document.getElementById(`inline-user-${parentUsername}`);
+            const passwordInput = document.getElementById(`inline-pass-${parentUsername}`);
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
 
             if (!username || !password) {
-                alert('Vul alle velden in.');
+                alert('Vul zowel een gebruikersnaam als een wachtwoord in voor de DJ.');
                 return;
-            }
-
-            if (role === 'sub_dj') {
-                company = document.getElementById('parentAccountSelect').value;
-                if (!company) {
-                    alert('Selecteer een bedrijf of solo DJ waar deze DJ onder valt.');
-                    return;
-                }
-                expiresAt.setFullYear(expiresAt.getFullYear() + 2);
-            } else {
-                const duration = document.getElementById('subscriptionDuration').value;
-                if (duration === '1_month') expiresAt.setMonth(expiresAt.getMonth() + 1);
-                if (duration === '1_year') expiresAt.setFullYear(expiresAt.getFullYear() + 1);
-                if (duration === '2_years') expiresAt.setFullYear(expiresAt.getFullYear() + 2);
             }
 
             try {
@@ -291,27 +229,67 @@
                     return;
                 }
 
-                const dbRole = role === 'sub_dj' ? 'company_dj' : role;
+                const expiresAt = parentExpiresAt || new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString();
 
                 const success = await PartyApp.db.createUser({ 
                     username, 
                     password, 
-                    role: dbRole, 
-                    company, 
+                    role: 'company_dj', 
+                    company: parentUsername, 
+                    expires_at: expiresAt 
+                });
+
+                if (success) {
+                    alert(`DJ ${username} succesvol toegevoegd aan ${parentUsername}!`);
+                    loadAdminData();
+                }
+            } catch (err) {
+                console.error("Fout bij aanmaken sub-DJ:", err);
+                alert("Kon DJ niet aanmaken.");
+            }
+        };
+
+        document.getElementById('createUserForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const role = document.getElementById('roleSelect').value;
+            const duration = document.getElementById('subscriptionDuration').value;
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value.trim();
+
+            if (!username || !password) {
+                alert('Vul alle velden in.');
+                return;
+            }
+
+            let expiresAt = new Date();
+            if (duration === '1_month') expiresAt.setMonth(expiresAt.getMonth() + 1);
+            if (duration === '1_year') expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+            if (duration === '2_years') expiresAt.setFullYear(expiresAt.getFullYear() + 2);
+
+            try {
+                const existingUsers = await PartyApp.db.getUsers();
+                if (existingUsers.some(u => u.username === username)) {
+                    alert('Deze gebruikersnaam bestaat al!');
+                    return;
+                }
+
+                const success = await PartyApp.db.createUser({ 
+                    username, 
+                    password, 
+                    role, 
+                    company: null, 
                     expires_at: expiresAt.toISOString() 
                 });
 
                 if (success) {
-                    alert('Succesvol aangemaakt!');
+                    alert('Account succesvol aangemaakt!');
                     document.getElementById('newUsername').value = '';
                     document.getElementById('newPassword').value = '';
-                    document.getElementById('roleSelect').value = 'company';
-                    toggleCompanyInput();
                     loadAdminData();
                 }
             } catch (err) {
                 console.error("Fout bij aanmaken:", err);
-                alert("Kon niet aanmaken.");
+                alert("Kon account niet aanmaken.");
             }
         });
 
@@ -362,7 +340,6 @@
             }
         };
 
-        toggleCompanyInput();
         setInterval(loadAdminData, 10000);
         loadAdminData();
     </script>
