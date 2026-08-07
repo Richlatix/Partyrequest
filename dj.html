@@ -1,222 +1,195 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Partyrequest - DJ Dashboard</title>
-  <style>
-    :root { --bg-color: #121212; --accent-color: #FF4081; --text-color: #FFFFFF; }
-    body { background-color: var(--bg-color); color: var(--text-color); font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
-    .card { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-    .btn { background-color: var(--accent-color); color: #fff; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-    .btn-danger { background-color: #e53935; }
-    input, button, textarea { margin: 5px 0; padding: 8px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; }
-    .request-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding: 10px 0; }
-    .color-picker { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partyrequest - DJ Dashboard</title>
+    <script src="style.js"></script>
 </head>
 <body>
-
-  <div style="display:flex; justify-content:space-between; align-items:center;">
-    <h1 id="djTitle">DJ Dashboard</h1>
-    <button class="btn btn-danger" onclick="handleLogout()">Uitloggen</button>
-  </div>
-
-  <!-- PARTYCODE GENERATOR -->
-  <div class="card">
-    <h2>Actieve Partycode</h2>
-    <div id="activeCodeDisplay" style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">GEEN ACTIEVE CODE</div>
-    <br>
-    <button class="btn" onclick="createNewPartyCode()">Nieuwe Partycode Genereren</button>
-    <small style="display:block; margin-top:5px; color:#aaa;">Als je een nieuwe code maakt, worden gasten van het vorige feest automatisch uitgelogd.</small>
-  </div>
-
-  <!-- WELKOMSTEKST & INSTELLINGEN -->
-  <div class="card">
-    <h2>Instellingen Gastenpagina</h2>
-    <label>Welkomsttekst voor gasten:</label><br>
-    <textarea id="welcomeMessageInput" style="width:100%; height:60px;"></textarea><br>
-    <button class="btn" onclick="saveSettings()">Opslaan</button>
-
-    <!-- Huisstijl (alleen zichtbaar voor Solo DJs) -->
-    <div id="brandingSection" style="display:none; margin-top: 15px;">
-      <h3>Huisstijl Aanpassen (Solo DJ)</h3>
-      <div class="color-picker">
-        <label>Achtergrond:</label>
-        <input type="color" id="bgColor" value="#121212">
-        <label>Accent:</label>
-        <input type="color" id="accentColor" value="#FF4081">
-        <label>Tekst:</label>
-        <input type="color" id="textColor" value="#FFFFFF">
-      </div>
-      <br>
-      <button class="btn" onclick="saveBranding()">Huisstijl Opslaan</button>
-    </div>
-  </div>
-
-  <!-- REKORDBOX / XML LIBRARY UPLOAD -->
-  <div class="card">
-    <h2>Nummer Library (XML)</h2>
-    <p id="libraryStatus">Aantal nummers in library: 0</p>
-    <input type="file" id="xmlFileInput" accept=".xml">
-  </div>
-
-  <!-- HANDMATIG VERZOEKJE TOEVOEGEN ALS DJ -->
-  <div class="card">
-    <h2>Handmatig Verzoekje Toevoegen</h2>
-    <input type="text" id="manualTitle" placeholder="Titel">
-    <input type="text" id="manualArtist" placeholder="Artiest">
-    <input type="text" id="manualMessage" placeholder="Opmerking (optioneel)">
-    <button class="btn" onclick="addManualRequest()">Toevoegen</button>
-  </div>
-
-  <!-- LIVE VERZOEKJES OVERZICHT -->
-  <div class="card">
-    <h2>Live Verzoekjes</h2>
-    <div id="djRequestsList">Geen verzoekjes binnen gekomen.</div>
-  </div>
-
-  <!-- Supabase & JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/xmlParser.js"></script>
-
-  <script>
-    let currentProfile = null;
-    let currentDj = null;
-    let currentActiveParty = null;
-
-    window.addEventListener('DOMContentLoaded', async () => {
-      const auth = await checkAuthSession(['solo_dj', 'company_dj']);
-      if (!auth) return;
-
-      currentProfile = auth.profile;
-      currentDj = auth.profile.djs[0] || auth.profile.djs;
-
-      document.getElementById('djTitle').innerText = `DJ Dashboard - ${currentProfile.name}`;
-      document.getElementById('welcomeMessageInput').value = currentDj.welcome_message || '';
-
-      // Alleen Solo DJ mag huisstijl aanpassen
-      if (currentProfile.role === 'solo_dj') {
-        document.getElementById('brandingSection').style.display = 'block';
-        document.getElementById('bgColor').value = currentProfile.bg_color || '#121212';
-        document.getElementById('accentColor').value = currentProfile.accent_color || '#FF4081';
-        document.getElementById('textColor').value = currentProfile.text_color || '#FFFFFF';
-      }
-
-      // XML Upload listener
-      document.getElementById('xmlFileInput').addEventListener('change', (e) => handleXmlUpload(e, currentDj.id));
-
-      // Laad party, library status en live verzoekjes
-      loadActiveParty();
-      loadLibraryCount();
-    });
-
-    async function loadActiveParty() {
-      const { data } = await supabase
-        .from('active_parties')
-        .select('*')
-        .eq('dj_id', currentDj.id)
-        .eq('is_active', true)
-        .single();
-
-      if (data) {
-        currentActiveParty = data;
-        document.getElementById('activeCodeDisplay').innerText = data.party_code;
-        listenToRequests(data.id);
-        fetchDjRequests(data.id);
-      }
-    }
-
-    async function createNewPartyCode() {
-      // Deactiveer oude partycodes
-      await supabase.from('active_parties').update({ is_active: false }).eq('dj_id', currentDj.id);
-
-      // Genereer willekeurige 5-letterige code
-      const newCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-
-      const { data, error } = await supabase
-        .from('active_parties')
-        .insert({ dj_id: currentDj.id, party_code: newCode, is_active: true })
-        .select()
-        .single();
-
-      if (!error) {
-        currentActiveParty = data;
-        document.getElementById('activeCodeDisplay').innerText = data.party_code;
-        listenToRequests(data.id);
-        fetchDjRequests(data.id);
-        alert(`Nieuwe partycode geactiveerd: ${newCode}`);
-      }
-    }
-
-    async function loadLibraryCount() {
-      const { data } = await supabase.from('dj_libraries').select('tracks').eq('dj_id', currentDj.id).single();
-      if (data && data.tracks) {
-        document.getElementById('libraryStatus').innerText = `Aantal nummers in library: ${data.tracks.length}`;
-      }
-    }
-
-    async function saveSettings() {
-      const msg = document.getElementById('welcomeMessageInput').value;
-      await supabase.from('djs').update({ welcome_message: msg }).eq('id', currentDj.id);
-      alert('Instellingen opgeslagen!');
-    }
-
-    async function saveBranding() {
-      const bg = document.getElementById('bgColor').value;
-      const accent = document.getElementById('accentColor').value;
-      const text = document.getElementById('textColor').value;
-
-      await supabase.from('profiles').update({ bg_color: bg, accent_color: accent, text_color: text }).eq('id', currentProfile.id);
-      alert('Huisstijl opgeslagen!');
-    }
-
-    async function addManualRequest() {
-      if (!currentActiveParty) return alert('Maak eerst een actieve partycode aan!');
-      const title = document.getElementById('manualTitle').value;
-      const artist = document.getElementById('manualArtist').value;
-      const message = document.getElementById('manualMessage').value;
-
-      if (!title || !artist) return alert('Titel en artiest zijn verplicht');
-
-      await supabase.from('requests').insert({ party_id: currentActiveParty.id, title, artist, message, votes: 1 });
-      document.getElementById('manualTitle').value = '';
-      document.getElementById('manualArtist').value = '';
-      document.getElementById('manualMessage').value = '';
-    }
-
-    function listenToRequests(partyId) {
-      supabase.channel(`dj-party-${partyId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'requests', filter: `party_id=eq.${partyId}` }, () => {
-        fetchDjRequests(partyId);
-      }).subscribe();
-    }
-
-    async function fetchDjRequests(partyId) {
-      const { data } = await supabase.from('requests').select('*').eq('party_id', partyId).order('votes', { ascending: false });
-      const container = document.getElementById('djRequestsList');
-      if (!data || data.length === 0) {
-        container.innerHTML = 'Nog geen verzoekjes binnen gekomen.';
-        return;
-      }
-      container.innerHTML = data.map(r => `
-        <div class="request-row">
-          <div>
-            <strong>${r.title}</strong> - ${r.artist}
-            ${r.message ? `<br><small style="color:#aaa;">"${r.message}"</small>` : ''}
-          </div>
-          <div>
-            <span style="font-weight:bold; margin-right:15px;">👍 ${r.votes}</span>
-            <button class="btn btn-danger" onclick="deleteRequest('${r.id}')">X</button>
-          </div>
+    <div class="container" style="padding-top: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1>DJ Dashboard</h1>
+            <button class="btn-primary" onclick="PartyApp.logout()" style="width: auto;">Uitloggen</button>
         </div>
-      `).join('');
-    }
 
-    async function deleteRequest(id) {
-      await supabase.from('requests').delete().eq('id', id);
-    }
-  </script>
+        <!-- Partycode & Einde Evenement -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Actieve Partycode</h3>
+            <p style="font-size: 32px; font-weight: bold; color: var(--primary-color); margin: 10px 0;" id="currentPartyCode">------</p>
+            <button class="btn-primary" onclick="generateNewPartyCode()" style="background-color: var(--accent-color); margin-bottom: 15px;">Nieuwe Partycode Maken (Einde Evenement)</button>
+            
+            <label>Welkomsttekst voor Gastenpagina:</label>
+            <textarea id="welcomeText" rows="3" placeholder="Welkom! Vraag hier je favoriete nummer aan..."></textarea>
+            <button class="btn-primary" onclick="saveWelcomeText()">Welkomsttekst Opslaan</button>
+        </div>
+
+        <!-- Solo DJ Huisstijl (Bedrijfs-DJ's zien dit niet) -->
+        <div id="soloBrandingCard" class="card" style="margin-bottom: 20px; display: none;">
+            <h3>Huisstijl Aanpassen (Solo DJ)</h3>
+            <label>Primair Kleur:</label>
+            <input type="color" id="soloPrimary" value="#ff3366" style="height: 45px; padding: 2px;">
+            <label>Achtergrond Kleur:</label>
+            <input type="color" id="soloBg" value="#0f0e17" style="height: 45px; padding: 2px;">
+            <button class="btn-primary" onclick="saveSoloBranding()">Huisstijl Opslaan</button>
+        </div>
+
+        <!-- Library Upload & Handmatig -->
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Muziek Library Beheren</h3>
+            <label>Upload Rekordbox / Nummer XML:</label>
+            <input type="file" id="xmlFile" accept=".xml">
+            <button class="btn-primary" onclick="uploadXml()">Library Importeren</button>
+            
+            <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
+            
+            <label>Handmatig Nummer Toevoegen:</label>
+            <input type="text" id="manualArtist" placeholder="Artiest">
+            <input type="text" id="manualTitle" placeholder="Titel">
+            <button class="btn-primary" onclick="addManualTrack()">Toevoegen</button>
+            <p id="libraryCount" style="margin-top: 10px; font-size: 14px; color: #aaa;"></p>
+        </div>
+
+        <!-- Live Verzoekjes & Stemmen -->
+        <div class="card">
+            <h3>Live Verzoekjes & Ranking</h3>
+            <div id="liveRequests"></div>
+        </div>
+    </div>
+
+    <script>
+        const user = PartyApp.getCurrentUser();
+        if (!user || (user.role !== 'dj' && user.role !== 'solo_dj' && user.role !== 'company_dj')) {
+            window.location.href = 'login.html';
+        }
+
+        // Huisstijl toepassen
+        if (user.role === 'solo_dj') {
+            document.getElementById('soloBrandingCard').style.display = 'block';
+            let branding = JSON.parse(localStorage.getItem('settings_' + user.username));
+            if (branding) {
+                PartyApp.applyBranding(branding);
+                document.getElementById('soloPrimary').value = branding.primaryColor || '#ff3366';
+                document.getElementById('soloBg').value = branding.backgroundColor || '#0f0e17';
+            }
+        } else if (user.company) {
+            let companyBranding = JSON.parse(localStorage.getItem('settings_' + user.company));
+            if (companyBranding) PartyApp.applyBranding(companyBranding);
+        }
+
+        let partyData = JSON.parse(localStorage.getItem('party_session_' + user.username)) || { code: generateCode(), welcome: '', library: [], requests: [] };
+        if (!partyData.code) {
+            partyData.code = generateCode();
+            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+        }
+
+        document.getElementById('currentPartyCode').innerText = partyData.code;
+        document.getElementById('welcomeText').value = partyData.welcome || '';
+        updateLibraryCount();
+        renderLiveRequests();
+
+        function generateCode() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        function generateNewPartyCode() {
+            partyData.code = generateCode();
+            partyData.requests = []; // Vorige gastenverzoekjes wissen
+            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+            document.getElementById('currentPartyCode').innerText = partyData.code;
+            renderLiveRequests();
+            alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
+        }
+
+        function saveWelcomeText() {
+            partyData.welcome = document.getElementById('welcomeText').value;
+            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+            alert('Welkomsttekst opgeslagen!');
+        }
+
+        function saveSoloBranding() {
+            let branding = {
+                primaryColor: document.getElementById('soloPrimary').value,
+                backgroundColor: document.getElementById('soloBg').value
+            };
+            localStorage.setItem('settings_' + user.username, JSON.stringify(branding));
+            PartyApp.applyBranding(branding);
+            alert('Huisstijl opgeslagen!');
+        }
+
+        function uploadXml() {
+            const fileInput = document.getElementById('xmlFile');
+            if(fileInput.files.length === 0) {
+                alert('Kies eerst een XML-bestand.');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function() {
+                // Simulatie van XML parsing
+                const dummyTracks = [
+                    { artist: "David Guetta", title: "Titanium" },
+                    { artist: "Swedish House Mafia", title: "Don't You Worry Child" },
+                    { artist: "Avicii", title: "Levels" }
+                ];
+                partyData.library = partyData.library.concat(dummyTracks);
+                localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+                updateLibraryCount();
+                alert('Library succesvol geïmporteerd!');
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+
+        function addManualTrack() {
+            const artist = document.getElementById('manualArtist').value.trim();
+            const title = document.getElementById('manualTitle').value.trim();
+            if(!artist || !title) {
+                alert('Vul artiest en titel in.');
+                return;
+            }
+            partyData.library.push({ artist, title });
+            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+            document.getElementById('manualArtist').value = '';
+            document.getElementById('manualTitle').value = '';
+            updateLibraryCount();
+            alert('Nummer toegevoegd aan library!');
+        }
+
+        function updateLibraryCount() {
+            document.getElementById('libraryCount').innerText = `Aantal nummers in library: ${partyData.library.length}`;
+        }
+
+        function renderLiveRequests() {
+            let currentData = JSON.parse(localStorage.getItem('party_session_' + user.username)) || partyData;
+            const container = document.getElementById('liveRequests');
+            container.innerHTML = '';
+            
+            if(!currentData.requests || currentData.requests.length === 0) {
+                container.innerHTML = '<p style="color: #aaa;">Nog geen verzoekjes ontvangen.</p>';
+                return;
+            }
+
+            currentData.requests.sort((a, b) => b.votes - a.votes);
+
+            currentData.requests.forEach((req) => {
+                container.innerHTML += `
+                    <div style="background: #0f0e17; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <b>${req.artist} - ${req.title}</b>
+                            ${req.message ? `<br><small style="color: var(--primary-color);">Bericht: "${req.message}"</small>` : ''}
+                        </div>
+                        <div style="font-size: 18px; font-weight: bold; color: var(--accent-color);">👍 ${req.votes}</div>
+                    </div>
+                `;
+            });
+        }
+
+        setInterval(() => {
+            let currentData = JSON.parse(localStorage.getItem('party_session_' + user.username));
+            if(currentData) {
+                partyData = currentData;
+                renderLiveRequests();
+            }
+        }, 2000);
+    </script>
 </body>
 </html>
