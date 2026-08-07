@@ -7,54 +7,102 @@
     <script src="style.js"></script>
 </head>
 <body>
-    <div class="container" style="padding-top: 40px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1>DJ Dashboard</h1>
-            <button class="btn-primary" onclick="PartyApp.logout()" style="width: auto;">Uitloggen</button>
+    <div class="container" style="padding-top: 30px; max-width: 900px;">
+        
+        <!-- Bovenste Branding / Logo Titel -->
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h1 id="brandHeaderTitle" style="font-size: 36px; font-weight: 800; letter-spacing: 1px; color: var(--primary-color);">PARTYREQUEST</h1>
+            <p id="brandSubTitle" style="font-size: 13px; color: #888; margin-top: 4px;">Licht - Geluid - AV - DJ - Support</p>
         </div>
 
-        <!-- Partycode & Einde Evenement -->
-        <div class="card" style="margin-bottom: 20px;">
-            <h3>Actieve Partycode</h3>
-            <p style="font-size: 32px; font-weight: bold; color: var(--primary-color); margin: 10px 0;" id="currentPartyCode">------</p>
+        <!-- DJ Topbar (Overeenkomstig met referentiebeeld) -->
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; margin-bottom: 25px;">
+            <div style="display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 16px; color: var(--primary-color);">
+                <span>🎧</span> DJ Live Dashboard
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- Ingelogde gasten teller -->
+                <div style="background: #090d16; padding: 6px 12px; border-radius: 6px; font-size: 11px; text-align: center; border: 1px solid #1e293b;">
+                    <span style="color: #888; display: block; font-size: 9px; font-weight: bold;">INGELOGD</span>
+                    👥 <span id="guestCount">0</span>
+                </div>
+                <!-- Partycode -->
+                <div style="background: #090d16; padding: 6px 12px; border-radius: 6px; font-size: 11px; text-align: center; border: 1px solid var(--primary-color);">
+                    <span style="color: #888; display: block; font-size: 9px; font-weight: bold;">CODE</span>
+                    <span id="currentPartyCode" style="color: var(--primary-color); font-weight: bold; font-size: 13px;">------</span>
+                </div>
+                <!-- Instellingen Tandwiel -->
+                <button onclick="toggleSettingsModal()" style="background: #090d16; border: 1px solid #1e293b; color: white; padding: 9px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;" title="Instellingen & Partycode">⚙️</button>
+                <!-- Uitloggen -->
+                <button onclick="PartyApp.logout()" style="background: #ef4444; border: none; color: white; padding: 9px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Uitloggen</button>
+            </div>
+        </div>
+
+        <!-- Instellingen Modal (Verborgen tot klik op tandwiel) -->
+        <div id="settingsModal" class="card" style="display: none; margin-bottom: 25px; border: 1px solid var(--primary-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>Sessie & Systeem Instellingen</h3>
+                <button onclick="toggleSettingsModal()" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 18px;">✕</button>
+            </div>
             <button class="btn-primary" onclick="generateNewPartyCode()" style="background-color: var(--accent-color); margin-bottom: 15px;">Nieuwe Partycode Maken (Einde Evenement)</button>
             
             <label>Welkomsttekst voor Gastenpagina:</label>
             <textarea id="welcomeText" rows="3" placeholder="Welkom! Vraag hier je favoriete nummer aan..."></textarea>
-            <button class="btn-primary" onclick="saveWelcomeText()">Welkomsttekst Opslaan</button>
+            <button class="btn-primary" onclick="saveWelcomeText()" style="margin-bottom: 15px;">Welkomsttekst Opslaan</button>
+
+            <!-- Solo DJ Huisstijl (Alleen zichtbaar voor solo DJ's) -->
+            <div id="soloBrandingCard" style="display: none; border-top: 1px solid #1e293b; padding-top: 15px;">
+                <h4>Huisstijl Aanpassen (Solo DJ)</h4>
+                <div style="display: flex; gap: 15px; margin-top: 10px;">
+                    <div style="flex: 1;"><label>Primair Kleur:</label><input type="color" id="soloPrimary" value="#3b82f6" style="height: 40px; padding: 2px;"></div>
+                    <div style="flex: 1;"><label>Achtergrond:</label><input type="color" id="soloBg" value="#0a0f1d" style="height: 40px; padding: 2px;"></div>
+                </div>
+                <button class="btn-primary" onclick="saveSoloBranding()" style="margin-top: 10px;">Huisstijl Opslaan</button>
+            </div>
         </div>
 
-        <!-- Solo DJ Huisstijl (Bedrijfs-DJ's zien dit niet) -->
-        <div id="soloBrandingCard" class="card" style="margin-bottom: 20px; display: none;">
-            <h3>Huisstijl Aanpassen (Solo DJ)</h3>
-            <label>Primair Kleur:</label>
-            <input type="color" id="soloPrimary" value="#ff3366" style="height: 45px; padding: 2px;">
-            <label>Achtergrond Kleur:</label>
-            <input type="color" id="soloBg" value="#0f0e17" style="height: 45px; padding: 2px;">
-            <button class="btn-primary" onclick="saveSoloBranding()">Huisstijl Opslaan</button>
+        <!-- Live Verzoekjes Sectie -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="display: flex; align-items: center; gap: 8px; font-size: 18px;">🔥 Live Verzoekjes</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="sortFilter" onchange="renderLiveRequests()" style="margin: 0; padding: 6px 12px; width: auto; font-size: 13px;">
+                    <option value="votes">🔥 Meeste stemmen</option>
+                    <option value="newest">🕒 Nieuwste</option>
+                </select>
+                <button onclick="clearAllRequests()" style="background: #ef4444; color: white; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">🗑️ Wis</button>
+            </div>
         </div>
 
-        <!-- Library Upload & Handmatig -->
-        <div class="card" style="margin-bottom: 20px;">
-            <h3>Muziek Library Beheren</h3>
-            <label>Upload Rekordbox / Nummer XML:</label>
-            <input type="file" id="xmlFile" accept=".xml">
-            <button class="btn-primary" onclick="uploadXml()">Library Importeren</button>
-            
-            <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
-            
-            <label>Handmatig Nummer Toevoegen:</label>
-            <input type="text" id="manualArtist" placeholder="Artiest">
-            <input type="text" id="manualTitle" placeholder="Titel">
-            <button class="btn-primary" onclick="addManualTrack()">Toevoegen</button>
-            <p id="libraryCount" style="margin-top: 10px; font-size: 14px; color: #aaa;"></p>
+        <div id="liveRequests" style="margin-bottom: 30px;">
+            <div class="card" style="text-align: center; color: #888; padding: 25px;">Geen verzoekjes in de wachtrij 🎉</div>
         </div>
 
-        <!-- Live Verzoekjes & Stemmen -->
-        <div class="card">
-            <h3>Live Verzoekjes & Ranking</h3>
-            <div id="liveRequests"></div>
+        <!-- Reeds Gedraaid Sectie -->
+        <h3 style="margin-bottom: 15px; display: flex; align-items: center; gap: 8px; font-size: 18px;">🎉 Reeds Gedraaid</h3>
+        <div id="playedRequests" class="card" style="margin-bottom: 30px; text-align: center; color: #888; padding: 25px;">
+            Nog geen nummers afgevinkt.
         </div>
+
+        <!-- Muziekbibliotheek / XML Beheren (Uitklapbare Accordion) -->
+        <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 40px;">
+            <button onclick="toggleLibraryAccordion()" style="width: 100%; background: #131b2e; color: var(--primary-color); border: none; padding: 16px 20px; font-weight: bold; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 15px;">
+                📁 Muziekbibliotheek / XML Beheren (Uitklappen)
+            </button>
+            <div id="libraryContent" style="display: none; padding: 20px; border-top: 1px solid #1e293b; background: #090d16;">
+                <label>Upload Rekordbox / Nummer XML:</label>
+                <input type="file" id="xmlFile" accept=".xml">
+                <button class="btn-primary" onclick="uploadXml()" style="margin-bottom: 20px;">Library Importeren</button>
+                
+                <hr style="border: 0; border-top: 1px solid #1e293b; margin: 15px 0;">
+                
+                <label>Handmatig Nummer Toevoegen:</label>
+                <input type="text" id="manualArtist" placeholder="Artiest">
+                <input type="text" id="manualTitle" placeholder="Titel">
+                <button class="btn-primary" onclick="addManualTrack()">Toevoegen</button>
+                <p id="libraryCount" style="margin-top: 15px; font-size: 13px; color: #aaa;"></p>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -63,133 +111,205 @@
             window.location.href = 'login.html';
         }
 
-        // Huisstijl toepassen
-        if (user.role === 'solo_dj') {
-            document.getElementById('soloBrandingCard').style.display = 'block';
-            let branding = JSON.parse(localStorage.getItem('settings_' + user.username));
-            if (branding) {
-                PartyApp.applyBranding(branding);
-                document.getElementById('soloPrimary').value = branding.primaryColor || '#ff3366';
-                document.getElementById('soloBg').value = branding.backgroundColor || '#0f0e17';
+        let partyData = null;
+
+        async function initDj() {
+            partyData = await PartyApp.db.getSession(user.username);
+            if (!partyData) return;
+
+            document.getElementById('currentPartyCode').innerText = partyData.party_code;
+            document.getElementById('welcomeText').value = partyData.welcome_text || '';
+            updateLibraryCount();
+            renderLiveRequests();
+
+            // Huisstijl laden
+            if (user.role === 'solo_dj') {
+                document.getElementById('soloBrandingCard').style.display = 'block';
+                document.getElementById('soloPrimary').value = partyData.primary_color || '#3b82f6';
+                document.getElementById('soloBg').value = partyData.background_color || '#0a0f1d';
+                PartyApp.applyBranding({ primaryColor: partyData.primary_color, backgroundColor: partyData.background_color });
+            } else if (user.company) {
+                document.getElementById('brandHeaderTitle').innerText = user.company.toUpperCase();
+                let allUsers = await PartyApp.db.getUsers();
+                let uObj = allUsers.find(u => u.username === user.username);
+                if (uObj && uObj.company) {
+                    let compData = await PartyApp.db.getSession(uObj.company);
+                    if (compData) PartyApp.applyBranding({ primaryColor: compData.primary_color, backgroundColor: compData.background_color });
+                }
             }
-        } else if (user.company) {
-            let companyBranding = JSON.parse(localStorage.getItem('settings_' + user.company));
-            if (companyBranding) PartyApp.applyBranding(companyBranding);
         }
 
-        let partyData = JSON.parse(localStorage.getItem('party_session_' + user.username)) || { code: generateCode(), welcome: '', library: [], requests: [] };
-        if (!partyData.code) {
-            partyData.code = generateCode();
-            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
         }
 
-        document.getElementById('currentPartyCode').innerText = partyData.code;
-        document.getElementById('welcomeText').value = partyData.welcome || '';
-        updateLibraryCount();
-        renderLiveRequests();
-
-        function generateCode() {
-            return Math.floor(100000 + Math.random() * 900000).toString();
+        function toggleLibraryAccordion() {
+            const content = document.getElementById('libraryContent');
+            content.style.display = content.style.display === 'none' ? 'block' : 'none';
         }
 
-        function generateNewPartyCode() {
-            partyData.code = generateCode();
-            partyData.requests = []; // Vorige gastenverzoekjes wissen
-            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
-            document.getElementById('currentPartyCode').innerText = partyData.code;
+        window.generateNewPartyCode = async function() {
+            const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+            partyData.party_code = newCode;
+            partyData.requests = [];
+            partyData.played = [];
+            await PartyApp.db.updateSession(user.username, { party_code: newCode, requests: [], played: [] });
+            document.getElementById('currentPartyCode').innerText = newCode;
             renderLiveRequests();
             alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
-        }
+        };
 
-        function saveWelcomeText() {
-            partyData.welcome = document.getElementById('welcomeText').value;
-            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+        window.saveWelcomeText = async function() {
+            const text = document.getElementById('welcomeText').value;
+            partyData.welcome_text = text;
+            await PartyApp.db.updateSession(user.username, { welcome_text: text });
             alert('Welkomsttekst opgeslagen!');
-        }
+        };
 
-        function saveSoloBranding() {
-            let branding = {
-                primaryColor: document.getElementById('soloPrimary').value,
-                backgroundColor: document.getElementById('soloBg').value
-            };
-            localStorage.setItem('settings_' + user.username, JSON.stringify(branding));
-            PartyApp.applyBranding(branding);
+        window.saveSoloBranding = async function() {
+            const primaryColor = document.getElementById('soloPrimary').value;
+            const backgroundColor = document.getElementById('soloBg').value;
+            partyData.primary_color = primaryColor;
+            partyData.background_color = backgroundColor;
+            await PartyApp.db.updateSession(user.username, { primary_color: primaryColor, background_color: backgroundColor });
+            PartyApp.applyBranding({ primaryColor, backgroundColor });
             alert('Huisstijl opgeslagen!');
-        }
+        };
 
-        function uploadXml() {
+        window.uploadXml = async function() {
             const fileInput = document.getElementById('xmlFile');
-            if(fileInput.files.length === 0) {
-                alert('Kies eerst een XML-bestand.');
-                return;
-            }
+            if(fileInput.files.length === 0) { alert('Kies eerst een XML-bestand.'); return; }
+            
             const reader = new FileReader();
-            reader.onload = function() {
-                // Simulatie van XML parsing
+            reader.onload = async function() {
                 const dummyTracks = [
                     { artist: "David Guetta", title: "Titanium" },
                     { artist: "Swedish House Mafia", title: "Don't You Worry Child" },
                     { artist: "Avicii", title: "Levels" }
                 ];
+                if (!partyData.library) partyData.library = [];
                 partyData.library = partyData.library.concat(dummyTracks);
-                localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+                await PartyApp.db.updateSession(user.username, { library: partyData.library });
                 updateLibraryCount();
                 alert('Library succesvol geïmporteerd!');
             };
             reader.readAsText(fileInput.files[0]);
-        }
+        };
 
-        function addManualTrack() {
+        window.addManualTrack = async function() {
             const artist = document.getElementById('manualArtist').value.trim();
             const title = document.getElementById('manualTitle').value.trim();
-            if(!artist || !title) {
-                alert('Vul artiest en titel in.');
-                return;
-            }
+            if(!artist || !title) { alert('Vul artiest en titel in.'); return; }
+            
+            if (!partyData.library) partyData.library = [];
             partyData.library.push({ artist, title });
-            localStorage.setItem('party_session_' + user.username, JSON.stringify(partyData));
+            await PartyApp.db.updateSession(user.username, { library: partyData.library });
             document.getElementById('manualArtist').value = '';
             document.getElementById('manualTitle').value = '';
             updateLibraryCount();
             alert('Nummer toegevoegd aan library!');
-        }
+        };
 
         function updateLibraryCount() {
-            document.getElementById('libraryCount').innerText = `Aantal nummers in library: ${partyData.library.length}`;
+            const count = partyData && partyData.library ? partyData.library.length : 0;
+            document.getElementById('libraryCount').innerText = `Aantal nummers in library: ${count}`;
         }
 
         function renderLiveRequests() {
-            let currentData = JSON.parse(localStorage.getItem('party_session_' + user.username)) || partyData;
             const container = document.getElementById('liveRequests');
+            const playedContainer = document.getElementById('playedRequests');
             container.innerHTML = '';
+            playedContainer.innerHTML = '';
             
-            if(!currentData.requests || currentData.requests.length === 0) {
-                container.innerHTML = '<p style="color: #aaa;">Nog geen verzoekjes ontvangen.</p>';
-                return;
+            // Render Live Verzoekjes
+            if(!partyData || !partyData.requests || partyData.requests.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align: center; color: #888; padding: 25px;">Geen verzoekjes in de wachtrij 🎉</div>';
+            } else {
+                const sortBy = document.getElementById('sortFilter').value;
+                let sortedReqs = [...partyData.requests];
+                if (sortBy === 'votes') {
+                    sortedReqs.sort((a, b) => b.votes - a.votes);
+                } else {
+                    sortedReqs.sort((a, b) => b.id - a.id);
+                }
+
+                sortedReqs.forEach((req) => {
+                    container.innerHTML += `
+                        <div class="card" style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; padding: 15px;">
+                            <div>
+                                <b style="font-size: 15px;">${req.artist} - ${req.title}</b>
+                                ${req.message ? `<br><small style="color: var(--primary-color);">Bericht: "${req.message}"</small>` : ''}
+                                <br><span style="font-size: 13px; color: var(--accent-color); font-weight: bold; margin-top: 4px; display: inline-block;">👍 ${req.votes} stemmen</span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="markAsPlayed(${req.id})" style="background: var(--accent-color); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Gedraaid</button>
+                                <button onclick="removeRequest(${req.id})" style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Wis</button>
+                            </div>
+                        </div>
+                    `;
+                });
             }
 
-            currentData.requests.sort((a, b) => b.votes - a.votes);
-
-            currentData.requests.forEach((req) => {
-                container.innerHTML += `
-                    <div style="background: #0f0e17; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <b>${req.artist} - ${req.title}</b>
-                            ${req.message ? `<br><small style="color: var(--primary-color);">Bericht: "${req.message}"</small>` : ''}
+            // Render Reeds Gedraaid
+            if (!partyData || !partyData.played || partyData.played.length === 0) {
+                playedContainer.innerHTML = 'Nog geen nummers afgevinkt.';
+            } else {
+                partyData.played.forEach((req) => {
+                    playedContainer.innerHTML += `
+                        <div style="background: #090d16; padding: 10px 15px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b;">
+                            <span style="text-decoration: line-through; color: #888;">${req.artist} - ${req.title}</span>
+                            <button onclick="deletePlayed(${req.id})" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px;">Verwijderen</button>
                         </div>
-                        <div style="font-size: 18px; font-weight: bold; color: var(--accent-color);">👍 ${req.votes}</div>
-                    </div>
-                `;
-            });
+                    `;
+                });
+            }
         }
 
-        setInterval(() => {
-            let currentData = JSON.parse(localStorage.getItem('party_session_' + user.username));
-            if(currentData) {
-                partyData = currentData;
+        window.markAsPlayed = async function(requestId) {
+            if (!partyData.requests) return;
+            const idx = partyData.requests.findIndex(r => r.id === requestId);
+            if (idx !== -1) {
+                const item = partyData.requests.splice(idx, 1)[0];
+                if (!partyData.played) partyData.played = [];
+                partyData.played.push(item);
+                await PartyApp.db.updateSession(user.username, { requests: partyData.requests, played: partyData.played });
                 renderLiveRequests();
             }
+        };
+
+        window.removeRequest = async function(requestId) {
+            partyData.requests = partyData.requests.filter(r => r.id !== requestId);
+            await PartyApp.db.updateSession(user.username, { requests: partyData.requests });
+            renderLiveRequests();
+        };
+
+        window.deletePlayed = async function(requestId) {
+            partyData.played = partyData.played.filter(r => r.id !== requestId);
+            await PartyApp.db.updateSession(user.username, { played: partyData.played });
+            renderLiveRequests();
+        };
+
+        window.clearAllRequests = async function() {
+            if (confirm('Weet je zeker dat je alle verzoekjes wilt wissen?')) {
+                partyData.requests = [];
+                await PartyApp.db.updateSession(user.username, { requests: [] });
+                renderLiveRequests();
+            }
+        };
+
+        // Live polling voor updates (elke 2 seconden)
+        setInterval(async () => {
+            if (user) {
+                let freshData = await PartyApp.db.getSession(user.username);
+                if (freshData) {
+                    partyData = freshData;
+                    renderLiveRequests();
+                }
+            }
         }, 2000);
+
+        setTimeout(initDj, 500);
     </script>
 </body>
 </html>
