@@ -1,36 +1,78 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Partyrequest - Inloggen</title>
-  <style>
-    body { background-color: #121212; color: #fff; font-family: sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-    .card { background: rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 8px; width: 100%; max-width: 350px; text-align:center; }
-    .btn { background-color: #FF4081; color: #fff; border: none; padding: 10px; border-radius: 4px; cursor: pointer; width: 100%; font-size:16px; margin-top:10px; }
-    input { margin: 10px 0; padding: 10px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; display: block; width: 100%; box-sizing: border-box; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partyrequest - Inloggen</title>
+    <script src="style.js"></script>
 </head>
 <body>
+    <div class="container" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <div class="card" style="width: 100%; max-width: 400px;">
+            <h2 style="color: var(--primary-color); margin-bottom: 20px; text-align: center;">Partyrequest Inloggen</h2>
+            
+            <form id="loginForm">
+                <label>Gebruikersnaam:</label>
+                <input type="text" id="username" required>
+                
+                <label>Wachtwoord:</label>
+                <input type="password" id="password" required>
+                
+                <button type="submit" class="btn-primary" style="margin-top: 15px;">Inloggen</button>
+            </form>
 
-  <div class="card">
-    <h1>Partyrequest</h1>
-    <p>Inloggen voor Admin, Bedrijven & DJ's</p>
-    <input type="email" id="email" placeholder="E-mailadres">
-    <input type="password" id="password" placeholder="Wachtwoord">
-    <button class="btn" onclick="submitLogin()">Inloggen</button>
-  </div>
+            <div style="margin-top: 20px; text-align: center; font-size: 13px; color: #888;">
+                Ben je gast? <a href="index.html" style="color: var(--primary-color); text-decoration: none;">Ga naar de gastenpagina</a>
+            </div>
+        </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/auth.js"></script>
+    <script>
+        // Standaard admin-account aanmaken als de database nog leeg is
+        let users = JSON.parse(localStorage.getItem('party_users')) || [];
+        if (users.length === 0) {
+            users.push({ username: 'admin', password: 'adminpassword', role: 'admin' });
+            localStorage.setItem('party_users', JSON.stringify(users));
+        }
 
-  <script>
-    async function submitLogin() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      await handleLogin(email, password);
-    }
-  </script>
+        // Als de gebruiker al is ingelogd, direct doorsturen op basis van rol
+        const currentUser = PartyApp.getCurrentUser();
+        if (currentUser) {
+            redirectUser(currentUser.role);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('username').value.trim();
+            const passwordInput = document.getElementById('password').value.trim();
+
+            let allUsers = JSON.parse(localStorage.getItem('party_users')) || [];
+            const foundUser = allUsers.find(u => u.username === usernameInput && u.password === passwordInput);
+
+            if (foundUser) {
+                localStorage.setItem('party_current_user', JSON.stringify(foundUser));
+                redirectUser(foundUser.role);
+            } else {
+                alert('Onjuiste gebruikersnaam of wachtwoord!');
+            }
+        });
+
+        function redirectUser(role) {
+            switch(role) {
+                case 'admin':
+                    window.location.href = 'admin.html';
+                    break;
+                case 'company':
+                    window.location.href = 'profiles.html';
+                    break;
+                case 'solo_dj':
+                case 'company_dj':
+                    window.location.href = 'dj.html';
+                    break;
+                default:
+                    window.location.href = 'login.html';
+            }
+        }
+    </script>
 </body>
 </html>
