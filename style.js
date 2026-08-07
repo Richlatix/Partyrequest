@@ -150,7 +150,6 @@ const PartyApp = {
         },
         async updateSession(username, updateFields) {
             if (!supabaseClient) return false;
-            // Zorg ervoor dat de username altijd meegaat en gebruik upsert
             const payload = { ...updateFields, username: username };
             const { error } = await supabaseClient.from('party_sessions').upsert(payload);
             if (error) { 
@@ -186,10 +185,6 @@ const PartyApp = {
 
             console.log('Sessie succesvol gevonden:', data);
             return data;
-            }
-
-            return data;
-        
         }
     }
 };
