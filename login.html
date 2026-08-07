@@ -38,16 +38,16 @@
                     return;
                 }
 
-                // Admin mag altijd inloggen
+                const now = new Date();
+
+                // 1. Admin controle
                 if (foundUser.role === 'admin') {
                     localStorage.setItem('party_current_user', JSON.stringify(foundUser));
                     window.location.href = 'admin.html';
                     return;
                 }
 
-                const now = new Date();
-
-                // Controleer abonnementsvervaldatum voor bedrijven en solo DJ's
+                // 2. Abonnementscontrole voor Bedrijven en Solo DJ's
                 if (foundUser.expires_at) {
                     const expDate = new Date(foundUser.expires_at);
                     if (expDate < now) {
@@ -56,7 +56,7 @@
                     }
                 }
 
-                // Als het een sub-DJ is, controleer dan ook of het moederbedrijf nog geldig is
+                // 3. Sub-DJ controle (check moederbedrijf)
                 if (foundUser.role === 'company_dj' && foundUser.company) {
                     const parentUser = users.find(u => u.username === foundUser.company);
                     if (!parentUser) {
@@ -72,9 +72,16 @@
                     }
                 }
 
-                // Sla sessie op en stuur door naar dashboard
+                // 4. Juiste redirect logica per rol
                 localStorage.setItem('party_current_user', JSON.stringify(foundUser));
-                window.location.href = 'dashboard.html';
+                
+                if (foundUser.role === 'company' || foundUser.role === 'solo_dj') {
+                    window.location.href = 'profiles.html';
+                } else if (foundUser.role === 'company_dj') {
+                    window.location.href = 'dj.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
 
             } catch (err) {
                 console.error('Inlogfout:', err);
