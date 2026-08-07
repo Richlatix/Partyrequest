@@ -108,12 +108,12 @@
 
         let partyData = null;
 
+        // Bedrijfs-DJ's gebruiken exact dezelfde sessie/code als hun moederbedrijf
+        const sessionUsername = (user.role === 'company_dj' && user.company) ? user.company : user.username;
+
         async function applyLatestBranding() {
             try {
-                let targetUsername = user.username;
-                
                 if (user.role === 'company_dj' && user.company) {
-                    targetUsername = user.company;
                     const headerTitle = document.getElementById('brandHeaderTitle');
                     if (headerTitle) {
                         headerTitle.innerText = user.company.toUpperCase();
@@ -125,7 +125,7 @@
                     }
                 }
 
-                let freshSession = await PartyApp.db.getSession(targetUsername);
+                let freshSession = await PartyApp.db.getSession(sessionUsername);
                 if (freshSession) {
                     PartyApp.applyBranding({ 
                         primaryColor: freshSession.primary_color, 
@@ -139,7 +139,7 @@
 
         async function initDj() {
             try {
-                partyData = await PartyApp.db.getSession(user.username);
+                partyData = await PartyApp.db.getSession(sessionUsername);
                 if (!partyData) return;
 
                 const codeEl = document.getElementById('currentPartyCode');
@@ -181,7 +181,7 @@
             partyData.party_code = newCode;
             partyData.requests = [];
             partyData.played = [];
-            await PartyApp.db.updateSession(user.username, { party_code: newCode, requests: [], played: [] });
+            await PartyApp.db.updateSession(sessionUsername, { party_code: newCode, requests: [], played: [] });
             document.getElementById('currentPartyCode').innerText = newCode;
             renderLiveRequests();
             alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
@@ -190,7 +190,7 @@
         window.saveWelcomeText = async function() {
             const text = document.getElementById('welcomeText').value;
             partyData.welcome_text = text;
-            await PartyApp.db.updateSession(user.username, { welcome_text: text });
+            await PartyApp.db.updateSession(sessionUsername, { welcome_text: text });
             alert('Welkomsttekst opgeslagen!');
         };
 
@@ -199,7 +199,7 @@
             const backgroundColor = document.getElementById('soloBg').value;
             partyData.primary_color = primaryColor;
             partyData.background_color = backgroundColor;
-            await PartyApp.db.updateSession(user.username, { primary_color: primaryColor, background_color: backgroundColor });
+            await PartyApp.db.updateSession(sessionUsername, { primary_color: primaryColor, background_color: backgroundColor });
             PartyApp.applyBranding({ primaryColor, backgroundColor });
             alert('Huisstijl opgeslagen!');
         };
@@ -217,7 +217,7 @@
                 ];
                 if (!partyData.library) partyData.library = [];
                 partyData.library = partyData.library.concat(dummyTracks);
-                await PartyApp.db.updateSession(user.username, { library: partyData.library });
+                await PartyApp.db.updateSession(sessionUsername, { library: partyData.library });
                 updateLibraryCount();
                 alert('Library succesvol geïmporteerd!');
             };
@@ -231,7 +231,7 @@
             
             if (!partyData.library) partyData.library = [];
             partyData.library.push({ artist, title });
-            await PartyApp.db.updateSession(user.username, { library: partyData.library });
+            await PartyApp.db.updateSession(sessionUsername, { library: partyData.library });
             document.getElementById('manualArtist').value = '';
             document.getElementById('manualTitle').value = '';
             updateLibraryCount();
@@ -302,7 +302,7 @@
                 const item = partyData.requests.splice(idx, 1)[0];
                 if (!partyData.played) partyData.played = [];
                 partyData.played.push(item);
-                await PartyApp.db.updateSession(user.username, { requests: partyData.requests, played: partyData.played });
+                await PartyApp.db.updateSession(sessionUsername, { requests: partyData.requests, played: partyData.played });
                 renderLiveRequests();
             }
         };
@@ -310,28 +310,28 @@
         window.removeRequest = async function(requestId) {
             if (!partyData.requests) return;
             partyData.requests = partyData.requests.filter(r => r.id !== requestId);
-            await PartyApp.db.updateSession(user.username, { requests: partyData.requests });
+            await PartyApp.db.updateSession(sessionUsername, { requests: partyData.requests });
             renderLiveRequests();
         };
 
         window.deletePlayed = async function(requestId) {
             if (!partyData.played) return;
             partyData.played = partyData.played.filter(r => r.id !== requestId);
-            await PartyApp.db.updateSession(user.username, { played: partyData.played });
+            await PartyApp.db.updateSession(sessionUsername, { played: partyData.played });
             renderLiveRequests();
         };
 
         window.clearAllRequests = async function() {
             if (confirm('Weet je zeker dat je alle verzoekjes wilt wissen?')) {
                 partyData.requests = [];
-                await PartyApp.db.updateSession(user.username, { requests: [] });
+                await PartyApp.db.updateSession(sessionUsername, { requests: [] });
                 renderLiveRequests();
             }
         };
 
         setInterval(async () => {
             if (user) {
-                let freshData = await PartyApp.db.getSession(user.username);
+                let freshData = await PartyApp.db.getSession(sessionUsername);
                 if (freshData) {
                     partyData = freshData;
                     renderLiveRequests();
