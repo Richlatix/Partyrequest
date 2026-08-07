@@ -161,10 +161,13 @@ const PartyApp = {
             return true;
         },
         async getSessionByCode(code) {
-            if (!supabaseClient || !code) return null;
-            // Maak de code schoon (verwijder per ongeluk meegekopieerde spaties)
+            if (!supabaseClient || !code) {
+                console.warn('Geen code meegegeven aan getSessionByCode');
+                return null;
+            }
             const cleanCode = code.toString().trim();
-            
+            console.log('Zoeken naar partycode in database:', cleanCode);
+
             const { data, error } = await supabaseClient
                 .from('party_sessions')
                 .select('*')
@@ -172,13 +175,17 @@ const PartyApp = {
                 .maybeSingle();
 
             if (error) {
-                console.error('Supabase zoekfout op code:', error);
+                console.error('Supabase zoekfout:', error);
                 return null;
             }
-            
+
             if (!data) {
-                console.warn('Geen sessie gevonden voor partycode:', cleanCode);
+                console.warn('Geen sessie gevonden met code:', cleanCode);
                 return null;
+            }
+
+            console.log('Sessie succesvol gevonden:', data);
+            return data;
             }
 
             return data;
