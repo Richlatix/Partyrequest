@@ -107,8 +107,6 @@
         }
 
         let partyData = null;
-
-        // Bepaal de juiste database-sleutel: company_dj leest/schrijft altijd naar het moederbedrijf
         const dbKey = (user.role === 'company_dj' && user.company) ? user.company : user.username;
 
         async function applyLatestBranding() {
@@ -175,22 +173,34 @@
 
         window.generateNewPartyCode = async function() {
             const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-            if (!partyData) partyData = {};
+            if (!partyData) partyData = { requests: [], played: [], library: [] };
+            
             partyData.party_code = newCode;
             partyData.requests = [];
             partyData.played = [];
-            await PartyApp.db.updateSession(dbKey, { party_code: newCode, requests: [], played: [] });
-            document.getElementById('currentPartyCode').innerText = newCode;
-            renderLiveRequests();
-            alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
+
+            try {
+                await PartyApp.db.updateSession(dbKey, partyData);
+                const codeEl = document.getElementById('currentPartyCode');
+                if (codeEl) codeEl.innerText = newCode;
+                renderLiveRequests();
+                alert('Nieuwe partycode gegenereerd! Vorige sessie is gereset.');
+            } catch (err) {
+                console.error("Fout bij genereren partycode:", err);
+                alert("Kon geen nieuwe partycode opslaan.");
+            }
         };
 
         window.saveWelcomeText = async function() {
             const text = document.getElementById('welcomeText').value;
             if (!partyData) partyData = {};
             partyData.welcome_text = text;
-            await PartyApp.db.updateSession(dbKey, { welcome_text: text });
-            alert('Welkomsttekst opgeslagen!');
+            try {
+                await PartyApp.db.updateSession(dbKey, partyData);
+                alert('Welkomsttekst opgeslagen!');
+            } catch (err) {
+                console.error("Fout bij opslaan welkomsttekst:", err);
+            }
         };
 
         window.saveSoloBranding = async function() {
@@ -199,9 +209,13 @@
             if (!partyData) partyData = {};
             partyData.primary_color = primaryColor;
             partyData.background_color = backgroundColor;
-            await PartyApp.db.updateSession(dbKey, { primary_color: primaryColor, background_color: backgroundColor });
-            PartyApp.applyBranding({ primaryColor, backgroundColor });
-            alert('Huisstijl opgeslagen!');
+            try {
+                await PartyApp.db.updateSession(dbKey, partyData);
+                PartyApp.applyBranding({ primaryColor, backgroundColor });
+                alert('Huisstijl opgeslagen!');
+            } catch (err) {
+                console.error("Fout bij opslaan huisstijl:", err);
+            }
         };
 
         window.uploadXml = async function() {
@@ -218,9 +232,14 @@
                 if (!partyData) partyData = {};
                 if (!partyData.library) partyData.library = [];
                 partyData.library = partyData.library.concat(dummyTracks);
-                await PartyApp.db.updateSession(dbKey, { library: partyData.library });
-                updateLibraryCount();
-                alert('Library succesvol geïmporteerd!');
+                
+                try {
+                    await PartyApp.db.updateSession(dbKey, partyData);
+                    updateLibraryCount();
+                    alert('Library succesvol geïmporteerd!');
+                } catch (err) {
+                    console.error("Fout bij importeren library:", err);
+                }
             };
             reader.readAsText(fileInput.files[0]);
         };
@@ -233,11 +252,16 @@
             if (!partyData) partyData = {};
             if (!partyData.library) partyData.library = [];
             partyData.library.push({ artist, title });
-            await PartyApp.db.updateSession(dbKey, { library: partyData.library });
-            document.getElementById('manualArtist').value = '';
-            document.getElementById('manualTitle').value = '';
-            updateLibraryCount();
-            alert('Nummer toegevoegd aan library!');
+            
+            try {
+                await PartyApp.db.updateSession(dbKey, partyData);
+                document.getElementById('manualArtist').value = '';
+                document.getElementById('manualTitle').value = '';
+                updateLibraryCount();
+                alert('Nummer toegevoegd aan library!');
+            } catch (err) {
+                console.error("Fout bij toevoegen nummer:", err);
+            }
         };
 
         function updateLibraryCount() {
@@ -304,7 +328,7 @@
                 const item = partyData.requests.splice(idx, 1)[0];
                 if (!partyData.played) partyData.played = [];
                 partyData.played.push(item);
-                await PartyApp.db.updateSession(dbKey, { requests: partyData.requests, played: partyData.played });
+                await PartyApp.db.updateSession(dbKey, partyData);
                 renderLiveRequests();
             }
         };
@@ -312,14 +336,14 @@
         window.removeRequest = async function(requestId) {
             if (!partyData || !partyData.requests) return;
             partyData.requests = partyData.requests.filter(r => r.id !== requestId);
-            await PartyApp.db.updateSession(dbKey, { requests: partyData.requests });
+            await PartyApp.db.updateSession(dbKey, partyData);
             renderLiveRequests();
         };
 
         window.deletePlayed = async function(requestId) {
             if (!partyData || !partyData.played) return;
             partyData.played = partyData.played.filter(r => r.id !== requestId);
-            await PartyApp.db.updateSession(dbKey, { played: partyData.played });
+            await PartyApp.db.updateSession(dbKey, partyData);
             renderLiveRequests();
         };
 
@@ -327,12 +351,11 @@
             if (confirm('Weet je zeker dat je alle verzoekjes wilt wissen?')) {
                 if (!partyData) partyData = {};
                 partyData.requests = [];
-                await PartyApp.db.updateSession(dbKey, { requests: [] });
+                await PartyApp.db.updateSession(dbKey, partyData);
                 renderLiveRequests();
             }
         };
 
-        // Live polling voor updates én huisstijl (elke 2 seconden)
         setInterval(async () => {
             if (user) {
                 let freshData = await PartyApp.db.getSession(dbKey);
