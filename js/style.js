@@ -2,15 +2,15 @@
 // PARTYREQUEST - CENTRAAL STYLE & LOGIC (style.js)
 // ==========================================
 
-// 1. Dynamisch CSS injecteren in de <head> van elke pagina
+// 1. Dynamisch CSS injecteren in de <head> van elke pagina (Donkerblauwe Huisstijl)
 const globalStyles = `
     :root {
-        --primary-color: #ff3366;
-        --secondary-color: #1a1a2e;
-        --background-color: #0f0e17;
-        --card-background: #161622;
-        --text-color: #ffffff;
-        --accent-color: #2cb67d;
+        --primary-color: #3b82f6;     /* Helder elektrisch blauw */
+        --secondary-color: #1e3a8a;   /* Diep koningsblauw */
+        --background-color: #0a0f1d;  /* Zeer donker midnight blue */
+        --card-background: #131b2e;   /* Strakke donkerblauwe kaartkleur */
+        --text-color: #f8fafc;        /* Helder wit/lichtgrijs voor leesbaarheid */
+        --accent-color: #10b981;      /* Frisse groen/teal kleur voor stemmen/successen */
     }
 
     * {
@@ -39,7 +39,8 @@ const globalStyles = `
         background-color: var(--card-background);
         border-radius: 12px;
         padding: 25px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(59, 130, 246, 0.1);
     }
 
     .btn-primary {
@@ -50,28 +51,40 @@ const globalStyles = `
         border-radius: 8px;
         cursor: pointer;
         font-weight: bold;
-        transition: opacity 0.2s;
+        transition: opacity 0.2s, background-color 0.2s;
         width: 100%;
     }
 
     .btn-primary:hover {
         opacity: 0.9;
+        background-color: #2563eb;
     }
 
     input, select, textarea {
         width: 100%;
-        padding: 10px;
-        border-radius: 6px;
-        border: 1px solid #333;
-        background-color: #0f0e17;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #1e293b;
+        background-color: #090d16;
         color: white;
         margin-top: 5px;
         margin-bottom: 15px;
+        font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
     }
 
     label {
         font-size: 14px;
         font-weight: 600;
+        color: #cbd5e1;
+    }
+
+    h1, h2, h3 {
+        color: var(--text-color);
     }
 `;
 
