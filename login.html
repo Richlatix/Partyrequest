@@ -4,75 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Partyrequest - Inloggen</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="style.js"></script>
 </head>
 <body>
-    <div class="container" style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+    <div class="container" style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
         <div class="card" style="width: 100%; max-width: 400px;">
-            <h2 style="color: var(--primary-color); margin-bottom: 20px; text-align: center;">Partyrequest Inloggen</h2>
-            
+            <h2 style="margin-bottom: 20px; text-align: center; color: var(--primary-color);">Inloggen</h2>
             <form id="loginForm">
                 <label>Gebruikersnaam:</label>
-                <input type="text" id="username" required>
+                <input type="text" id="username" placeholder="Je gebruikersnaam" required>
                 
                 <label>Wachtwoord:</label>
-                <input type="password" id="password" required>
+                <input type="password" id="password" placeholder="Je wachtwoord" required>
                 
-                <button type="submit" class="btn-primary" style="margin-top: 15px;">Inloggen</button>
+                <button type="submit" class="btn-primary" style="margin-top: 10px;">Inloggen</button>
             </form>
-
-            <div style="margin-top: 20px; text-align: center; font-size: 13px; color: #888;">
-                Ben je gast? <a href="index.html" style="color: var(--primary-color); text-decoration: none;">Ga naar de gastenpagina</a>
-            </div>
         </div>
     </div>
 
     <script>
-        // Standaard admin-account aanmaken als de database nog leeg is
-        let users = JSON.parse(localStorage.getItem('party_users')) || [];
-        if (users.length === 0) {
-            users.push({ username: 'admin', password: 'adminpassword', role: 'admin' });
-            localStorage.setItem('party_users', JSON.stringify(users));
-        }
-
-        // Als de gebruiker al is ingelogd, direct doorsturen op basis van rol
-        const currentUser = PartyApp.getCurrentUser();
-        if (currentUser) {
-            redirectUser(currentUser.role);
-        }
-
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('username').value.trim();
             const passwordInput = document.getElementById('password').value.trim();
 
-            let allUsers = JSON.parse(localStorage.getItem('party_users')) || [];
-            const foundUser = allUsers.find(u => u.username === usernameInput && u.password === passwordInput);
+            try {
+                const users = await PartyApp.db.getUsers();
+                const foundUser = users.find(u => u.username === usernameInput && u.password === passwordInput);
 
-            if (foundUser) {
+                if (!foundUser) {
+                    alert('Onjuiste gebruikersnaam of wachtwoord!');
+                    return;
+                }
+
+                // Admin mag altijd inloggen
+                if (foundUser.role === 'admin') {
+                    localStorage.setItem('party_current_user', JSON.stringify(foundUser));
+                    window.location.href = 'admin.html';
+                    return;
+                }
+
+                const now = new Date();
+
+                // Controleer abonnementsvervaldatum voor bedrijven en solo DJ's
+                if (foundUser.expires_at) {
+                    const expDate = new Date(foundUser.expires_at);
+                    if (expDate < now) {
+                        alert('Dit abonnement is verlopen. Neem contact op met de beheerder.');
+                        return;
+                    }
+                }
+
+                // Als het een sub-DJ is, controleer dan ook of het moederbedrijf nog geldig is
+                if (foundUser.role === 'company_dj' && foundUser.company) {
+                    const parentUser = users.find(u => u.username === foundUser.company);
+                    if (!parentUser) {
+                        alert('Het moederbedrijf van dit DJ-account bestaat niet meer.');
+                        return;
+                    }
+                    if (parentUser.expires_at) {
+                        const parentExp = new Date(parentUser.expires_at);
+                        if (parentExp < now) {
+                            alert('Het abonnement van het moederbedrijf is verlopen. Inloggen is niet mogelijk.');
+                            return;
+                        }
+                    }
+                }
+
+                // Sla sessie op en stuur door naar dashboard
                 localStorage.setItem('party_current_user', JSON.stringify(foundUser));
-                redirectUser(foundUser.role);
-            } else {
-                alert('Onjuiste gebruikersnaam of wachtwoord!');
+                window.location.href = 'dashboard.html';
+
+            } catch (err) {
+                console.error('Inlogfout:', err);
+                alert('Er ging iets mis bij het inloggen.');
             }
         });
-
-        function redirectUser(role) {
-            switch(role) {
-                case 'admin':
-                    window.location.href = 'admin.html';
-                    break;
-                case 'company':
-                    window.location.href = 'profiles.html';
-                    break;
-                case 'solo_dj':
-                case 'company_dj':
-                    window.location.href = 'dj.html';
-                    break;
-                default:
-                    window.location.href = 'login.html';
-            }
-        }
     </script>
 </body>
 </html>
