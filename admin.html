@@ -8,25 +8,61 @@
     <script src="style.js"></script>
 </head>
 <body>
-    <div class="container" style="padding-top: 40px; max-width: 900px;">
+    <div class="container" style="padding-top: 30px; max-width: 1000px;">
         <!-- Topbar -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <div>
                 <h1 style="font-size: 28px; font-weight: 800; color: var(--primary-color);">Admin Dashboard</h1>
-                <p style="font-size: 13px; color: #888; margin-top: 2px;">Beheer bedrijven en solo DJ accounts</p>
+                <p style="font-size: 13px; color: #888; margin-top: 2px;">Beheer accounts, abonnementen en live statistieken</p>
             </div>
             <button class="btn-primary" onclick="PartyApp.logout()" style="background: #ef4444; width: auto; padding: 10px 16px; font-size: 13px;">Uitloggen</button>
+        </div>
+
+        <!-- Live Tellers / Stats Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 25px;">
+            <div class="card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <span style="color: #888; font-size: 12px; font-weight: bold; display: block;">ACTIEVE PARTYCODES</span>
+                    <span id="activeCodesCount" style="font-size: 24px; font-weight: bold; color: var(--accent-color);">0</span>
+                </div>
+                <span style="font-size: 28px;">🎟️</span>
+            </div>
+            <div class="card" style="padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <span style="color: #888; font-size: 12px; font-weight: bold; display: block;">TOTAAL ACCOUNTS</span>
+                    <span id="totalAccountsCount" style="font-size: 24px; font-weight: bold; color: var(--primary-color);">0</span>
+                </div>
+                <span style="font-size: 28px;">👥</span>
+            </div>
         </div>
         
         <!-- Account Aanmaken Card -->
         <div class="card" style="margin-bottom: 25px;">
-            <h3 style="margin-bottom: 15px; font-size: 18px;">Bedrijf of Solo DJ Aanmaken</h3>
+            <h3 style="margin-bottom: 15px; font-size: 18px;">Nieuw Account Aanmaken</h3>
             <form id="createUserForm">
-                <label>Type Account:</label>
-                <select id="roleSelect">
-                    <option value="company">Bedrijf</option>
-                    <option value="solo_dj">Solo DJ</option>
-                </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>Type Account:</label>
+                        <select id="roleSelect" onchange="toggleCompanyInput()">
+                            <option value="company">Bedrijf</option>
+                            <option value="solo_dj">Solo DJ</option>
+                            <option value="company_dj">DJ onder Bedrijf</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Abonnementsduur:</label>
+                        <select id="subscriptionDuration">
+                            <option value="1_month">1 Maand</option>
+                            <option value="1_year" selected>1 Jaar</option>
+                            <option value="2_years">2 Jaar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="companyContainer" style="display: none;">
+                    <label>Koppel aan Bedrijf (Bedrijfsnaam):</label>
+                    <input type="text" id="parentCompany" placeholder="Naam van het moederbedrijf">
+                </div>
                 
                 <label>Gebruikersnaam:</label>
                 <input type="text" id="newUsername" placeholder="Bijv. dj_mark of party-rent" required>
@@ -34,13 +70,13 @@
                 <label>Wachtwoord:</label>
                 <input type="password" id="newPassword" placeholder="Minimaal 6 tekens" required>
                 
-                <button type="submit" class="btn-primary" style="margin-top: 5px;">Account Aanmaken</button>
+                <button type="submit" class="btn-primary" style="margin-top: 5px;">Account Aanmaken & Abonnement Starten</button>
             </form>
         </div>
 
         <!-- Account Beheer Card -->
         <div class="card">
-            <h3 style="margin-bottom: 15px; font-size: 18px;">Beheer Bestaande Accounts</h3>
+            <h3 style="margin-bottom: 15px; font-size: 18px;">Beheer Bestaande Accounts & Abonnementen</h3>
             <div id="userList">
                 <p style="color: #888; text-align: center; padding: 15px;">Accounts laden...</p>
             </div>
@@ -48,72 +84,133 @@
     </div>
 
     <script>
-        // Beveiliging: alleen toegankelijk voor admin
         const user = PartyApp.getCurrentUser();
         if (!user || user.role !== 'admin') {
             window.location.href = 'login.html';
         }
 
-        async function loadUsers() {
+        function toggleCompanyInput() {
+            const role = document.getElementById('roleSelect').value;
+            const container = document.getElementById('companyContainer');
+            if (role === 'company_dj') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        async function loadAdminData() {
             const listDiv = document.getElementById('userList');
-            listDiv.innerHTML = '<p style="color: #888; text-align: center; padding: 15px;">Accounts laden...</p>';
+            listDiv.innerHTML = '<p style="color: #888; text-align: center; padding: 15px;">Data laden...</p>';
             
             try {
                 const users = await PartyApp.db.getUsers();
+                const sessions = await PartyApp.db.getAllSessions();
+
+                // Live tellers updaten
+                document.getElementById('totalAccountsCount').innerText = users.filter(u => u.role !== 'admin').length;
+                document.getElementById('activeCodesCount').innerText = sessions.filter(s => s.party_code).length;
+
                 listDiv.innerHTML = '';
-                
-                const managedUsers = users.filter(u => u.role === 'company' || u.role === 'solo_dj');
+                const managedUsers = users.filter(u => u.role !== 'admin');
                 
                 if (managedUsers.length === 0) {
-                    listDiv.innerHTML = '<p style="color: #888; text-align: center; padding: 15px;">Geen bedrijven of solo DJ\'s gevonden.</p>';
+                    listDiv.innerHTML = '<p style="color: #888; text-align: center; padding: 15px;">Geen accounts gevonden.</p>';
                     return;
                 }
                 
+                const now = new Date();
+
                 managedUsers.forEach((u) => {
-                    const roleLabel = u.role === 'company' ? 'Bedrijf' : 'Solo DJ';
+                    let roleLabel = 'Bedrijf';
+                    if (u.role === 'solo_dj') roleLabel = 'Solo DJ';
+                    if (u.role === 'company_dj') roleLabel = `DJ (${u.company || 'Bedrijf'})`;
+
+                    // Abonnementsstatus berekenen
+                    let expiresAt = u.expires_at ? new Date(u.expires_at) : new Date(now.getTime() + 365*24*60*60*1000);
+                    let diffTime = expiresAt - now;
+                    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    let statusBadge = '';
+                    let badgeColor = 'var(--accent-color)';
+
+                    if (diffDays < 0) {
+                        statusBadge = 'VERLOPEN (Inloggen geblokkeerd)';
+                        badgeColor = 'var(--danger-color)';
+                    } else if (diffDays <= 30) {
+                        statusBadge = `Verloopt bijna over ${diffDays} dagen!`;
+                        badgeColor = 'var(--warning-color)';
+                    } else {
+                        statusBadge = `Geldig nog ${diffDays} dagen (${expiresAt.toLocaleDateString('nl-NL')})`;
+                    }
+
                     listDiv.innerHTML += `
-                        <div style="background: #090d16; padding: 14px 18px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b;">
+                        <div style="background: #090d16; padding: 15px 18px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                             <div>
-                                <b style="font-size: 15px;">${u.username}</b> 
-                                <span style="font-size: 11px; color: var(--primary-color); background: rgba(59,130,246,0.1); padding: 3px 8px; border-radius: 4px; margin-left: 8px;">${roleLabel}</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <b style="font-size: 16px;">${u.username}</b> 
+                                    <span style="font-size: 11px; color: var(--primary-color); background: rgba(59,130,246,0.1); padding: 3px 8px; border-radius: 4px;">${roleLabel}</span>
+                                </div>
+                                <small style="color: ${badgeColor}; display: block; margin-top: 4px; font-weight: bold;">⚠️ ${statusBadge}</small>
                             </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button onclick="promptChangePassword('${u.username}')" style="background: #1e3a8a; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Wachtwoord</button>
-                                <button onclick="deleteUserAccount('${u.username}')" style="background: #ef4444; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Verwijderen</button>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                                <button onclick="extendSubscription('${u.username}')" style="background: #059669; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">+1 Jaar</button>
+                                <button onclick="promptChangePassword('${u.username}')" style="background: #1e3a8a; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">Wachtwoord</button>
+                                <button onclick="deleteUserAccount('${u.username}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">Verwijderen</button>
                             </div>
                         </div>`;
                 });
             } catch (err) {
-                console.error("Fout bij laden gebruikers:", err);
-                listDiv.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 15px;">Fout bij laden van gebruikers.</p>';
+                console.error("Fout bij laden admin data:", err);
+                listDiv.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 15px;">Fout bij laden van gegevens.</p>';
             }
         }
 
         document.getElementById('createUserForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const role = document.getElementById('roleSelect').value;
+            const duration = document.getElementById('subscriptionDuration').value;
             const username = document.getElementById('newUsername').value.trim();
             const password = document.getElementById('newPassword').value.trim();
+            const company = role === 'company_dj' ? document.getElementById('parentCompany').value.trim() : null;
 
             if (!username || !password) {
                 alert('Vul alle velden in.');
                 return;
             }
 
+            if (role === 'company_dj' && !company) {
+                alert('Geef op bij welk bedrijf deze DJ hoort.');
+                return;
+            }
+
+            // Bereken vervaldatum op basis van selectie
+            let expiresAt = new Date();
+            if (duration === '1_month') expiresAt.setMonth(expiresAt.getMonth() + 1);
+            if (duration === '1_year') expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+            if (duration === '2_years') expiresAt.setFullYear(expiresAt.getFullYear() + 2);
+
             try {
-                // Check of gebruiker al bestaat via Supabase
                 const existingUsers = await PartyApp.db.getUsers();
                 if (existingUsers.some(u => u.username === username)) {
                     alert('Deze gebruikersnaam bestaat al!');
                     return;
                 }
 
-                const success = await PartyApp.db.createUser({ username, password, role });
+                const success = await PartyApp.db.createUser({ 
+                    username, 
+                    password, 
+                    role, 
+                    company, 
+                    expires_at: expiresAt.toISOString() 
+                });
+
                 if (success) {
-                    alert('Account succesvol aangemaakt!');
+                    alert('Account succesvol aangemaakt met abonnement!');
                     document.getElementById('newUsername').value = '';
                     document.getElementById('newPassword').value = '';
-                    loadUsers();
+                    if(document.getElementById('parentCompany')) document.getElementById('parentCompany').value = '';
+                    loadAdminData();
                 }
             } catch (err) {
                 console.error("Fout bij aanmaken account:", err);
@@ -121,12 +218,33 @@
             }
         });
 
+        window.extendSubscription = async function(username) {
+            try {
+                const users = await PartyApp.db.getUsers();
+                const targetUser = users.find(u => u.username === username);
+                if (!targetUser) return;
+
+                let currentExp = targetUser.expires_at ? new Date(targetUser.expires_at) : new Date();
+                if (currentExp < new Date()) currentExp = new Date(); // Als verlopen, reken vanaf vandaag
+
+                currentExp.setFullYear(currentExp.getFullYear() + 1); // Tel 1 jaar op
+
+                const success = await PartyApp.db.updateSubscription(username, currentExp.toISOString());
+                if (success) {
+                    alert(`Abonnement van ${username} met 1 jaar verlengd!`);
+                    loadAdminData();
+                }
+            } catch (err) {
+                console.error("Fout bij verlengen:", err);
+            }
+        };
+
         window.deleteUserAccount = async function(username) {
             if (confirm(`Weet je zeker dat je ${username} wilt verwijderen?`)) {
                 const success = await PartyApp.db.deleteUser(username);
                 if (success) {
                     alert('Account verwijderd.');
-                    loadUsers();
+                    loadAdminData();
                 }
             }
         };
@@ -141,7 +259,9 @@
             }
         };
 
-        loadUsers();
+        // Automatisch verversen van de live tellers elke 10 seconden
+        setInterval(loadAdminData, 10000);
+        loadAdminData();
     </script>
 </body>
 </html>
