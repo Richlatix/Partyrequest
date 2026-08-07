@@ -154,7 +154,7 @@
                                 <small style="color: ${badgeColor}; display: block; margin-top: 4px; font-weight: bold;">⚠️ ${statusBadge}</small>
                             </div>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                <button onclick="extendSubscription('${u.username}')" style="background: #059669; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">+1 Jaar</button>
+                                <button onclick="promptChangeExpiration('${u.username}', '${u.expires_at || ''}')" style="background: #059669; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">Vervaldatum</button>
                                 <button onclick="promptChangePassword('${u.username}')" style="background: #1e3a8a; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">Wachtwoord</button>
                                 <button onclick="deleteUserAccount('${u.username}')" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px;">Verwijderen</button>
                             </div>
@@ -184,7 +184,6 @@
                 return;
             }
 
-            // Bereken vervaldatum op basis van selectie
             let expiresAt = new Date();
             if (duration === '1_month') expiresAt.setMonth(expiresAt.getMonth() + 1);
             if (duration === '1_year') expiresAt.setFullYear(expiresAt.getFullYear() + 1);
@@ -218,24 +217,30 @@
             }
         });
 
-        window.extendSubscription = async function(username) {
-            try {
-                const users = await PartyApp.db.getUsers();
-                const targetUser = users.find(u => u.username === username);
-                if (!targetUser) return;
+        window.promptChangeExpiration = async function(username, currentExpiresAt) {
+            let defaultDateStr = '';
+            if (currentExpiresAt) {
+                const d = new Date(currentExpiresAt);
+                defaultDateStr = d.toISOString().split('T')[0];
+            } else {
+                const d = new Date();
+                d.setFullYear(d.getFullYear() + 1);
+                defaultDateStr = d.toISOString().split('T')[0];
+            }
 
-                let currentExp = targetUser.expires_at ? new Date(targetUser.expires_at) : new Date();
-                if (currentExp < new Date()) currentExp = new Date(); // Als verlopen, reken vanaf vandaag
+            const newDateStr = prompt(`Voer de nieuwe vervaldatum in voor ${username} (Formaat: JJJJ-MM-DD):`, defaultDateStr);
+            if (newDateStr && newDateStr.trim() !== '') {
+                const parsedDate = new Date(newDateStr);
+                if (isNaN(parsedDate.getTime())) {
+                    alert('Ongeldige datum ingevoerd! Gebruik het formaat JJJJ-MM-DD (bijv. 2027-08-07).');
+                    return;
+                }
 
-                currentExp.setFullYear(currentExp.getFullYear() + 1); // Tel 1 jaar op
-
-                const success = await PartyApp.db.updateSubscription(username, currentExp.toISOString());
+                const success = await PartyApp.db.updateSubscription(username, parsedDate.toISOString());
                 if (success) {
-                    alert(`Abonnement van ${username} met 1 jaar verlengd!`);
+                    alert('Vervaldatum succesvol aangepast!');
                     loadAdminData();
                 }
-            } catch (err) {
-                console.error("Fout bij verlengen:", err);
             }
         };
 
@@ -259,7 +264,6 @@
             }
         };
 
-        // Automatisch verversen van de live tellers elke 10 seconden
         setInterval(loadAdminData, 10000);
         loadAdminData();
     </script>
