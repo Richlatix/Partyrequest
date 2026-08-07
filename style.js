@@ -150,8 +150,14 @@ const PartyApp = {
         },
         async updateSession(username, updateFields) {
             if (!supabaseClient) return false;
-            const { error } = await supabaseClient.from('party_sessions').update(updateFields).eq('username', username);
-            if (error) { console.error(error); return false; }
+            // Zorg ervoor dat de username altijd meegaat en gebruik upsert
+            const payload = { ...updateFields, username: username };
+            const { error } = await supabaseClient.from('party_sessions').upsert(payload);
+            if (error) { 
+                console.error('Supabase update fout:', error); 
+                alert('Database fout bij opslaan: ' + error.message); 
+                return false; 
+            }
             return true;
         },
         async getSessionByCode(code) {
