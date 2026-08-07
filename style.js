@@ -10,8 +10,8 @@ document.head.appendChild(scriptTag);
 // ==========================================
 // VUL HIER JOUW SUPABASE GEGEVENS IN:
 // ==========================================
-const SUPABASE_URL = 'JOUW_SUPABASE_URL_HIER';
-const SUPABASE_ANON_KEY = 'JOUW_SUPABASE_ANON_KEY_HIER';
+const SUPABASE_URL = 'https://vuwrolizqvogvjwhbytc.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_Yk-N-MiANRyOHXwJtFVkDA_Nd9NUTp5';
 
 let supabaseClient = null;
 
