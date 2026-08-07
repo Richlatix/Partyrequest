@@ -4,17 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Partyrequest - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="style.js"></script>
 </head>
 <body>
-    <div class="container" style="padding-top: 40px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1>Admin Dashboard</h1>
-            <button class="btn-primary" onclick="PartyApp.logout()" style="width: auto;">Uitloggen</button>
+    <div class="container" style="padding-top: 40px; max-width: 900px;">
+        <!-- Topbar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <div>
+                <h1 style="font-size: 28px; font-weight: 800; color: var(--primary-color);">Admin Dashboard</h1>
+                <p style="font-size: 13px; color: #888; margin-top: 2px;">Beheer bedrijven en solo DJ accounts</p>
+            </div>
+            <button class="btn-primary" onclick="PartyApp.logout()" style="background: #ef4444; width: auto; padding: 10px 16px; font-size: 13px;">Uitloggen</button>
         </div>
         
-        <div class="card" style="margin-bottom: 20px;">
-            <h3>Bedrijf of Solo DJ Aanmaken</h3>
+        <!-- Account Aanmaken Card -->
+        <div class="card" style="margin-bottom: 25px;">
+            <h3 style="margin-bottom: 15px; font-size: 18px;">Bedrijf of Solo DJ Aanmaken</h3>
             <form id="createUserForm">
                 <label>Type Account:</label>
                 <select id="roleSelect">
@@ -23,18 +29,21 @@
                 </select>
                 
                 <label>Gebruikersnaam:</label>
-                <input type="text" id="newUsername" required>
+                <input type="text" id="newUsername" placeholder="Bijv. dj_mark of party-rent" required>
                 
                 <label>Wachtwoord:</label>
-                <input type="password" id="newPassword" required>
+                <input type="password" id="newPassword" placeholder="Minimaal 6 tekens" required>
                 
-                <button type="submit" class="btn-primary">Account Aanmaken</button>
+                <button type="submit" class="btn-primary" style="margin-top: 5px;">Account Aanmaken</button>
             </form>
         </div>
 
+        <!-- Account Beheer Card -->
         <div class="card">
-            <h3>Beheer Bestaande Accounts</h3>
-            <div id="userList" style="margin-top: 15px;"></div>
+            <h3 style="margin-bottom: 15px; font-size: 18px;">Beheer Bestaande Accounts</h3>
+            <div id="userList">
+                <p style="color: #888; text-align: center; padding: 15px;">Accounts laden...</p>
+            </div>
         </div>
     </div>
 
@@ -45,58 +54,92 @@
             window.location.href = 'login.html';
         }
 
-        function loadUsers() {
-            let users = JSON.parse(localStorage.getItem('party_users')) || [];
+        async function loadUsers() {
             const listDiv = document.getElementById('userList');
-            listDiv.innerHTML = '';
+            listDiv.innerHTML = '<p style="color: #888; text-align: center; padding: 15px;">Accounts laden...</p>';
             
-            const managedUsers = users.filter(u => u.role === 'company' || u.role === 'solo_dj');
-            
-            if(managedUsers.length === 0) {
-                listDiv.innerHTML = '<p style="color: #aaa;">Geen bedrijven of solo DJ\'s gevonden.</p>';
-                return;
+            try {
+                const users = await PartyApp.db.getUsers();
+                listDiv.innerHTML = '';
+                
+                const managedUsers = users.filter(u => u.role === 'company' || u.role === 'solo_dj');
+                
+                if (managedUsers.length === 0) {
+                    listDiv.innerHTML = '<p style="color: #888; text-align: center; padding: 15px;">Geen bedrijven of solo DJ\'s gevonden.</p>';
+                    return;
+                }
+                
+                managedUsers.forEach((u) => {
+                    const roleLabel = u.role === 'company' ? 'Bedrijf' : 'Solo DJ';
+                    listDiv.innerHTML += `
+                        <div style="background: #090d16; padding: 14px 18px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #1e293b;">
+                            <div>
+                                <b style="font-size: 15px;">${u.username}</b> 
+                                <span style="font-size: 11px; color: var(--primary-color); background: rgba(59,130,246,0.1); padding: 3px 8px; border-radius: 4px; margin-left: 8px;">${roleLabel}</span>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="promptChangePassword('${u.username}')" style="background: #1e3a8a; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Wachtwoord</button>
+                                <button onclick="deleteUserAccount('${u.username}')" style="background: #ef4444; color: white; border: none; padding: 7px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 12px;">Verwijderen</button>
+                            </div>
+                        </div>`;
+                });
+            } catch (err) {
+                console.error("Fout bij laden gebruikers:", err);
+                listDiv.innerHTML = '<p style="color: #ef4444; text-align: center; padding: 15px;">Fout bij laden van gebruikers.</p>';
             }
-            
-            managedUsers.forEach((u) => {
-                listDiv.innerHTML += `
-                    <div style="background: #0f0e17; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <b>${u.username}</b> <span style="font-size: 12px; color: var(--primary-color);">(${u.role === 'company' ? 'Bedrijf' : 'Solo DJ'})</span>
-                        </div>
-                        <button onclick="deleteUser('${u.username}')" style="background: #ff3366; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;">Verwijderen</button>
-                    </div>`;
-            });
         }
 
-        document.getElementById('createUserForm').addEventListener('submit', function(e) {
+        document.getElementById('createUserForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const role = document.getElementById('roleSelect').value;
             const username = document.getElementById('newUsername').value.trim();
             const password = document.getElementById('newPassword').value.trim();
 
-            let users = JSON.parse(localStorage.getItem('party_users')) || [];
-            if(users.some(u => u.username === username)) {
-                alert('Deze gebruikersnaam bestaat al!');
+            if (!username || !password) {
+                alert('Vul alle velden in.');
                 return;
             }
 
-            users.push({ username, password, role });
-            localStorage.setItem('party_users', JSON.stringify(users));
+            try {
+                // Check of gebruiker al bestaat via Supabase
+                const existingUsers = await PartyApp.db.getUsers();
+                if (existingUsers.some(u => u.username === username)) {
+                    alert('Deze gebruikersnaam bestaat al!');
+                    return;
+                }
 
-            alert('Account succesvol aangemaakt!');
-            document.getElementById('newUsername').value = '';
-            document.getElementById('newPassword').value = '';
-            loadUsers();
+                const success = await PartyApp.db.createUser({ username, password, role });
+                if (success) {
+                    alert('Account succesvol aangemaakt!');
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                    loadUsers();
+                }
+            } catch (err) {
+                console.error("Fout bij aanmaken account:", err);
+                alert("Kon account niet aanmaken.");
+            }
         });
 
-        function deleteUser(username) {
-            if(confirm(`Weet je zeker dat je ${username} wilt verwijderen?`)) {
-                let users = JSON.parse(localStorage.getItem('party_users')) || [];
-                users = users.filter(u => u.username !== username);
-                localStorage.setItem('party_users', JSON.stringify(users));
-                loadUsers();
+        window.deleteUserAccount = async function(username) {
+            if (confirm(`Weet je zeker dat je ${username} wilt verwijderen?`)) {
+                const success = await PartyApp.db.deleteUser(username);
+                if (success) {
+                    alert('Account verwijderd.');
+                    loadUsers();
+                }
             }
-        }
+        };
+
+        window.promptChangePassword = async function(username) {
+            const newPass = prompt(`Voer een nieuw wachtwoord in voor ${username}:`);
+            if (newPass && newPass.trim() !== '') {
+                const success = await PartyApp.db.updatePassword(username, newPass.trim());
+                if (success) {
+                    alert('Wachtwoord succesvol gewijzigd!');
+                }
+            }
+        };
 
         loadUsers();
     </script>
