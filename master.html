@@ -23,6 +23,7 @@
     .btn-primary { background: var(--accent-gradient); }
     .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--card-border); color: #fff;}
     .btn-sm { padding: 8px 14px; font-size: 0.82rem; border-radius: var(--radius-md); width: auto; }
+    .btn-danger { background: rgba(255, 59, 48, 0.15); color: var(--danger-color); border: 1px solid rgba(255, 59, 48, 0.3); }
     .input-field { width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--card-border); border-radius: var(--radius-lg); color: #fff; font-size: 0.95rem; outline: none; margin-bottom: 12px; }
     .input-field:focus { border-color: var(--accent-color); }
     .hidden { display: none !important; }
@@ -31,7 +32,7 @@
     .stat-box { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 16px; text-align: center; }
     .stat-num { font-size: 2rem; font-weight: 800; color: var(--accent-color); }
     
-    .company-item { background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; }
+    .company-item { background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; position: relative; }
     .dj-list-box { background: rgba(0,0,0,0.4); border-radius: var(--radius-md); padding: 12px; margin-top: 12px; }
     
     .live-feed-box { background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); border-radius: var(--radius-lg); max-height: 250px; overflow-y: auto; padding: 10px; }
@@ -212,15 +213,25 @@
                   <div style="display:flex; gap:8px; margin-bottom:6px;">
                       <input type="text" id="dj-name-${dj.id}" class="input-field" style="padding:6px; margin:0; font-size:0.8rem; flex:1;" value="${dj.dj_name}">
                       <input type="text" id="dj-code-${dj.id}" class="input-field" style="padding:6px; margin:0; width:70px; font-size:0.8rem; text-align:center;" value="${dj.dj_code}">
-                      <button class="btn btn-sm btn-secondary" onclick="masterUpdateDJ('${dj.id}')">💾</button>
+                      <button class="btn btn-sm btn-secondary" title="Sla DJ op" onclick="masterUpdateDJ('${dj.id}')">💾</button>
                   </div>
               `).join('') + '</div>';
           } else { djsHtml = '<div class="dj-list-box"><p style="font-size:0.8rem; color:var(--text-sub); margin:0;">Dit bedrijf heeft nog geen DJ\'s aangemaakt.</p></div>'; }
 
+          // Knop om het complete bedrijf veilig te verwijderen (via de backend RPC)
+          const deleteBtnHtml = `
+            <button class="btn btn-sm btn-danger" style="position: absolute; top: 20px; right: 20px; width: auto;" 
+                    onclick="deleteCompanyCompletely('${c.id}', '${c.company_name.replace(/'/g, "\\'")}')" 
+                    title="Verwijder Bedrijf">
+              🗑️ Wis Bedrijf
+            </button>
+          `;
+
           return `
             <div class="company-item">
-              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <strong style="font-size: 1.1rem;">${c.company_name}</strong>
+              ${deleteBtnHtml}
+              <div style="margin-bottom: 8px; padding-right: 100px;">
+                <strong style="font-size: 1.1rem; display: block;">${c.company_name}</strong>
                 <span style="font-size: 0.8rem; color: ${color}; font-weight:bold;">Abo: ${endDate}</span>
               </div>
               <div style="font-size: 0.75rem; color: var(--text-sub); margin-bottom: 12px;">UID: ${c.id}</div>
@@ -268,6 +279,26 @@
             if(error.code === '23505') toonPopup('Fout: Inlogcode is al in gebruik!');
             else toonPopup('Update mislukt: ' + error.message);
         } else { toonPopup('DJ Gegevens overschreven!'); loadMasterData(); }
+    }
+
+    // NIEUW: Functie om via de RPC de inlog + bedrijfsdata te wissen
+    async function deleteCompanyCompletely(companyId, companyName) {
+        const confirmDelete = confirm(`🚨 GEVAAR: Weet je 100% zeker dat je '${companyName}' wilt verwijderen?\n\nDit wist per direct hun account, het e-mailadres, alle DJ's en de bibliotheek. Dit kan niet ongedaan worden gemaakt.`);
+        
+        if (confirmDelete) {
+            toonPopup('Bezig met compleet wissen...');
+            
+            // We roepen de nieuwe beveiligde functie (RPC) aan in de database
+            const { error } = await dbClient.rpc('delete_company_completely', { company_uid: companyId });
+            
+            if (error) {
+                console.error("Delete Error:", error);
+                toonPopup('Fout bij wissen: ' + error.message);
+            } else {
+                toonPopup('✅ Bedrijf en account zijn volledig gewist!');
+                loadMasterData();
+            }
+        }
     }
 
     async function addGlobalBlacklistWord() {
