@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Partyrequest — MASTER ADMIN</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg-color: #0d0f12; --card-bg: rgba(26, 29, 36, 0.72); --card-border: rgba(255, 255, 255, 0.1);
+      --accent-color: #ff3b30; --accent-gradient: linear-gradient(135deg, #ff3b30, #ff9500); /* Rood/Oranje voor Admin */
+      --text-main: #f5f5f7; --text-sub: #8e8e93; --success-color: #34c759; --danger-color: #ff3b30;
+      --radius-xl: 24px; --radius-lg: 16px; --radius-md: 12px; --blur-val: blur(20px);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; justify-content: center; }
+    .app-container { width: 100%; max-width: 800px; padding: 20px; display: flex; flex-direction: column; }
+    .glass-card { background: var(--card-bg); backdrop-filter: var(--blur-val); border: 1px solid var(--card-border); border-radius: var(--radius-xl); padding: 24px; margin-bottom: 20px; }
+    .btn { width: 100%; padding: 14px 20px; border-radius: var(--radius-lg); border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #fff; }
+    .btn-primary { background: var(--accent-gradient); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--card-border); }
+    .btn-sm { padding: 8px 14px; font-size: 0.82rem; border-radius: var(--radius-md); width: auto; }
+    .input-field { width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--card-border); border-radius: var(--radius-lg); color: #fff; font-size: 0.95rem; outline: none; margin-bottom: 12px; }
+    .input-field:focus { border-color: var(--accent-color); }
+    .hidden { display: none !important; }
+    .flex-row { display: flex; gap: 10px; align-items: center; }
+    .stat-box { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 16px; text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 800; color: var(--accent-color); }
+    .company-item { background: rgba(0,0,0,0.2); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- LOGIN SCHERM -->
+    <div id="login-view" class="glass-card text-center" style="margin-top: 10vh;">
+      <div style="font-size: 3rem; margin-bottom: 10px;">👑</div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 6px;">Master Admin</h2>
+      <p style="color: var(--text-sub); font-size: 0.88rem; margin-bottom: 24px;">Exclusieve toegang voor eigenaar.</p>
+      <input type="email" id="login-email" class="input-field" placeholder="E-mailadres">
+      <input type="password" id="login-password" class="input-field" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter') loginMaster()">
+      <button class="btn btn-primary mt-4" onclick="loginMaster()">Inloggen als Baas</button>
+    </div>
+
+    <!-- DASHBOARD SCHERM -->
+    <div id="dashboard-view" class="hidden">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h2 style="font-size: 1.3rem;">👑 Master Dashboard</h2>
+        <button class="btn btn-sm btn-secondary" onclick="logoutMaster()">Uitloggen</button>
+      </div>
+
+      <!-- STATISTIEKEN -->
+      <div class="flex-row" style="margin-bottom: 20px;">
+        <div class="stat-box">
+          <div class="stat-num" id="stat-companies">0</div>
+          <div style="font-size: 0.8rem; color: var(--text-sub);">Bedrijven</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-djs">0</div>
+          <div style="font-size: 0.8rem; color: var(--text-sub);">Actieve DJ's</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-requests">0</div>
+          <div style="font-size: 0.8rem; color: var(--text-sub);">Verzoekjes</div>
+        </div>
+      </div>
+
+      <!-- BEDRIJVEN BEHEREN -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 1.1rem; color: var(--accent-color);">🏢 Aangesloten Bedrijven</h3>
+          <button class="btn btn-sm btn-secondary" onclick="document.getElementById('add-company-form').classList.toggle('hidden')">➕ Nieuw Bedrijf</button>
+        </div>
+
+        <!-- Add Company Form -->
+        <div id="add-company-form" class="hidden" style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px dashed var(--accent-color);">
+          <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 12px;">Maak eerst het account aan in Supabase (Authentication), en plak daarna hier de User UID in om het bedrijf te koppelen.</p>
+          <input type="text" id="new-comp-uid" class="input-field" placeholder="Supabase User UID (bijv. 123e4567-e89b-...)">
+          <input type="text" id="new-comp-name" class="input-field" placeholder="Bedrijfsnaam">
+          <div class="flex-row">
+            <input type="number" id="new-comp-djs" class="input-field" placeholder="Max DJ's (bijv. 5)">
+            <input type="date" id="new-comp-date" class="input-field">
+          </div>
+          <button class="btn btn-sm btn-primary" style="margin-top: 8px;" onclick="addCompany()">Bedrijf Aanmaken</button>
+        </div>
+
+        <div id="companies-list">Laden...</div>
+      </div>
+
+      <!-- GLOBALE BLACKLIST -->
+      <div class="glass-card">
+        <h3 style="font-size: 1.1rem; margin-bottom: 16px;">🛡️ Landelijke Blacklist (Voor alle feesten)</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <input type="text" id="global-blacklist-input" class="input-field" style="margin: 0;" placeholder="Woord uitsluiten voor alle DJ's..." onkeydown="if(event.key==='Enter') addGlobalBlacklistWord()">
+          <button class="btn btn-sm btn-secondary" onclick="addGlobalBlacklistWord()">Voeg toe</button>
+        </div>
+        <div id="global-blacklist-container" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // --- SUPABASE CONFIGURATION ---
+    const SUPABASE_URL = "https://wiimebmtizhquwzjrixa.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_-TyLItKUkPl28wpvaeFQAw_kQj7ZReu";
+    let dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    let globalBlacklist = [];
+
+    // --- AUTHENTICATIE ---
+    dbClient.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        // Check of dit de Master Admin is
+        const { data, error } = await dbClient.from('super_admins').select('id').eq('id', session.user.id).single();
+        if (data) {
+          document.getElementById('login-view').classList.add('hidden');
+          document.getElementById('dashboard-view').classList.remove('hidden');
+          loadMasterData();
+        } else {
+          alert('Je hebt geen Master Admin rechten op dit account.');
+          await dbClient.auth.signOut();
+        }
+      } else {
+        document.getElementById('login-view').classList.remove('hidden');
+        document.getElementById('dashboard-view').classList.add('hidden');
+      }
+    });
+
+    async function loginMaster() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      await dbClient.auth.signInWithPassword({ email, password });
+    }
+
+    async function logoutMaster() {
+      await dbClient.auth.signOut();
+      location.reload();
+    }
+
+    // --- DATA LADEN ---
+    async function loadMasterData() {
+      // 1. Ophalen Bedrijven
+      const { data: comps } = await dbClient.from('companies').select('*');
+      const { count: djCount } = await dbClient.from('djs').select('*', { count: 'exact', head: true });
+      const { count: reqCount } = await dbClient.from('requests').select('*', { count: 'exact', head: true });
+      
+      document.getElementById('stat-companies').innerText = comps ? comps.length : 0;
+      document.getElementById('stat-djs').innerText = djCount || 0;
+      document.getElementById('stat-requests').innerText = reqCount || 0;
+
+      const compList = document.getElementById('companies-list');
+      if (!comps || comps.length === 0) {
+        compList.innerHTML = '<p style="color:var(--text-sub);">Nog geen bedrijven in het systeem.</p>';
+      } else {
+        compList.innerHTML = comps.map(c => {
+          const endDate = c.subscription_end_date ? new Date(c.subscription_end_date).toLocaleDateString('nl-NL') : 'Geen datum';
+          const isExpired = c.subscription_end_date && new Date(c.subscription_end_date) < new Date();
+          const color = isExpired ? 'var(--danger-color)' : 'var(--success-color)';
+          return `
+            <div class="company-item">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <strong style="font-size: 1.1rem;">${c.company_name}</strong>
+                <span style="font-size: 0.8rem; color: ${color};">Abo t/m: ${endDate}</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 12px;">Max DJ's: ${c.max_djs} | UID: ${c.id.substring(0,8)}...</div>
+              
+              <div style="display:flex; gap: 8px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 8px;">
+                <input type="date" id="date-${c.id}" class="input-field" style="padding: 6px; margin: 0; font-size: 0.8rem;" value="${c.subscription_end_date ? c.subscription_end_date.split('T')[0] : ''}">
+                <input type="number" id="dj-${c.id}" class="input-field" style="padding: 6px; margin: 0; width: 60px; font-size: 0.8rem;" value="${c.max_djs}">
+                <button class="btn btn-sm btn-secondary" onclick="updateCompany('${c.id}')">💾 Update</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 2. Globale Blacklist Laden
+      const { data: settings } = await dbClient.from('master_settings').select('global_blacklist').eq('id', 1).single();
+      if (settings && settings.global_blacklist) {
+        globalBlacklist = settings.global_blacklist;
+        renderGlobalBlacklist();
+      }
+    }
+
+    async function addCompany() {
+      const id = document.getElementById('new-comp-uid').value.trim();
+      const name = document.getElementById('new-comp-name').value.trim();
+      const djs = document.getElementById('new-comp-djs').value || 1;
+      const date = document.getElementById('new-comp-date').value;
+
+      if(!id || !name) return alert('UID en Naam zijn verplicht.');
+
+      const { error } = await dbClient.from('companies').insert([{
+        id: id, company_name: name, max_djs: djs, subscription_end_date: date ? new Date(date).toISOString() : null
+      }]);
+
+      if (error) alert('Fout bij toevoegen: ' + error.message);
+      else {
+        document.getElementById('new-comp-uid').value = '';
+        document.getElementById('new-comp-name').value = '';
+        document.getElementById('add-company-form').classList.add('hidden');
+        loadMasterData();
+      }
+    }
+
+    async function updateCompany(id) {
+      const newDate = document.getElementById(`date-${id}`).value;
+      const newMax = document.getElementById(`dj-${id}`).value;
+      
+      const { error } = await dbClient.from('companies').update({
+        subscription_end_date: newDate ? new Date(newDate).toISOString() : null,
+        max_djs: newMax
+      }).eq('id', id);
+
+      if (error) alert('Update mislukt.');
+      else { alert('Bedrijf succesvol geüpdatet!'); loadMasterData(); }
+    }
+
+    // --- GLOBALE BLACKLIST ---
+    async function addGlobalBlacklistWord() {
+      const input = document.getElementById('global-blacklist-input');
+      const word = input.value.trim().toLowerCase();
+      if (word && !globalBlacklist.includes(word)) {
+        globalBlacklist.push(word);
+        await dbClient.from('master_settings').update({ global_blacklist: globalBlacklist }).eq('id', 1);
+        input.value = '';
+        renderGlobalBlacklist();
+      }
+    }
+
+    async function removeGlobalBlacklistWord(word) {
+      globalBlacklist = globalBlacklist.filter(w => w !== word);
+      await dbClient.from('master_settings').update({ global_blacklist: globalBlacklist }).eq('id', 1);
+      renderGlobalBlacklist();
+    }
+
+    function renderGlobalBlacklist() {
+      const container = document.getElementById('global-blacklist-container');
+      container.innerHTML = globalBlacklist.map(w => `
+        <span style="background: rgba(255, 59, 48, 0.2); border: 1px solid var(--danger-color); padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px;">
+          ${w} <span style="cursor:pointer; font-weight:bold;" onclick="removeGlobalBlacklistWord('${w}')">✕</span>
+        </span>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
