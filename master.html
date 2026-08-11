@@ -36,6 +36,14 @@
     
     .live-feed-box { background: rgba(0,0,0,0.3); border: 1px solid var(--card-border); border-radius: var(--radius-lg); max-height: 250px; overflow-y: auto; padding: 10px; }
     .live-item { padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+
+    .toast-popup {
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(20, 22, 28, 0.95);
+      color: #ffffff; border: 1px solid var(--accent-color); padding: 14px 24px; border-radius: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 9999; font-weight: 700; text-align: center; min-width: 280px;
+      animation: fadeInOut 3s ease forwards; backdrop-filter: blur(10px);
+    }
+    @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 20px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
   </style>
 </head>
 <body>
@@ -50,6 +58,9 @@
       <input type="email" id="login-email" class="input-field" placeholder="E-mailadres">
       <input type="password" id="login-password" class="input-field" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter') loginMaster()">
       <button class="btn btn-primary mt-4" onclick="loginMaster()">Inloggen als Baas</button>
+      
+      <!-- Force logout knop voor als je vastzit met een test-account -->
+      <button class="btn btn-secondary mt-2 hidden" id="force-logout-btn" onclick="logoutMaster()">Log huidig test-account uit</button>
     </div>
 
     <!-- DASHBOARD SCHERM -->
@@ -111,6 +122,13 @@
     
     let globalBlacklist = [];
 
+    function toonPopup(bericht) {
+      const oude = document.getElementById('custom-toast');
+      if (oude) oude.remove();
+      const p = document.createElement('div'); p.id = 'custom-toast'; p.className = 'toast-popup'; p.innerText = bericht;
+      document.body.appendChild(p); setTimeout(() => { if (p) p.remove(); }, 4000);
+    }
+
     // --- AUTHENTICATIE ---
     dbClient.auth.onAuthStateChange(async (event, session) => {
       if (session) {
@@ -123,19 +141,27 @@
           loadLiveFeed();
           listenToRealtime();
         } else {
-          alert('Je hebt geen Master Admin rechten op dit account.');
-          await dbClient.auth.signOut();
+          // NIET uitloggen, anders crash je accounts.html! Toon alleen een waarschuwing.
+          document.getElementById('login-view').classList.remove('hidden');
+          document.getElementById('dashboard-view').classList.add('hidden');
+          document.getElementById('force-logout-btn').classList.remove('hidden');
+          if(event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+             toonPopup('⚠️ Je hebt geen Master Admin rechten op dit specifieke account. Schakel over naar accounts.html');
+          }
         }
       } else {
         document.getElementById('login-view').classList.remove('hidden');
         document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('force-logout-btn').classList.add('hidden');
       }
     });
 
     async function loginMaster() {
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value.trim();
-      await dbClient.auth.signInWithPassword({ email, password });
+      if (!email || !password) return toonPopup('Vul alles in!');
+      const { error } = await dbClient.auth.signInWithPassword({ email, password });
+      if (error) toonPopup('Inloggen mislukt: ' + error.message);
     }
 
     async function logoutMaster() {
@@ -252,22 +278,22 @@
         max_djs: newMax
       }).eq('id', id);
 
-      if (error) alert('Update mislukt.');
-      else { alert('Bedrijfslicentie succesvol geüpdatet!'); loadMasterData(); }
+      if (error) toonPopup('Update mislukt.');
+      else { toonPopup('Bedrijfslicentie succesvol geüpdatet!'); loadMasterData(); }
     }
 
     async function masterUpdateDJ(djId) {
         const newName = document.getElementById(`dj-name-${djId}`).value.trim();
         const newCode = document.getElementById(`dj-code-${djId}`).value.trim();
 
-        if(!newName || !newCode) return alert('Vul naam en code in.');
+        if(!newName || !newCode) return toonPopup('Vul naam en code in.');
 
         const { error } = await dbClient.from('djs').update({ dj_name: newName, dj_code: newCode }).eq('id', djId);
         if (error) {
-            if(error.code === '23505') alert('Fout: Deze inlogcode is al in gebruik door een andere DJ!');
-            else alert('Update mislukt: ' + error.message);
+            if(error.code === '23505') toonPopup('Fout: Inlogcode is al in gebruik!');
+            else toonPopup('Update mislukt: ' + error.message);
         } else {
-            alert('DJ Gegevens overschreven!');
+            toonPopup('DJ Gegevens overschreven!');
             loadMasterData();
         }
     }
