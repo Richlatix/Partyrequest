@@ -217,7 +217,9 @@
     // --- SUPABASE CONFIGURATION ---
     const SUPABASE_URL = "https://wiimebmtizhquwzjrixa.supabase.co";
     const SUPABASE_KEY = "sb_publishable_-TyLItKUkPl28wpvaeFQAw_kQj7ZReu";
-    let supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Gewijzigd naar dbClient om een Syntax Error conflict met de Supabase CDN te voorkomen
+    let dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
     let currentCompany = null;
     let currentDJs = [];
@@ -234,7 +236,7 @@
     }
 
     // --- AUTHENTICATIE LOGICA ---
-    supabase.auth.onAuthStateChange((event, session) => {
+    dbClient.auth.onAuthStateChange((event, session) => {
       if (session) {
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('dashboard-view').classList.remove('hidden');
@@ -252,14 +254,14 @@
       if (!email || !password) return toonPopup('Vul alle velden in.');
       toonPopup('Bezig met inloggen...');
       
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
       if (error) {
         toonPopup('Inloggen mislukt: ' + error.message);
       }
     }
 
     async function logoutCompany() {
-      await supabase.auth.signOut();
+      await dbClient.auth.signOut();
       toonPopup('Succesvol uitgelogd.');
     }
 
@@ -267,7 +269,7 @@
     async function loadCompanyDashboard(userId) {
       toonPopup('Gegevens ophalen...');
       
-      const { data: companyData, error: compError } = await supabase
+      const { data: companyData, error: compError } = await dbClient
         .from('companies')
         .select('*')
         .eq('id', userId)
@@ -319,7 +321,7 @@
     }
 
     async function loadDJs(companyId) {
-      const { data: djs, error } = await supabase
+      const { data: djs, error } = await dbClient
         .from('djs')
         .select('*')
         .eq('company_id', companyId);
@@ -362,7 +364,7 @@
       if (currentDJs.length >= currentCompany.max_djs) return toonPopup('Maximum aantal DJ accounts bereikt.');
 
       toonPopup('Bezig met aanmaken...');
-      const { error } = await supabase.from('djs').insert([{
+      const { error } = await dbClient.from('djs').insert([{
         company_id: currentCompany.id,
         dj_name: djName,
         dj_code: djCode
@@ -381,7 +383,7 @@
 
     async function deleteDJ(djId, djName) {
       if(confirm(`Weet je zeker dat je DJ '${djName}' wilt verwijderen? Hun instellingen en bibliotheek gaan hiermee definitief verloren.`)) {
-        const { error } = await supabase.from('djs').delete().eq('id', djId);
+        const { error } = await dbClient.from('djs').delete().eq('id', djId);
         if (error) return toonPopup('Fout bij verwijderen.');
         toonPopup('DJ verwijderd.');
         loadDJs(currentCompany.id);
@@ -392,7 +394,7 @@
       const newName = document.getElementById('comp-name-input').value.trim();
       if (!newName) return toonPopup('Bedrijfsnaam mag niet leeg zijn.');
       
-      const { error } = await supabase.from('companies')
+      const { error } = await dbClient.from('companies')
         .update({ company_name: newName })
         .eq('id', currentCompany.id);
         
@@ -432,14 +434,19 @@
         const compressedBlob = await compressImage(file);
         const fileName = `company_${currentCompany.id}_${Date.now()}.png`;
         
-        // Zorg dat de bucket bestaat of gebruik een generieke media map
-        const { error: uploadError } = await supabase.storage.from('media').upload(fileName, compressedBlob, { contentType: 'image/png' });
-        if (uploadError) throw uploadError;
+        let bucketName = 'media';
+        let uploadAttempt = await dbClient.storage.from(bucketName).upload(fileName, compressedBlob, { contentType: 'image/png' });
+        
+        if (uploadAttempt.error) {
+          bucketName = 'party-photos';
+          uploadAttempt = await dbClient.storage.from(bucketName).upload(fileName, compressedBlob, { contentType: 'image/png' });
+          if (uploadAttempt.error) throw uploadAttempt.error;
+        }
 
-        const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(fileName);
+        const { data: publicUrlData } = dbClient.storage.from(bucketName).getPublicUrl(fileName);
         const logoUrl = publicUrlData.publicUrl;
         
-        await supabase.from('companies').update({ logo_url: logoUrl }).eq('id', currentCompany.id);
+        await dbClient.from('companies').update({ logo_url: logoUrl }).eq('id', currentCompany.id);
         
         document.getElementById('comp-logo-preview').src = logoUrl;
         document.getElementById('comp-logo-preview').classList.remove('hidden');
@@ -452,7 +459,7 @@
     }
 
     async function removeCompanyLogo() {
-      await supabase.from('companies').update({ logo_url: 'REMOVED' }).eq('id', currentCompany.id);
+      await dbClient.from('companies').update({ logo_url: 'REMOVED' }).eq('id', currentCompany.id);
       document.getElementById('comp-logo-preview').classList.add('hidden');
       toonPopup('Logo verwijderd!');
     }
