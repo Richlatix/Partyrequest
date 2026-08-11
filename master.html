@@ -273,13 +273,29 @@
       const newDate = document.getElementById(`date-${id}`).value;
       const newMax = document.getElementById(`dj-${id}`).value;
       
-      const { error } = await dbClient.from('companies').update({
-        subscription_end_date: newDate ? new Date(newDate).toISOString() : null,
-        max_djs: newMax
-      }).eq('id', id);
+      // Extra beveiliging en feedback voor lege/halve datums
+      if (!newDate) {
+          const confirmEmpty = confirm("Je hebt de datum leeg gelaten (of niet volledig ingevuld). Wil je het abonnement hiermee stopzetten?");
+          if (!confirmEmpty) return; // Annuleer de actie als je misklikte
+      }
+      
+      toonPopup('Bezig met opslaan...');
 
-      if (error) toonPopup('Update mislukt.');
-      else { toonPopup('Bedrijfslicentie succesvol geüpdatet!'); loadMasterData(); }
+      // Bouw de data netjes op voor de database
+      const updatePayload = {
+        subscription_end_date: newDate ? new Date(newDate).toISOString() : null,
+        max_djs: newMax ? parseInt(newMax) : 0
+      };
+
+      const { error } = await dbClient.from('companies').update(updatePayload).eq('id', id);
+
+      if (error) {
+          console.error("Supabase Error:", error);
+          toonPopup('Fout bij opslaan: ' + error.message);
+      } else { 
+          toonPopup('✅ Abonnement succesvol aangepast!'); 
+          loadMasterData(); 
+      }
     }
 
     async function masterUpdateDJ(djId) {
