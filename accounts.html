@@ -40,7 +40,7 @@
 
   <div class="app-container">
     
-    <!-- 1. LOGIN SCHERM -->
+    <!-- LOGIN SCHERM -->
     <div id="login-view" class="glass-card text-center" style="margin-top: 10vh;">
       <div style="font-size: 3rem; margin-bottom: 10px;">🏢</div>
       <h2 style="font-size: 1.5rem; margin-bottom: 6px;">Partyrequest Portaal</h2>
@@ -59,7 +59,7 @@
       </div>
     </div>
 
-    <!-- 1B. REGISTREER SCHERM -->
+    <!-- REGISTREER SCHERM -->
     <div id="register-view" class="glass-card text-center hidden" style="margin-top: 10vh;">
       <div style="font-size: 3rem; margin-bottom: 10px;">🚀</div>
       <h2 style="font-size: 1.5rem; margin-bottom: 6px;">Bedrijf Aanmelden</h2>
@@ -81,7 +81,7 @@
       </div>
     </div>
 
-    <!-- 2. BEDRIJFS DASHBOARD -->
+    <!-- BEDRIJFS DASHBOARD -->
     <div id="dashboard-view" class="hidden">
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 10px 0;">
@@ -116,7 +116,7 @@
         <div id="add-dj-section" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--card-border);">
           <h4 style="font-size: 0.9rem; margin-bottom: 12px;">Nieuwe DJ Aanmaken</h4>
           <div class="form-group">
-            <input type="text" id="new-dj-name" class="input-field mb-2" placeholder="DJ / Act Naam (bijv. DJ Marc)">
+            <input type="text" id="new-dj-name" class="input-field mb-2" placeholder="DJ / Act Naam">
             <input type="text" id="new-dj-code" class="input-field mb-2" placeholder="Unieke Inlogcode (bijv. 3977)">
           </div>
           <button class="btn btn-sm btn-primary" onclick="createNewDJ()">Voeg DJ Toe</button>
@@ -163,12 +163,8 @@
     function toonPopup(bericht) {
       const oude = document.getElementById('custom-toast');
       if (oude) oude.remove();
-      const p = document.createElement('div');
-      p.id = 'custom-toast';
-      p.className = 'toast-popup';
-      p.innerText = bericht;
-      document.body.appendChild(p);
-      setTimeout(() => { if (p) p.remove(); }, 3000);
+      const p = document.createElement('div'); p.id = 'custom-toast'; p.className = 'toast-popup'; p.innerText = bericht;
+      document.body.appendChild(p); setTimeout(() => { if (p) p.remove(); }, 3000);
     }
 
     function switchAuth(view) {
@@ -176,7 +172,6 @@
       document.getElementById('register-view').classList.toggle('hidden', view !== 'register');
     }
 
-    // --- AUTHENTICATIE LOGICA ---
     dbClient.auth.onAuthStateChange((event, session) => {
       if (session) {
         document.getElementById('login-view').classList.add('hidden');
@@ -202,7 +197,6 @@
       const name = document.getElementById('reg-name').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const password = document.getElementById('reg-password').value.trim();
-      
       if (!name || !email || !password) return toonPopup('Vul alle velden in.');
       toonPopup('Bezig met registreren...');
 
@@ -210,13 +204,7 @@
       if (error) return toonPopup('Registratie mislukt: ' + error.message);
 
       if (data.user) {
-        // Direct bedrijf aanmaken in de tabel
-        const { error: dbError } = await dbClient.from('companies').insert([{
-          id: data.user.id,
-          company_name: name,
-          max_djs: 0 // Standaard op 0, Admin moet dit vrijgeven
-        }]);
-        
+        const { error: dbError } = await dbClient.from('companies').insert([{ id: data.user.id, company_name: name, max_djs: 0 }]);
         if (dbError) console.error("Database insert error:", dbError);
         toonPopup('Account succesvol aangemaakt! Log direct in.');
       }
@@ -227,13 +215,11 @@
       toonPopup('Uitgelogd.');
     }
 
-    // --- DASHBOARD DATA LADEN ---
     async function loadCompanyDashboard(userId) {
       const { data: companyData, error: compError } = await dbClient.from('companies').select('*').eq('id', userId).single();
       if (compError || !companyData) return toonPopup('Gegevens niet gevonden.');
       
       currentCompany = companyData;
-      
       document.getElementById('dash-company-name').innerText = companyData.company_name;
       document.getElementById('comp-name-input').value = companyData.company_name;
       document.getElementById('dj-max').innerText = companyData.max_djs;
@@ -243,14 +229,11 @@
         document.getElementById('comp-logo-preview').classList.remove('hidden');
       }
 
-      // Check abonnement
       const alertBox = document.getElementById('subscription-alert');
       const okBox = document.getElementById('subscription-ok');
       
       if (!companyData.subscription_end_date) {
-          // Account nieuw aangemaakt, nog geen datum
-          okBox.classList.add('hidden');
-          alertBox.classList.remove('hidden');
+          okBox.classList.add('hidden'); alertBox.classList.remove('hidden');
           alertBox.querySelector('h3').innerText = '🔒 Account in afwachting';
           alertBox.querySelector('p').innerText = 'Je account is nog niet geactiveerd door Partyrequest. Zodra je een licentie hebt, kun je DJ\'s aanmaken.';
       } else {
@@ -271,12 +254,11 @@
           okBox.classList.remove('hidden'); alertBox.classList.add('hidden');
         }
       }
-
       loadDJs(userId);
     }
 
     async function loadDJs(companyId) {
-      const { data: djs, error } = await dbClient.from('djs').select('*').eq('company_id', companyId);
+      const { data: djs } = await dbClient.from('djs').select('*').eq('company_id', companyId);
       currentDJs = djs || [];
       document.getElementById('dj-count').innerText = currentDJs.length;
       
@@ -312,10 +294,7 @@
     }
 
     async function deleteDJ(djId, djName) {
-      if(confirm(`DJ '${djName}' verwijderen?`)) {
-        await dbClient.from('djs').delete().eq('id', djId);
-        loadDJs(currentCompany.id);
-      }
+      if(confirm(`DJ '${djName}' verwijderen?`)) { await dbClient.from('djs').delete().eq('id', djId); loadDJs(currentCompany.id); }
     }
 
     async function saveCompanyDetails() {
@@ -325,7 +304,7 @@
     }
 
     function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.8) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const reader = new FileReader(); reader.readAsDataURL(file);
         reader.onload = event => {
           const img = new Image(); img.src = event.target.result;
@@ -342,17 +321,34 @@
     }
 
     async function uploadCompanyLogo(event) {
-      const file = event.target.files[0]; if (!file) return;
+      const file = event.target.files[0]; 
+      if (!file) return;
+      
       toonPopup('Uploaden...');
+      
       try {
         const compressedBlob = await compressImage(file);
         const fileName = `company_${currentCompany.id}_${Date.now()}.png`;
-        await dbClient.storage.from('party-photos').upload(`uploads/${fileName}`, compressedBlob, { contentType: 'image/png' });
+        
+        const { error: uploadError } = await dbClient.storage
+          .from('party-photos')
+          .upload(`uploads/${fileName}`, compressedBlob, { contentType: 'image/png' });
+          
+        if (uploadError) {
+          console.error("Supabase Upload Error:", uploadError);
+          throw new Error(uploadError.message);
+        }
+
         const { data } = dbClient.storage.from('party-photos').getPublicUrl(`uploads/${fileName}`);
         await dbClient.from('companies').update({ logo_url: data.publicUrl }).eq('id', currentCompany.id);
-        document.getElementById('comp-logo-preview').src = data.publicUrl; document.getElementById('comp-logo-preview').classList.remove('hidden');
-        toonPopup('Logo opgeslagen!');
-      } catch (err) { toonPopup('Upload mislukt.'); }
+        
+        document.getElementById('comp-logo-preview').src = data.publicUrl; 
+        document.getElementById('comp-logo-preview').classList.remove('hidden');
+        toonPopup('✅ Logo succesvol opgeslagen!');
+      } catch (err) { 
+        toonPopup('Upload mislukt: ' + err.message); 
+      }
+      event.target.value = '';
     }
 
     async function removeCompanyLogo() {
