@@ -59,7 +59,6 @@
       <input type="password" id="login-password" class="input-field" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter') loginMaster()">
       <button class="btn btn-primary mt-4" onclick="loginMaster()">Inloggen als Baas</button>
       
-      <!-- Force logout knop voor als je vastzit met een test-account -->
       <button class="btn btn-secondary mt-2 hidden" id="force-logout-btn" onclick="logoutMaster()">Log huidig test-account uit</button>
     </div>
 
@@ -115,15 +114,11 @@
   </div>
 
   <script>
-    // --- SUPABASE CONFIGURATION ---
     const SUPABASE_URL = "https://wiimebmtizhquwzjrixa.supabase.co";
     const SUPABASE_KEY = "sb_publishable_-TyLItKUkPl28wpvaeFQAw_kQj7ZReu";
     
-    // HIER ZIT DE MAGIC FIX: Een unieke opslagsleutel voor de Master Admin!
     let dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: {
-        storageKey: 'master-admin-session'
-      }
+      auth: { storageKey: 'master-admin-session' }
     });
     
     let globalBlacklist = [];
@@ -135,10 +130,8 @@
       document.body.appendChild(p); setTimeout(() => { if (p) p.remove(); }, 4000);
     }
 
-    // --- AUTHENTICATIE ---
     dbClient.auth.onAuthStateChange(async (event, session) => {
       if (session) {
-        // Controleer op Admin rechten
         const { data, error } = await dbClient.from('super_admins').select('id').eq('id', session.user.id).single();
         if (data) {
           document.getElementById('login-view').classList.add('hidden');
@@ -147,7 +140,6 @@
           loadLiveFeed();
           listenToRealtime();
         } else {
-          // Geen admin? Blijf op inlogscherm.
           document.getElementById('login-view').classList.remove('hidden');
           document.getElementById('dashboard-view').classList.add('hidden');
           document.getElementById('force-logout-btn').classList.remove('hidden');
@@ -170,40 +162,24 @@
       if (error) toonPopup('Inloggen mislukt: ' + error.message);
     }
 
-    async function logoutMaster() {
-      await dbClient.auth.signOut();
-      location.reload();
-    }
+    async function logoutMaster() { await dbClient.auth.signOut(); location.reload(); }
 
-    // --- LIVE FEED ---
     function listenToRealtime() {
         dbClient.channel('master-feed')
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, () => {
-              loadLiveFeed();
-              loadMasterData(); // Update the counter
+              loadLiveFeed(); loadMasterData();
           }).subscribe();
     }
 
     async function loadLiveFeed() {
-        const { data, error } = await dbClient
-            .from('requests')
-            .select('title, artist, party_code, djs(dj_name)')
-            .order('created_at', { ascending: false })
-            .limit(30);
-
+        const { data } = await dbClient.from('requests').select('title, artist, party_code, djs(dj_name)').order('created_at', { ascending: false }).limit(30);
         const container = document.getElementById('live-feed-container');
-        if (!data || data.length === 0) {
-            container.innerHTML = '<p style="color:var(--text-sub); text-align:center;">Nog geen verzoekjes.</p>';
-            return;
-        }
-
+        if (!data || data.length === 0) { container.innerHTML = '<p style="color:var(--text-sub); text-align:center;">Nog geen verzoekjes.</p>'; return; }
         container.innerHTML = data.map(req => {
             const djName = req.djs ? req.djs.dj_name : 'Onbekende DJ';
             return `
             <div class="live-item">
-                <div>
-                    <strong style="font-size:0.9rem;">${req.title}</strong> <span style="font-size:0.8rem; color:var(--text-sub);">- ${req.artist}</span>
-                </div>
+                <div><strong style="font-size:0.9rem;">${req.title}</strong> <span style="font-size:0.8rem; color:var(--text-sub);">- ${req.artist}</span></div>
                 <div style="text-align:right;">
                     <div style="font-size:0.75rem; color:var(--accent-color); font-weight:bold;">${djName}</div>
                     <div style="font-size:0.7rem; color:var(--text-sub);">CODE: ${req.party_code}</div>
@@ -212,9 +188,7 @@
         }).join('');
     }
 
-    // --- DATA LADEN (BEDRIJVEN & DJ'S) ---
     async function loadMasterData() {
-      // Haal bedrijven op INCLUSIEF hun onderliggende DJ's
       const { data: comps } = await dbClient.from('companies').select('*, djs(*)');
       const { count: djCount } = await dbClient.from('djs').select('*', { count: 'exact', head: true });
       const { count: reqCount } = await dbClient.from('requests').select('*', { count: 'exact', head: true });
@@ -224,15 +198,13 @@
       document.getElementById('stat-requests').innerText = reqCount || 0;
 
       const compList = document.getElementById('companies-list');
-      if (!comps || comps.length === 0) {
-        compList.innerHTML = '<p style="color:var(--text-sub);">Nog geen bedrijven in het systeem.</p>';
-      } else {
+      if (!comps || comps.length === 0) { compList.innerHTML = '<p style="color:var(--text-sub);">Nog geen bedrijven in het systeem.</p>'; } 
+      else {
         compList.innerHTML = comps.map(c => {
           const endDate = c.subscription_end_date ? new Date(c.subscription_end_date).toLocaleDateString('nl-NL') : 'Niet actief';
           const isExpired = c.subscription_end_date && new Date(c.subscription_end_date) < new Date();
           const color = isExpired ? 'var(--danger-color)' : 'var(--success-color)';
           
-          // Maak HTML blokje voor alle DJ's binnen dit bedrijf
           let djsHtml = '';
           if (c.djs && c.djs.length > 0) {
               djsHtml = '<div class="dj-list-box"><h4 style="font-size:0.85rem; margin-bottom:8px; color:var(--text-sub);">DJ Accounts:</h4>' + 
@@ -243,9 +215,7 @@
                       <button class="btn btn-sm btn-secondary" onclick="masterUpdateDJ('${dj.id}')">💾</button>
                   </div>
               `).join('') + '</div>';
-          } else {
-              djsHtml = '<div class="dj-list-box"><p style="font-size:0.8rem; color:var(--text-sub); margin:0;">Dit bedrijf heeft nog geen DJ\'s aangemaakt.</p></div>';
-          }
+          } else { djsHtml = '<div class="dj-list-box"><p style="font-size:0.8rem; color:var(--text-sub); margin:0;">Dit bedrijf heeft nog geen DJ\'s aangemaakt.</p></div>'; }
 
           return `
             <div class="company-item">
@@ -260,75 +230,53 @@
                 <input type="number" id="dj-${c.id}" class="input-field" style="padding: 6px; margin: 0; width: 60px; font-size: 0.8rem;" value="${c.max_djs}">
                 <button class="btn btn-sm btn-secondary" style="background:var(--accent-color); border:none;" onclick="updateCompany('${c.id}')">Abo Opslaan</button>
               </div>
-              
               ${djsHtml}
-            </div>
-          `;
+            </div>`;
         }).join('');
       }
 
-      // 2. Globale Blacklist Laden
       const { data: settings } = await dbClient.from('master_settings').select('global_blacklist').eq('id', 1).single();
-      if (settings && settings.global_blacklist) {
-        globalBlacklist = settings.global_blacklist;
-        renderGlobalBlacklist();
-      }
+      if (settings && settings.global_blacklist) { globalBlacklist = settings.global_blacklist; renderGlobalBlacklist(); }
     }
 
     async function updateCompany(id) {
       const newDate = document.getElementById(`date-${id}`).value;
       const newMax = document.getElementById(`dj-${id}`).value;
       
-      // Extra beveiliging en feedback voor lege/halve datums
       if (!newDate) {
           const confirmEmpty = confirm("Je hebt de datum leeg gelaten (of niet volledig ingevuld). Wil je het abonnement hiermee stopzetten?");
-          if (!confirmEmpty) return; // Annuleer de actie als je misklikte
+          if (!confirmEmpty) return;
       }
       
       toonPopup('Bezig met opslaan...');
-
-      // Bouw de data netjes op voor de database
       const updatePayload = {
         subscription_end_date: newDate ? new Date(newDate).toISOString() : null,
         max_djs: newMax ? parseInt(newMax) : 0
       };
 
       const { error } = await dbClient.from('companies').update(updatePayload).eq('id', id);
-
-      if (error) {
-          console.error("Supabase Error:", error);
-          toonPopup('Fout bij opslaan: ' + error.message);
-      } else { 
-          toonPopup('✅ Abonnement succesvol aangepast!'); 
-          loadMasterData(); 
-      }
+      if (error) { toonPopup('Fout bij opslaan: ' + error.message); } else { toonPopup('✅ Abonnement succesvol aangepast!'); loadMasterData(); }
     }
 
     async function masterUpdateDJ(djId) {
         const newName = document.getElementById(`dj-name-${djId}`).value.trim();
         const newCode = document.getElementById(`dj-code-${djId}`).value.trim();
-
         if(!newName || !newCode) return toonPopup('Vul naam en code in.');
 
         const { error } = await dbClient.from('djs').update({ dj_name: newName, dj_code: newCode }).eq('id', djId);
         if (error) {
             if(error.code === '23505') toonPopup('Fout: Inlogcode is al in gebruik!');
             else toonPopup('Update mislukt: ' + error.message);
-        } else {
-            toonPopup('DJ Gegevens overschreven!');
-            loadMasterData();
-        }
+        } else { toonPopup('DJ Gegevens overschreven!'); loadMasterData(); }
     }
 
-    // --- GLOBALE BLACKLIST ---
     async function addGlobalBlacklistWord() {
       const input = document.getElementById('global-blacklist-input');
       const word = input.value.trim().toLowerCase();
       if (word && !globalBlacklist.includes(word)) {
         globalBlacklist.push(word);
         await dbClient.from('master_settings').update({ global_blacklist: globalBlacklist }).eq('id', 1);
-        input.value = '';
-        renderGlobalBlacklist();
+        input.value = ''; renderGlobalBlacklist();
       }
     }
 
