@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Partyrequest — Bedrijfsportaal</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg-color: #0d0f12;
+      --card-bg: rgba(26, 29, 36, 0.72);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --accent-color: #007aff;
+      --accent-gradient: linear-gradient(135deg, #007aff, #5856d6);
+      --text-main: #f5f5f7;
+      --text-sub: #8e8e93;
+      --danger-color: #ff3b30;
+      --success-color: #34c759;
+      --warning-color: #ff9500;
+      --radius-xl: 24px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --blur-val: blur(20px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      background-image: 
+        radial-gradient(circle at 20% 20%, rgba(0, 122, 255, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(88, 86, 214, 0.1) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: var(--blur-val);
+      -webkit-backdrop-filter: var(--blur-val);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: var(--radius-lg);
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: #fff;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent-gradient); box-shadow: 0 4px 20px rgba(0, 122, 255, 0.35); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--card-border); }
+    .btn-danger { background: rgba(255, 59, 48, 0.15); color: var(--danger-color); border: 1px solid rgba(255, 59, 48, 0.3); }
+    .btn-sm { padding: 8px 14px; font-size: 0.82rem; border-radius: var(--radius-md); width: auto; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .input-field {
+      width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+      color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+    }
+    .input-field:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
+
+    .toast-popup {
+      position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+      background: rgba(20, 22, 28, 0.95); color: #ffffff; border: 1px solid var(--accent-color);
+      padding: 14px 24px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      z-index: 9999; font-weight: 700; text-align: center; min-width: 280px;
+      animation: fadeInOut 3s ease forwards; backdrop-filter: blur(10px);
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translate(-50%, 20px); }
+      15% { opacity: 1; transform: translate(-50%, 0); }
+      85% { opacity: 1; transform: translate(-50%, 0); }
+      100% { opacity: 0; transform: translate(-50%, -10px); }
+    }
+
+    .hidden { display: none !important; }
+    .flex-row { display: flex; gap: 10px; align-items: center; }
+    
+    .dj-item {
+      background: rgba(0,0,0,0.3); padding: 16px; border-radius: var(--radius-md);
+      border: 1px solid var(--card-border); margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- 1. LOGIN SCHERM -->
+    <div id="login-view" class="glass-card text-center" style="margin-top: 10vh;">
+      <div style="font-size: 3rem; margin-bottom: 10px;">🏢</div>
+      <h2 style="font-size: 1.5rem; margin-bottom: 6px;">Partyrequest Portaal</h2>
+      <p style="color: var(--text-sub); font-size: 0.88rem; margin-bottom: 24px;">Log in om je bedrijf en DJ's te beheren.</p>
+      
+      <div class="form-group">
+        <input type="email" id="login-email" class="input-field" placeholder="E-mailadres">
+      </div>
+      <div class="form-group">
+        <input type="password" id="login-password" class="input-field" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter') loginCompany()">
+      </div>
+      
+      <button class="btn btn-primary mt-4" onclick="loginCompany()">Inloggen</button>
+      <div style="margin-top: 20px; font-size: 0.8rem; color: var(--text-sub);">
+        Nog geen account of hulp nodig? Neem contact op met Partyrequest beheer.
+      </div>
+    </div>
+
+    <!-- 2. BEDRIJFS DASHBOARD -->
+    <div id="dashboard-view" class="hidden">
+      
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 10px 0;">
+        <h2 style="font-size: 1.3rem;">👋 Welkom, <span id="dash-company-name">Bedrijf</span></h2>
+        <button class="btn btn-sm btn-secondary" onclick="logoutCompany()">Uitloggen</button>
+      </div>
+
+      <!-- ABONNEMENT STATUS -->
+      <div id="subscription-alert" class="glass-card hidden" style="border-color: var(--warning-color); background: rgba(255, 149, 0, 0.1);">
+        <h3 style="color: var(--warning-color); font-size: 1.05rem; margin-bottom: 8px;">⚠️ Let op: Abonnement verloopt bijna</h3>
+        <p style="font-size: 0.85rem;" id="sub-alert-text">Je abonnement verloopt op [datum]. Verleng tijdig om te voorkomen dat je DJ's niet meer kunnen inloggen.</p>
+      </div>
+
+      <div class="glass-card" id="subscription-ok" style="border-color: var(--success-color); background: rgba(52, 199, 89, 0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.9rem; font-weight: 600; color: var(--success-color);">✅ Abonnement Actief</span>
+          <span style="font-size: 0.8rem; color: var(--text-sub);">Geldig t/m: <span id="sub-end-date">--</span></span>
+        </div>
+      </div>
+
+      <!-- DJ BEHEER -->
+      <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 1.1rem; color: var(--accent-color);">🎧 Jouw DJ's</h3>
+          <span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 12px;">
+            <span id="dj-count">0</span> / <span id="dj-max">1</span> Slots
+          </span>
+        </div>
+        
+        <div id="dj-list-container"></div>
+
+        <div id="add-dj-section" class="hidden" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--card-border);">
+          <h4 style="font-size: 0.9rem; margin-bottom: 12px;">Nieuwe DJ Aanmaken</h4>
+          <div class="form-group">
+            <input type="text" id="new-dj-name" class="input-field mb-2" placeholder="DJ / Act Naam (bijv. DJ Marc)">
+            <input type="text" id="new-dj-code" class="input-field mb-2" placeholder="Unieke Inlogcode (bijv. 3977)">
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="createNewDJ()">Voeg DJ Toe</button>
+        </div>
+        <div id="add-dj-limit-msg" class="hidden" style="margin-top: 16px; font-size: 0.8rem; color: var(--danger-color); text-align: center;">
+          Je hebt het maximaal aantal DJ accounts voor je abonnement bereikt.
+        </div>
+      </div>
+
+      <!-- BEDRIJFS BRANDING -->
+      <div class="glass-card">
+        <h3 style="font-size: 1.1rem; margin-bottom: 16px; color: var(--accent-color);">🏢 Bedrijfsbranding</h3>
+        <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 16px;">Dit logo is zichtbaar linksboven voor gasten in het Partyrequest scherm.</p>
+        
+        <div class="form-group">
+          <label class="form-label">Bedrijfsnaam</label>
+          <input type="text" id="comp-name-input" class="input-field">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Bedrijfslogo</label>
+          <div class="flex-row">
+            <input type="file" id="comp-logo-upload" accept="image/*" class="hidden" onchange="uploadCompanyLogo(event)">
+            <button class="btn btn-sm btn-secondary" style="flex:1;" onclick="document.getElementById('comp-logo-upload').click()">Upload Logo</button>
+            <button class="btn btn-sm btn-danger" style="width:auto;" onclick="removeCompanyLogo()">Wis</button>
+          </div>
+          <img id="comp-logo-preview" class="hidden" style="max-height: 60px; margin-top: 12px; border-radius: 8px; border: 1px solid var(--card-border);">
+        </div>
+        
+        <button class="btn btn-secondary mt-2" onclick="saveCompanyDetails()">💾 Opslaan</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // --- SUPABASE CONFIGURATION ---
+    const SUPABASE_URL = "https://wiimebmtizhquwzjrixa.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_-TyLItKUkPl28wpvaeFQAw_kQj7ZReu";
+    let supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    let currentCompany = null;
+    let currentDJs = [];
+
+    function toonPopup(bericht) {
+      const oude = document.getElementById('custom-toast');
+      if (oude) oude.remove();
+      const p = document.createElement('div');
+      p.id = 'custom-toast';
+      p.className = 'toast-popup';
+      p.innerText = bericht;
+      document.body.appendChild(p);
+      setTimeout(() => { if (p) p.remove(); }, 3000);
+    }
+
+    // --- AUTHENTICATIE LOGICA ---
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('dashboard-view').classList.remove('hidden');
+        loadCompanyDashboard(session.user.id);
+      } else {
+        document.getElementById('login-view').classList.remove('hidden');
+        document.getElementById('dashboard-view').classList.add('hidden');
+      }
+    });
+
+    async function loginCompany() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      
+      if (!email || !password) return toonPopup('Vul alle velden in.');
+      toonPopup('Bezig met inloggen...');
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        toonPopup('Inloggen mislukt: ' + error.message);
+      }
+    }
+
+    async function logoutCompany() {
+      await supabase.auth.signOut();
+      toonPopup('Succesvol uitgelogd.');
+    }
+
+    // --- DASHBOARD DATA LADEN ---
+    async function loadCompanyDashboard(userId) {
+      toonPopup('Gegevens ophalen...');
+      
+      const { data: companyData, error: compError } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (compError || !companyData) {
+        return toonPopup('Fout bij ophalen bedrijfsgegevens.');
+      }
+      
+      currentCompany = companyData;
+      
+      document.getElementById('dash-company-name').innerText = companyData.company_name;
+      document.getElementById('comp-name-input').value = companyData.company_name;
+      document.getElementById('dj-max').innerText = companyData.max_djs;
+      
+      if (companyData.logo_url && companyData.logo_url !== 'REMOVED') {
+        const preview = document.getElementById('comp-logo-preview');
+        preview.src = companyData.logo_url;
+        preview.classList.remove('hidden');
+      } else {
+        document.getElementById('comp-logo-preview').classList.add('hidden');
+      }
+
+      if (companyData.subscription_end_date) {
+        const endDate = new Date(companyData.subscription_end_date);
+        const now = new Date();
+        const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+        
+        document.getElementById('sub-end-date').innerText = endDate.toLocaleDateString('nl-NL');
+        
+        if (daysLeft <= 30 && daysLeft >= 0) {
+          document.getElementById('subscription-ok').classList.add('hidden');
+          const alertBox = document.getElementById('subscription-alert');
+          alertBox.classList.remove('hidden');
+          document.getElementById('sub-alert-text').innerText = `Je abonnement verloopt over ${daysLeft} dagen (${endDate.toLocaleDateString('nl-NL')}). Verleng tijdig.`;
+        } else if (daysLeft < 0) {
+          document.getElementById('subscription-ok').classList.add('hidden');
+          const alertBox = document.getElementById('subscription-alert');
+          alertBox.classList.remove('hidden');
+          alertBox.style.borderColor = 'var(--danger-color)';
+          alertBox.style.background = 'rgba(255, 59, 48, 0.1)';
+          alertBox.querySelector('h3').style.color = 'var(--danger-color)';
+          alertBox.querySelector('h3').innerText = '❌ Abonnement Verlopen';
+          document.getElementById('sub-alert-text').innerText = 'Je abonnement is verlopen. Het systeem is tijdelijk bevroren.';
+        }
+      }
+
+      loadDJs(userId);
+    }
+
+    async function loadDJs(companyId) {
+      const { data: djs, error } = await supabase
+        .from('djs')
+        .select('*')
+        .eq('company_id', companyId);
+        
+      if (error) return console.error(error);
+      currentDJs = djs || [];
+      
+      document.getElementById('dj-count').innerText = currentDJs.length;
+      
+      const listContainer = document.getElementById('dj-list-container');
+      if (currentDJs.length === 0) {
+        listContainer.innerHTML = '<p style="font-size:0.85rem; color:var(--text-sub); text-align:center; padding:10px;">Je hebt nog geen DJ accounts aangemaakt.</p>';
+      } else {
+        listContainer.innerHTML = currentDJs.map(dj => `
+          <div class="dj-item">
+            <div>
+              <strong style="display:block; font-size:1rem; margin-bottom:2px;">${dj.dj_name}</strong>
+              <span style="font-size:0.8rem; color:var(--text-sub);">Inlogcode: <strong style="color:var(--accent-color); letter-spacing:1px;">${dj.dj_code}</strong></span>
+            </div>
+            <button class="btn btn-sm btn-danger" style="padding: 6px; border:none;" onclick="deleteDJ('${dj.id}', '${dj.dj_name.replace(/'/g, "\\'")}')">🗑️</button>
+          </div>
+        `).join('');
+      }
+
+      if (currentDJs.length < currentCompany.max_djs) {
+        document.getElementById('add-dj-section').classList.remove('hidden');
+        document.getElementById('add-dj-limit-msg').classList.add('hidden');
+      } else {
+        document.getElementById('add-dj-section').classList.add('hidden');
+        document.getElementById('add-dj-limit-msg').classList.remove('hidden');
+      }
+    }
+
+    // --- BEHEER LOGICA ---
+    async function createNewDJ() {
+      const djName = document.getElementById('new-dj-name').value.trim();
+      const djCode = document.getElementById('new-dj-code').value.trim();
+      
+      if (!djName || !djCode) return toonPopup('Vul een naam en inlogcode in.');
+      if (currentDJs.length >= currentCompany.max_djs) return toonPopup('Maximum aantal DJ accounts bereikt.');
+
+      toonPopup('Bezig met aanmaken...');
+      const { error } = await supabase.from('djs').insert([{
+        company_id: currentCompany.id,
+        dj_name: djName,
+        dj_code: djCode
+      }]);
+
+      if (error) {
+        if(error.code === '23505') return toonPopup('Deze inlogcode is al in gebruik. Kies een andere.');
+        return toonPopup('Fout bij aanmaken: ' + error.message);
+      }
+
+      toonPopup(`DJ ${djName} succesvol toegevoegd!`);
+      document.getElementById('new-dj-name').value = '';
+      document.getElementById('new-dj-code').value = '';
+      loadDJs(currentCompany.id);
+    }
+
+    async function deleteDJ(djId, djName) {
+      if(confirm(`Weet je zeker dat je DJ '${djName}' wilt verwijderen? Hun instellingen en bibliotheek gaan hiermee definitief verloren.`)) {
+        const { error } = await supabase.from('djs').delete().eq('id', djId);
+        if (error) return toonPopup('Fout bij verwijderen.');
+        toonPopup('DJ verwijderd.');
+        loadDJs(currentCompany.id);
+      }
+    }
+
+    async function saveCompanyDetails() {
+      const newName = document.getElementById('comp-name-input').value.trim();
+      if (!newName) return toonPopup('Bedrijfsnaam mag niet leeg zijn.');
+      
+      const { error } = await supabase.from('companies')
+        .update({ company_name: newName })
+        .eq('id', currentCompany.id);
+        
+      if (error) return toonPopup('Fout bij opslaan.');
+      
+      toonPopup('Bedrijfsgegevens opgeslagen!');
+      document.getElementById('dash-company-name').innerText = newName;
+    }
+
+    // SIMPELE COMPRESSIE VOOR LOGO'S
+    function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = event => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            let width = img.width, height = img.height;
+            if (width > height && width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
+            else if (height > maxHeight) { width = Math.round((width * maxHeight) / height); height = maxHeight; }
+            const canvas = document.createElement('canvas');
+            canvas.width = width; canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            canvas.toBlob(blob => { if (blob) resolve(blob); else reject(new Error('Canvas leeg')); }, 'image/png', quality);
+          };
+        };
+      });
+    }
+
+    async function uploadCompanyLogo(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      toonPopup('Logo uploaden...');
+      
+      try {
+        const compressedBlob = await compressImage(file);
+        const fileName = `company_${currentCompany.id}_${Date.now()}.png`;
+        
+        // Zorg dat de bucket bestaat of gebruik een generieke media map
+        const { error: uploadError } = await supabase.storage.from('media').upload(fileName, compressedBlob, { contentType: 'image/png' });
+        if (uploadError) throw uploadError;
+
+        const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(fileName);
+        const logoUrl = publicUrlData.publicUrl;
+        
+        await supabase.from('companies').update({ logo_url: logoUrl }).eq('id', currentCompany.id);
+        
+        document.getElementById('comp-logo-preview').src = logoUrl;
+        document.getElementById('comp-logo-preview').classList.remove('hidden');
+        toonPopup('Logo opgeslagen!');
+      } catch (err) {
+        console.error(err);
+        toonPopup('Upload mislukt.');
+      }
+      event.target.value = '';
+    }
+
+    async function removeCompanyLogo() {
+      await supabase.from('companies').update({ logo_url: 'REMOVED' }).eq('id', currentCompany.id);
+      document.getElementById('comp-logo-preview').classList.add('hidden');
+      toonPopup('Logo verwijderd!');
+    }
+  </script>
+</body>
+</html>
