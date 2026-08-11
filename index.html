@@ -5,143 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Partyrequest — Next-Gen Event Requests</title>
   
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root {
-      --bg-color: #0d0f12;
-      --card-bg: rgba(26, 29, 36, 0.72);
-      --card-border: rgba(255, 255, 255, 0.1);
-      --accent-color: #007aff;
-      --accent-gradient: linear-gradient(135deg, #007aff, #5856d6);
-      --text-main: #f5f5f7;
-      --text-sub: #8e8e93;
-      --danger-color: #ff3b30;
-      --success-color: #34c759;
-      --warning-color: #ff9500;
-      --radius-xl: 24px;
-      --radius-lg: 16px;
-      --radius-md: 12px;
-      --blur-val: blur(20px);
+      --bg-color: #0d0f12; --card-bg: rgba(26, 29, 36, 0.72); --card-border: rgba(255, 255, 255, 0.1);
+      --accent-color: #007aff; --accent-gradient: linear-gradient(135deg, #007aff, #5856d6);
+      --text-main: #f5f5f7; --text-sub: #8e8e93; --danger-color: #ff3b30; --success-color: #34c759; --warning-color: #ff9500;
+      --radius-xl: 24px; --radius-lg: 16px; --radius-md: 12px; --blur-val: blur(20px);
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; }
-
-    body {
-      background-color: var(--bg-color); color: var(--text-main); min-height: 100vh;
-      display: flex; justify-content: center;
-      background-image: radial-gradient(circle at 10% 10%, rgba(0, 122, 255, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(88, 86, 214, 0.15) 0%, transparent 40%);
-      background-attachment: fixed; padding-bottom: 80px;
-    }
-
+    body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; justify-content: center; background-image: radial-gradient(circle at 10% 10%, rgba(0, 122, 255, 0.15) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(88, 86, 214, 0.15) 0%, transparent 40%); background-attachment: fixed; padding-bottom: 80px; }
     .app-container { width: 100%; max-width: 480px; min-height: 100vh; display: flex; flex-direction: column; position: relative; }
-
-    .glass-card {
-      background: var(--card-bg); backdrop-filter: var(--blur-val); -webkit-backdrop-filter: var(--blur-val);
-      border: 1px solid var(--card-border); border-radius: var(--radius-xl); padding: 20px;
-      margin-bottom: 16px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    }
-
-    .glass-header {
-      position: sticky; top: 0; z-index: 100; background: rgba(13, 15, 18, 0.82);
-      backdrop-filter: var(--blur-val); -webkit-backdrop-filter: var(--blur-val);
-      border-bottom: 1px solid var(--card-border); padding: 12px 16px;
-      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-    }
-
-    .brand-title {
-      font-size: 1.15rem; font-weight: 800; letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #ffffff 30%, var(--accent-color));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      display: flex; align-items: center; justify-content: center;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
+    .glass-card { background: var(--card-bg); backdrop-filter: var(--blur-val); border: 1px solid var(--card-border); border-radius: var(--radius-xl); padding: 20px; margin-bottom: 16px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+    .glass-header { position: sticky; top: 0; z-index: 100; background: rgba(13, 15, 18, 0.82); backdrop-filter: var(--blur-val); border-bottom: 1px solid var(--card-border); padding: 12px 16px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+    .brand-title { font-size: 1.15rem; font-weight: 800; background: linear-gradient(135deg, #ffffff 30%, var(--accent-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .status-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
-
-    .btn {
-      width: 100%; padding: 14px 20px; border-radius: var(--radius-lg); border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; color: #fff;
-    }
+    .btn { width: 100%; padding: 14px 20px; border-radius: var(--radius-lg); border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; color: #fff; transition: all 0.2s; }
     .btn:active { transform: scale(0.97); }
     .btn-primary { background: var(--accent-gradient); box-shadow: 0 4px 20px rgba(0, 122, 255, 0.35); }
-    .btn-secondary { background: rgba(255, 255, 255, 0.1); color: var(--text-main); border: 1px solid var(--card-border); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--card-border); }
     .btn-danger { background: rgba(255, 59, 48, 0.15); color: var(--danger-color); border: 1px solid rgba(255, 59, 48, 0.3); }
     .btn-sm { padding: 8px 14px; font-size: 0.82rem; border-radius: var(--radius-md); width: auto; }
     .btn:disabled { background: rgba(255, 255, 255, 0.05); color: #666; cursor: not-allowed; box-shadow: none; }
-
     .form-group { margin-bottom: 14px; }
-    .form-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; text-transform: uppercase; }
-    .input-field {
-      width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--card-border);
-      border-radius: var(--radius-lg); color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s;
-    }
+    .input-field { width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--card-border); border-radius: var(--radius-lg); color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
     .input-field:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
-
     .segmented-control { display: flex; background: rgba(0, 0, 0, 0.35); padding: 4px; border-radius: 14px; margin-bottom: 20px; border: 1px solid rgba(255, 255, 255, 0.05); }
     .segment-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-sub); font-size: 0.85rem; font-weight: 600; border-radius: 10px; cursor: pointer; transition: all 0.25s ease; }
     .segment-btn.active { background: rgba(255, 255, 255, 0.15); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-
     .search-results-list { max-height: 220px; overflow-y: auto; background: rgba(20, 22, 28, 0.95); border: 1px solid var(--card-border); border-radius: var(--radius-lg); margin-top: 6px; display: none; }
     .search-result-item { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .search-result-item:hover { background: rgba(255, 255, 255, 0.08); }
     .search-result-title { font-weight: 700; font-size: 0.9rem; color: #fff; }
     .search-result-artist { font-size: 0.8rem; color: var(--text-sub); }
-
-    .request-card {
-      background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: var(--radius-lg);
-      padding: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; transition: transform 0.2s;
-    }
+    .request-card { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .request-info { flex: 1; }
     .request-song { font-weight: 700; font-size: 0.95rem; color: #fff; margin-bottom: 2px; }
     .request-artist { font-size: 0.82rem; color: var(--text-sub); }
     .request-note { font-size: 0.78rem; color: var(--warning-color); margin-top: 4px; font-style: italic; }
-
-    .upvote-btn {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 122, 255, 0.12);
-      border: 1px solid rgba(0, 122, 255, 0.3); color: var(--accent-color); padding: 8px 12px; border-radius: 12px; cursor: pointer;
-      min-width: 64px; font-weight: 800; font-size: 0.85rem; transition: all 0.2s;
-    }
+    .upvote-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 122, 255, 0.12); border: 1px solid rgba(0, 122, 255, 0.3); color: var(--accent-color); padding: 8px 12px; border-radius: 12px; cursor: pointer; min-width: 64px; font-weight: 800; font-size: 0.85rem; }
     .upvote-btn.voted { background: var(--accent-color); color: #fff; }
     .upvote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .app-navbar {
-      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px;
-      background: rgba(18, 20, 26, 0.85); backdrop-filter: var(--blur-val); -webkit-backdrop-filter: var(--blur-val);
-      border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; padding: 10px 0 20px 0; z-index: 200;
-    }
+    .app-navbar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; background: rgba(18, 20, 26, 0.85); backdrop-filter: var(--blur-val); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; padding: 10px 0 20px 0; z-index: 200; }
     .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-sub); text-decoration: none; font-size: 0.72rem; font-weight: 600; cursor: pointer; }
     .nav-item.active { color: var(--accent-color); }
     .nav-icon { font-size: 1.3rem; }
-
-    .toast-popup {
-      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(20, 22, 28, 0.95);
-      color: #ffffff; border: 1px solid var(--accent-color); padding: 14px 24px; border-radius: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 9999; font-weight: 700; text-align: center; min-width: 280px;
-      animation: fadeInOut 3s ease forwards; backdrop-filter: blur(10px);
-    }
-
+    .toast-popup { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: rgba(20, 22, 28, 0.95); color: #ffffff; border: 1px solid var(--accent-color); padding: 14px 24px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 9999; font-weight: 700; text-align: center; min-width: 280px; animation: fadeInOut 3s ease forwards; backdrop-filter: blur(10px); }
     @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, 20px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -10px); } }
-
-    #btn-scroll-top {
-      position: fixed; bottom: 80px; right: 20px; width: 44px; height: 44px; border-radius: 50%; background: var(--accent-gradient);
-      color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      border: none; z-index: 900; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.3s;
-    }
-    #btn-scroll-top.visible { opacity: 1; pointer-events: auto; }
-
     .hidden { display: none !important; }
     .flex-row { display: flex; gap: 10px; align-items: center; }
-    .mt-2 { margin-top: 8px; }
-    .mt-4 { margin-top: 16px; }
-    .mb-2 { margin-bottom: 8px; }
-    .mb-4 { margin-bottom: 20px; }
-    .text-center { text-align: center; }
     .badge { padding: 4px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; background: rgba(255,255,255,0.1); }
   </style>
 </head>
@@ -149,83 +64,58 @@
 
   <div class="app-container">
     
-    <!-- HEADER -->
     <header class="glass-header">
       <div style="display: flex; align-items: center; justify-content: flex-start; overflow: hidden; height: 32px;">
          <img id="header-logo" class="hidden" style="max-height: 100%; max-width: 100px; border-radius: 4px; object-fit: contain;">
       </div>
-      
       <div id="header-dj-name" class="brand-title">Partyrequest</div>
-      
       <div style="display: flex; justify-content: flex-end; align-items: center; height: 32px;">
-        <div id="header-status-badge" class="status-badge hidden">
-          <div class="status-dot"></div>
-          <span id="party-code-display">CODE: --</span>
-        </div>
-        <button id="btn-header-dj-login" class="btn btn-sm btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem;" onclick="switchAuthTab('dj')">
-          🎧 DJ Login
-        </button>
+        <div id="header-status-badge" class="status-badge hidden"><div class="status-dot"></div><span id="party-code-display">CODE: --</span></div>
+        <button id="btn-header-dj-login" class="btn btn-sm btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.75rem;" onclick="switchAuthTab('dj')">🎧 DJ Login</button>
       </div>
     </header>
 
     <main style="padding: 16px;">
-
-      <!-- 1. AUTH SCREEN (LANDING PAGE) -->
+      
       <section id="screen-auth" class="glass-card text-center" style="margin-top: 40px;">
         <h2 style="font-size: 1.5rem; margin-bottom: 6px;">Welkom bij Partyrequest</h2>
         <p style="color: var(--text-sub); font-size: 0.88rem; margin-bottom: 24px;" id="auth-subtitle">Voer de feestcode in om deel te nemen.</p>
         
         <div id="auth-guest-form">
           <div class="form-group">
-            <input type="number" id="input-guest-code" class="input-field text-center" placeholder="Feestcode (bijv. 4920)" maxlength="4" style="font-size: 1.6rem; letter-spacing: 6px; font-weight: 800;" onkeydown="if(event.key==='Enter') loginGuest()">
+            <input type="number" id="input-guest-code" class="input-field text-center" placeholder="Feestcode" maxlength="4" style="font-size: 1.6rem; letter-spacing: 6px; font-weight: 800;" onkeydown="if(event.key==='Enter') loginGuest()">
           </div>
-          <button class="btn btn-primary" onclick="loginGuest()">
-            <span>Betreed Feest</span> ➔
-          </button>
+          <button class="btn btn-primary" onclick="loginGuest()"><span>Betreed Feest</span> ➔</button>
         </div>
 
         <div id="auth-dj-form" class="hidden">
           <div class="form-group">
             <input type="password" id="input-dj-pin" class="input-field text-center" placeholder="Inlogcode DJ" style="font-size: 1.2rem; letter-spacing: 2px;" onkeydown="if(event.key==='Enter') loginDJ()">
           </div>
-          <button class="btn btn-primary" onclick="loginDJ()">
-            <span>Open DJ Dashboard</span> 🎛️
-          </button>
-          <button class="btn btn-secondary mt-4" onclick="switchAuthTab('guest')" style="font-size: 0.85rem;">
-            <span>← Terug naar Gast Inlog</span>
-          </button>
+          <button class="btn btn-primary" onclick="loginDJ()"><span>Open DJ Dashboard</span> 🎛️</button>
+          <button class="btn btn-secondary mt-4" onclick="switchAuthTab('guest')" style="font-size: 0.85rem;">← Terug</button>
         </div>
       </section>
 
-      <!-- 2. GUEST VIEW -->
       <section id="screen-guest" class="hidden">
-        
         <div id="guest-welcome-banner" class="glass-card hidden" style="background: linear-gradient(135deg, rgba(0,122,255,0.2), rgba(88,86,214,0.2)); border-color: rgba(0,122,255,0.3);">
-          <h3 id="welcome-message-title" style="font-size: 1.1rem; font-weight: 800; margin-bottom: 4px;">🎉 Welkom op het feest!</h3>
+          <h3 id="welcome-message-title" style="font-size: 1.1rem; font-weight: 800; margin-bottom: 4px;">🎉 Welkom!</h3>
           <p id="welcome-message-text" style="font-size: 0.85rem; color: #e5e5ea;"></p>
         </div>
 
-        <!-- GUEST TAB 1: VERZOEKJES -->
         <div id="guest-tab-requests">
-          
           <div id="guest-requests-disabled-msg" class="glass-card text-center hidden" style="border-color: var(--danger-color);">
             <h3 style="color: var(--danger-color); margin-bottom: 6px;">🛑 Gesloten</h3>
-            <p style="font-size: 0.85rem; color: var(--text-sub);">Verzoekjes zijn helaas uitgeschakeld, geniet nog even van het feest!</p>
+            <p style="font-size: 0.85rem; color: var(--text-sub);">Verzoekjes zijn helaas uitgeschakeld.</p>
           </div>
 
           <div id="guest-requests-form-container" class="glass-card">
-            <h3 style="font-size: 1.05rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-              <span>🎵 Nummer Aanvragen</span>
-            </h3>
-
+            <h3 style="font-size: 1.05rem; margin-bottom: 12px;">🎵 Nummer Aanvragen</h3>
             <div id="library-search-box" class="form-group" style="position: relative;">
-              <input type="text" id="input-search-library" class="input-field" placeholder="🔎 Zoek op titel of artiest uit bibliotheek..." onkeyup="filterSongs(this.value)">
+              <input type="text" id="input-search-library" class="input-field" placeholder="🔎 Zoek op titel of artiest..." onkeyup="filterSongs(this.value)">
               <div id="search-results" class="search-results-list"></div>
             </div>
-
-            <button class="btn btn-sm btn-secondary" style="margin-bottom: 14px; padding: 12px; width: 100%; border: 1px dashed var(--card-border);" onclick="toggleManualRequestForm()" id="btn-toggle-manual">
-              ➕ Staat je nummer er niet tussen? Klik hier!
-            </button>
+            <button class="btn btn-sm btn-secondary" style="margin-bottom: 14px; padding: 12px; width: 100%; border: 1px dashed var(--card-border);" onclick="toggleManualRequestForm()" id="btn-toggle-manual">➕ Staat je nummer er niet tussen?</button>
 
             <div id="manual-request-box" class="hidden" style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: var(--radius-md); margin-bottom: 14px;">
               <div class="form-group">
@@ -233,16 +123,13 @@
                 <input type="text" id="req-artist" class="input-field mb-2" placeholder="Artiest (optioneel)">
                 <input type="text" id="req-note" class="input-field" placeholder="Opmerking (bijv. 'Voor de jarige!')">
               </div>
-              <button class="btn btn-primary" onclick="submitCustomRequest()">
-                <span>Verzoekje Versturen</span> 🚀
-              </button>
+              <button class="btn btn-primary" onclick="submitCustomRequest()">Verzoekje Versturen 🚀</button>
             </div>
           </div>
 
           <div class="glass-card">
             <h3 style="font-size: 1.05rem; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
-              <span>🔥 Live Wachtrij</span>
-              <span id="queue-count-badge" class="badge">0 nummers</span>
+              <span>🔥 Live Wachtrij</span><span id="queue-count-badge" class="badge">0 nummers</span>
             </h3>
             <div id="requests-queue-container"></div>
           </div>
@@ -253,46 +140,31 @@
           </div>
         </div>
 
-        <!-- GUEST TAB 2: PROMOTIE -->
         <div id="guest-tab-promo" class="hidden">
           <div class="glass-card text-center">
-            
-            <div id="promo-default-icon" style="width: 70px; height: 70px; border-radius: 50%; background: var(--accent-gradient); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">
-              🎧
-            </div>
-            
-            <h3 id="promo-dj-name" style="font-size: 1.3rem; font-weight: 800;">Berghmans & Von Hauze</h3>
-            
+            <div style="width: 70px; height: 70px; border-radius: 50%; background: var(--accent-gradient); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🎧</div>
+            <h3 id="promo-dj-name" style="font-size: 1.3rem; font-weight: 800;">DJ</h3>
             <div id="promo-display-links" style="display: flex; flex-direction: column; gap: 10px; margin-top: 16px;"></div>
           </div>
-          
           <button class="btn btn-secondary mt-4" onclick="logoutGuest()">🚪 Afmelden als Gast</button>
-          <button class="btn btn-primary mt-2" onclick="showDJLoginFromGuest()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); color: var(--text-main); box-shadow: none;">
-            🎧 Inloggen als DJ
-          </button>
+          <button class="btn btn-primary mt-2" onclick="showDJLoginFromGuest()" style="background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); color: var(--text-main); box-shadow: none;">🎧 Inloggen als DJ</button>
         </div>
       </section>
 
-      <!-- 3. DJ DASHBOARD -->
       <section id="screen-dj" class="hidden">
-        
         <div class="segmented-control" style="margin-bottom: 14px;">
           <button class="segment-btn active" onclick="switchDJTab('queue')">🎧 Wachtrij</button>
           <button class="segment-btn" onclick="switchDJTab('settings')">⚙️ Instellingen</button>
         </div>
 
-        <!-- DJ TAB 1: WACHTRIJ -->
         <div id="dj-tab-queue">
           <div class="glass-card">
-            
-            <!-- Quick Actions Toolbar -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
               <div class="flex-row" style="gap: 6px;">
-                <button class="btn btn-sm btn-secondary" style="padding: 6px 10px;" onclick="toggleDjQuickPanel('add')" title="Verzoekje toevoegen">➕ Voeg Toe</button>
-                <button class="btn btn-sm btn-secondary" style="padding: 6px 10px;" onclick="toggleDjQuickPanel('blacklist')" title="Snel blacklist">🚫 Blacklist</button>
-                <button id="btn-toggle-requests" class="btn btn-sm btn-secondary" style="padding: 6px 10px;" onclick="toggleRequestsActive()" title="Verzoekjes uitschakelen">🛑 Sluit inkomend</button>
+                <button class="btn btn-sm btn-secondary" style="padding: 6px 10px;" onclick="toggleDjQuickPanel('add')">➕ Voeg Toe</button>
+                <button class="btn btn-sm btn-secondary" style="padding: 6px 10px;" onclick="toggleDjQuickPanel('blacklist')">🚫 Blacklist</button>
+                <button id="btn-toggle-requests" class="btn btn-sm btn-secondary" style="padding: 6px 10px;" onclick="toggleRequestsActive()">🛑 Sluit inkomend</button>
               </div>
-
               <div class="flex-row" style="gap: 6px; margin-top: 10px;">
                 <select id="sort-select" class="input-field" style="padding: 6px; width: auto; font-size: 0.8rem;" onchange="renderDJQueue()">
                   <option value="votes">🔥 Meeste stemmen</option>
@@ -303,7 +175,6 @@
               </div>
             </div>
 
-            <!-- Verborgen Quick Action Panels -->
             <div id="dj-quick-add" class="hidden" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: var(--radius-md); margin-bottom: 14px; border: 1px solid var(--accent-color);">
               <div class="form-group" style="position: relative; margin-bottom: 10px;">
                 <input type="text" id="quick-search-library" class="input-field" style="padding: 10px;" placeholder="🔎 Zoek in bibliotheek..." onkeyup="filterQuickDjSongs(this.value)">
@@ -319,59 +190,37 @@
 
             <div id="dj-quick-blacklist" class="hidden" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: var(--radius-md); margin-bottom: 14px; border: 1px solid var(--danger-color);">
               <div class="flex-row">
-                <input type="text" id="quick-blacklist-input" class="input-field" style="padding: 10px;" placeholder="Typ scheldwoord en druk Enter..." onkeydown="if(event.key==='Enter') addQuickBlacklistWord()">
+                <input type="text" id="quick-blacklist-input" class="input-field" style="padding: 10px;" placeholder="Typ woord..." onkeydown="if(event.key==='Enter') addQuickBlacklistWord()">
                 <button class="btn btn-sm btn-danger" onclick="addQuickBlacklistWord()">Blokkeer</button>
               </div>
             </div>
-
             <div id="dj-queue-list" style="margin-top: 14px;"></div>
           </div>
-
           <div class="glass-card">
             <h3 style="font-size: 1.05rem; margin-bottom: 12px; color: var(--text-sub);">🎉 Reeds Gedraaid</h3>
             <div id="dj-done-list"></div>
           </div>
         </div>
 
-        <!-- DJ TAB 2: INSTELLINGEN & BIEB -->
         <div id="dj-tab-settings" class="hidden">
-          
           <div class="glass-card">
             <h3 style="font-size: 1.05rem; margin-bottom: 12px;">Welkomsttekst & DJ Info</h3>
-            <div class="form-group">
-              <label class="form-label">Titel Gastenscherm</label>
-              <input type="text" id="welcome-title-input" class="input-field" placeholder="Bijv. 🎉 Welkom op het feest!" onkeydown="if(event.key==='Enter') saveDJSettings()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Welkomstbericht Gasten</label>
-              <input type="text" id="welcome-text-input" class="input-field" placeholder="Korte uitleg..." onkeydown="if(event.key==='Enter') saveDJSettings()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Jouw DJ Naam</label>
-              <input type="text" id="setting-dj-name" class="input-field" placeholder="Berghmans & Von Hauze" onkeydown="if(event.key==='Enter') saveDJSettings()">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Promotie / Social Link (Max 1)</label>
-              <input type="text" id="setting-social-link" class="input-field" placeholder="https://instagram.com/jouwnaam" onkeydown="if(event.key==='Enter') saveDJSettings()">
-            </div>
-            <button class="btn btn-secondary btn-sm mb-4" onclick="saveDJSettings()">💾 Wijzigingen Opslaan</button>
+            <div class="form-group"><label class="form-label">Titel Gastenscherm</label><input type="text" id="welcome-title-input" class="input-field" onkeydown="if(event.key==='Enter') saveDJSettings()"></div>
+            <div class="form-group"><label class="form-label">Welkomstbericht</label><input type="text" id="welcome-text-input" class="input-field" onkeydown="if(event.key==='Enter') saveDJSettings()"></div>
+            <div class="form-group"><label class="form-label">Jouw DJ Naam</label><input type="text" id="setting-dj-name" class="input-field" onkeydown="if(event.key==='Enter') saveDJSettings()"></div>
+            <div class="form-group"><label class="form-label">Promotie Link (Max 1)</label><input type="text" id="setting-social-link" class="input-field" onkeydown="if(event.key==='Enter') saveDJSettings()"></div>
+            <button class="btn btn-secondary btn-sm mb-4" onclick="saveDJSettings()">💾 Opslaan</button>
           </div>
 
           <div class="glass-card">
-            <h3 style="font-size: 1.05rem; margin-bottom: 12px;">🛡️ Beveiliging & Spam</h3>
+            <h3 style="font-size: 1.05rem; margin-bottom: 12px;">🛡️ Beveiliging</h3>
             <div class="form-group">
-              <label class="form-label">Spam Cooldown (seconden)</label>
-              <div style="display:flex; gap:8px;">
-                <input type="number" id="setting-spam-cooldown" class="input-field" value="30" style="margin:0;">
-                <button class="btn btn-secondary btn-sm" onclick="saveDJSettings()">Opslaan</button>
-              </div>
+              <label class="form-label">Spam Cooldown (sec)</label>
+              <div style="display:flex; gap:8px;"><input type="number" id="setting-spam-cooldown" class="input-field" style="margin:0;"><button class="btn btn-secondary btn-sm" onclick="saveDJSettings()">Opslaan</button></div>
             </div>
             <div class="form-group mt-4">
-              <label class="form-label">Woord Blacklist Toevoegen</label>
-              <div style="display:flex; gap:8px;">
-                <input type="text" id="blacklist-word-input" class="input-field" placeholder="Verboden woord" style="margin:0;" onkeydown="if(event.key==='Enter') addBlacklistWordFromSettings()">
-                <button class="btn btn-secondary btn-sm" onclick="addBlacklistWordFromSettings()">Voeg toe</button>
-              </div>
+              <label class="form-label">Blacklist Woord Toevoegen</label>
+              <div style="display:flex; gap:8px;"><input type="text" id="blacklist-word-input" class="input-field" style="margin:0;" onkeydown="if(event.key==='Enter') addBlacklistWordFromSettings()"><button class="btn btn-secondary btn-sm" onclick="addBlacklistWordFromSettings()">Voeg toe</button></div>
               <div id="blacklist-words-container" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;"></div>
             </div>
           </div>
@@ -387,74 +236,37 @@
               <h3 style="font-size: 1.05rem; margin: 0;">📚 Muziekbibliotheek (XML)</h3>
               <button class="btn btn-sm btn-danger" style="width: auto;" onclick="resetLibraryDatabase()">🗑️ Wis Bieb</button>
             </div>
-            <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 14px;">Upload je VirtualDJ/Rekordbox XML om nummers direct zoekbaar te maken voor gasten.</p>
-
+            <p style="font-size: 0.82rem; color: var(--text-sub); margin-bottom: 14px;">Upload je XML om nummers zoekbaar te maken.</p>
             <div class="form-group">
               <input type="file" id="xml-file" accept=".xml" class="hidden" onchange="uploadXML(event)">
-              <button class="btn btn-secondary" onclick="document.getElementById('xml-file').click()">
-                <span>📄 Nieuw XML Bestand Uploaden</span>
-              </button>
+              <button class="btn btn-secondary" onclick="document.getElementById('xml-file').click()">📄 Nieuw XML Bestand Uploaden</button>
               <div id="xml-progress-text" style="font-size: 0.85rem; color: var(--accent-color); font-weight: bold; margin-top: 8px; text-align: center;"></div>
             </div>
           </div>
           
           <button class="btn btn-secondary mt-4" onclick="switchToGuestFromDJ()">🏠 Wissel naar Gastenscherm</button>
           <button class="btn btn-danger mt-2" onclick="logoutDJ()">🚪 Uitloggen DJ</button>
-
         </div>
       </section>
-
     </main>
 
-    <!-- BOTTOM NAVBAR (ONLY SHOWN FOR GUEST VIEW) -->
     <nav id="guest-navbar" class="app-navbar hidden">
-      <div class="nav-item active" onclick="switchGuestTab('requests', this)">
-        <span class="nav-icon">🎵</span>
-        <span>Verzoekjes</span>
-      </div>
-      <div class="nav-item" onclick="switchGuestTab('promo', this)">
-        <span class="nav-icon">🎎</span>
-        <span>DJ Info</span>
-      </div>
+      <div class="nav-item active" onclick="switchGuestTab('requests', this)"><span class="nav-icon">🎵</span><span>Verzoekjes</span></div>
+      <div class="nav-item" onclick="switchGuestTab('promo', this)"><span class="nav-icon">🎎</span><span>DJ Info</span></div>
     </nav>
   </div>
 
-  <button id="btn-scroll-top" onclick="scrollToTop()">↑</button>
-
   <script>
-    // --- SUPABASE CONFIGURATION ---
-    const SUPABASE_URL = localStorage.getItem('custom_supabase_url') || "https://wiimebmtizhquwzjrixa.supabase.co";
-    const SUPABASE_KEY = localStorage.getItem('custom_supabase_key') || "sb_publishable_-TyLItKUkPl28wpvaeFQAw_kQj7ZReu";
+    const SUPABASE_URL = "https://wiimebmtizhquwzjrixa.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_-TyLItKUkPl28wpvaeFQAw_kQj7ZReu";
     let dbClient = null;
     
-    // --- GLOBAL STATE ---
-    let allSongs = [];
-    let librarySongs = [];
-    let isDjLoggedIn = false;
-    let currentDjId = null;
-    let currentCompanyId = null;
-    let currentPartyCode = null;
-    let isRequestsDisabled = false;
-    let blacklistedWords = [];
-    let spamCooldownSeconds = 30; 
-    let guestSessionId = 'guest_' + Math.random().toString(36).substring(2, 9);
+    let allSongs = [], librarySongs = [], isDjLoggedIn = false, currentDjId = null, currentPartyCode = null, isRequestsDisabled = false, blacklistedWords = [], spamCooldownSeconds = 30;
     
-    window.addEventListener('scroll', () => {
-      const btn = document.getElementById('btn-scroll-top');
-      if (window.scrollY > 300) btn.classList.add('visible');
-      else btn.classList.remove('visible');
-    });
-    function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-
     function toonPopup(bericht) {
-      const oude = document.getElementById('custom-toast');
-      if (oude) oude.remove();
-      const p = document.createElement('div');
-      p.id = 'custom-toast';
-      p.className = 'toast-popup';
-      p.innerText = bericht;
-      document.body.appendChild(p);
-      setTimeout(() => { if (p) p.remove(); }, 3000);
+      const oude = document.getElementById('custom-toast'); if (oude) oude.remove();
+      const p = document.createElement('div'); p.id = 'custom-toast'; p.className = 'toast-popup'; p.innerText = bericht;
+      document.body.appendChild(p); setTimeout(() => { if (p) p.remove(); }, 3000);
     }
     
     function getVotedSongIds() { try { return JSON.parse(sessionStorage.getItem('voted_song_ids')) || []; } catch(e){ return []; } }
@@ -469,31 +281,27 @@
       const lastTime = sessionStorage.getItem('last_request_time');
       if (lastTime) {
         const diff = Math.floor((Date.now() - parseInt(lastTime)) / 1000);
-        if (diff < spamCooldownSeconds) {
-          toonPopup(`⏳ Wacht nog ${spamCooldownSeconds - diff} seconden voordat je weer een verzoekje plaatst.`);
-          return false;
-        }
+        if (diff < spamCooldownSeconds) { toonPopup(`⏳ Wacht nog ${spamCooldownSeconds - diff} seconden.`); return false; }
       }
       return true;
+    }
+    
+    function containsBlacklistedWord(...texts) {
+        if (!blacklistedWords || blacklistedWords.length === 0) return false;
+        const combined = texts.filter(t => t).join(' ').toLowerCase();
+        return blacklistedWords.some(w => combined.includes(w.toLowerCase()));
     }
 
     window.onload = async () => {
       try {
         dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
         const urlParams = new URLSearchParams(window.location.search);
         const codeFromUrl = urlParams.get('code');
-        if (codeFromUrl && codeFromUrl.length === 4) {
-          document.getElementById('input-guest-code').value = codeFromUrl;
-        }
-
+        if (codeFromUrl && codeFromUrl.length === 4) document.getElementById('input-guest-code').value = codeFromUrl;
         checkActiveSession();
-      } catch(err) {
-        toonPopup('Fout bij verbinden met Supabase!');
-      }
+      } catch(err) { toonPopup('Fout bij verbinden!'); }
     };
 
-    // --- NAVIGATION & TABS ---
     function switchAuthTab(tab) {
       document.getElementById('auth-guest-form').classList.toggle('hidden', tab !== 'guest');
       document.getElementById('auth-dj-form').classList.toggle('hidden', tab !== 'dj');
@@ -510,8 +318,7 @@
 
     function switchDJTab(tab) {
       const buttons = document.querySelectorAll('#screen-dj .segment-btn');
-      const tabs = ['queue', 'settings'];
-      tabs.forEach((t, idx) => {
+      ['queue', 'settings'].forEach((t, idx) => {
         if(buttons[idx]) buttons[idx].classList.toggle('active', t === tab);
         const panel = document.getElementById(`dj-tab-${t}`);
         if(panel) panel.classList.toggle('hidden', t !== tab);
@@ -521,36 +328,18 @@
     function toggleDjQuickPanel(panelType) {
       const add = document.getElementById('dj-quick-add');
       const bl = document.getElementById('dj-quick-blacklist');
-      
       if(panelType !== 'add') add.classList.add('hidden');
       if(panelType !== 'blacklist') bl.classList.add('hidden');
-      
-      if (panelType === 'add') {
-          add.classList.toggle('hidden');
-          if(!add.classList.contains('hidden')) document.getElementById('quick-search-library').focus();
-      }
-      if (panelType === 'blacklist') {
-          bl.classList.toggle('hidden');
-          if(!bl.classList.contains('hidden')) document.getElementById('quick-blacklist-input').focus();
-      }
+      if (panelType === 'add') { add.classList.toggle('hidden'); if(!add.classList.contains('hidden')) document.getElementById('quick-search-library').focus(); }
+      if (panelType === 'blacklist') { bl.classList.toggle('hidden'); if(!bl.classList.contains('hidden')) document.getElementById('quick-blacklist-input').focus(); }
     }
 
-    // --- AUTHENTICATION & INITIALIZATION ---
     async function checkActiveSession() {
       const savedCode = sessionStorage.getItem('entered_party_code');
       const savedDjId = sessionStorage.getItem('logged_in_dj_id');
-      
-      if (savedDjId) {
-          // DJ was ingelogd
-          const pinInput = document.getElementById('input-dj-pin');
-          pinInput.value = sessionStorage.getItem('logged_in_dj_pin') || '';
-          await loginDJ();
-      } else if (savedCode) {
-          // Gast was ingelogd
-          document.getElementById('input-guest-code').value = savedCode;
-          await loginGuest();
-      } else {
-          // Show landing page
+      if (savedDjId) { document.getElementById('input-dj-pin').value = sessionStorage.getItem('logged_in_dj_pin') || ''; await loginDJ(); } 
+      else if (savedCode) { document.getElementById('input-guest-code').value = savedCode; await loginGuest(); } 
+      else {
           document.getElementById('screen-auth').classList.remove('hidden');
           document.getElementById('screen-guest').classList.add('hidden');
           document.getElementById('guest-navbar').classList.add('hidden');
@@ -565,28 +354,14 @@
       const code = document.getElementById('input-guest-code').value.trim();
       if (!code) return toonPopup('Vul een code in.');
       toonPopup('Feest zoeken...');
-
-      const { data, error } = await dbClient
-        .from('djs')
-        .select('*, companies(logo_url, subscription_end_date)')
-        .eq('active_party_code', code)
-        .single();
-
-      if (error || !data) return toonPopup('Onjuiste of gesloten feestcode!');
-
-      // Check subscription
-      if (data.companies && data.companies.subscription_end_date) {
-         if (new Date(data.companies.subscription_end_date) < new Date()) {
-             return toonPopup('Dit account is tijdelijk bevroren wegens een verlopen licentie.');
-         }
-      }
+      const { data, error } = await dbClient.from('djs').select('*, companies(logo_url, subscription_end_date)').eq('active_party_code', code).single();
+      if (error || !data) return toonPopup('Onjuiste code!');
+      if (data.companies && data.companies.subscription_end_date && new Date(data.companies.subscription_end_date) < new Date()) return toonPopup('Account tijdelijk bevroren.');
 
       sessionStorage.setItem('entered_party_code', code);
-      isDjLoggedIn = false;
-      currentDjId = data.id;
-      currentPartyCode = code;
+      isDjLoggedIn = false; currentDjId = data.id; currentPartyCode = code;
       
-      applySettingsToUI(data);
+      await loadGlobalSettings(); applySettingsToUI(data);
 
       document.getElementById('screen-auth').classList.add('hidden');
       document.getElementById('screen-dj').classList.add('hidden');
@@ -596,37 +371,22 @@
       document.getElementById('btn-header-dj-login').classList.add('hidden');
       document.getElementById('party-code-display').innerText = `CODE: ${currentPartyCode}`;
       
-      listenToRealtime();
-      await loadLibrary();
-      await loadRequests();
+      listenToRealtime(); await loadLibrary(); await loadRequests();
     }
 
     async function loginDJ() {
       const pin = document.getElementById('input-dj-pin').value.trim();
       if (!pin) return toonPopup('Vul inlogcode in.');
       toonPopup('Inloggen...');
-
-      const { data, error } = await dbClient
-        .from('djs')
-        .select('*, companies(logo_url, subscription_end_date)')
-        .eq('dj_code', pin)
-        .single();
-
+      const { data, error } = await dbClient.from('djs').select('*, companies(logo_url, subscription_end_date)').eq('dj_code', pin).single();
       if (error || !data) return toonPopup('Onjuiste DJ Inlogcode!');
-
-      if (data.companies && data.companies.subscription_end_date) {
-         if (new Date(data.companies.subscription_end_date) < new Date()) {
-             return toonPopup('Je bedrijfsaccount is tijdelijk bevroren.');
-         }
-      }
+      if (data.companies && data.companies.subscription_end_date && new Date(data.companies.subscription_end_date) < new Date()) return toonPopup('Bedrijfsaccount bevroren.');
 
       sessionStorage.setItem('logged_in_dj_id', data.id);
       sessionStorage.setItem('logged_in_dj_pin', pin);
-      isDjLoggedIn = true;
-      currentDjId = data.id;
-      currentPartyCode = data.active_party_code || '----';
+      isDjLoggedIn = true; currentDjId = data.id; currentPartyCode = data.active_party_code || '----';
       
-      applySettingsToUI(data);
+      await loadGlobalSettings(); applySettingsToUI(data);
 
       document.getElementById('screen-auth').classList.add('hidden');
       document.getElementById('screen-guest').classList.add('hidden');
@@ -636,18 +396,19 @@
       document.getElementById('btn-header-dj-login').classList.add('hidden');
       document.getElementById('party-code-display').innerText = `CODE: ${currentPartyCode}`;
       
-      listenToRealtime();
-      await loadLibrary();
-      await loadRequests();
-      renderDJQueue();
+      listenToRealtime(); await loadLibrary(); await loadRequests(); renderDJQueue();
+    }
+
+    async function loadGlobalSettings() {
+      const { data } = await dbClient.from('master_settings').select('global_blacklist').eq('id', 1).single();
+      if (data && data.global_blacklist) blacklistedWords = blacklistedWords.concat(data.global_blacklist);
     }
 
     function applySettingsToUI(data) {
         isRequestsDisabled = !data.requests_open;
         spamCooldownSeconds = data.spam_cooldown || 30;
-        blacklistedWords = data.blacklist || [];
+        if(data.blacklist) blacklistedWords = [...new Set([...blacklistedWords, ...data.blacklist])];
 
-        // Guest UI
         const wt = data.welcome_title || "🎉 Welkom op het feest!";
         const wx = data.welcome_text || "";
         const banner = document.getElementById('guest-welcome-banner');
@@ -656,47 +417,35 @@
           document.getElementById('welcome-message-title').innerText = wt;
           document.getElementById('welcome-message-text').innerText = wx;
           document.getElementById('welcome-message-text').style.display = wx ? 'block' : 'none';
-        } else {
-          banner.classList.add('hidden');
-        }
+        } else { banner.classList.add('hidden'); }
         
-        // Disable Requests UI
         const guestForm = document.getElementById('guest-requests-form-container');
         const disabledMsg = document.getElementById('guest-requests-disabled-msg');
         const djToggleBtn = document.getElementById('btn-toggle-requests');
         if (isRequestsDisabled) {
-            guestForm.classList.add('hidden');
-            disabledMsg.classList.remove('hidden');
+            guestForm.classList.add('hidden'); disabledMsg.classList.remove('hidden');
             if(djToggleBtn) { djToggleBtn.style.background = 'var(--danger-color)'; djToggleBtn.innerText = '✅ Open inkomend'; }
         } else {
-            guestForm.classList.remove('hidden');
-            disabledMsg.classList.add('hidden');
+            guestForm.classList.remove('hidden'); disabledMsg.classList.add('hidden');
             if(djToggleBtn) { djToggleBtn.style.background = ''; djToggleBtn.innerText = '🛑 Sluit inkomend'; }
         }
 
-        // Branding
-        const brandName = data.dj_name || 'Berghmans & Von Hauze';
+        const brandName = data.dj_name || 'Partyrequest DJ';
         document.getElementById('header-dj-name').innerText = brandName;
         document.getElementById('promo-dj-name').innerText = brandName;
         
         if (data.companies && data.companies.logo_url && data.companies.logo_url !== 'REMOVED') {
             document.getElementById('header-logo').src = data.companies.logo_url;
             document.getElementById('header-logo').classList.remove('hidden');
-        } else {
-            document.getElementById('header-logo').classList.add('hidden');
-        }
+        } else { document.getElementById('header-logo').classList.add('hidden'); }
 
-        // Social Link
         const linksCont = document.getElementById('promo-display-links');
         if(data.social_link && data.social_link.trim() !== '') {
             let href = data.social_link.trim();
             if (!href.startsWith('http')) href = 'https://' + href;
             linksCont.innerHTML = `<a href="${href}" target="_blank" class="btn btn-secondary" style="justify-content:center;">📱 Volg de DJ</a>`;
-        } else {
-            linksCont.innerHTML = '';
-        }
+        } else { linksCont.innerHTML = ''; }
 
-        // Fill DJ Settings Inputs
         if (isDjLoggedIn) {
             safeSetInput('welcome-title-input', data.welcome_title);
             safeSetInput('welcome-text-input', data.welcome_text);
@@ -707,10 +456,7 @@
         }
     }
     
-    function safeSetInput(id, val) {
-        const el = document.getElementById(id);
-        if (el && document.activeElement !== el) el.value = val || '';
-    }
+    function safeSetInput(id, val) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = val || ''; }
 
     async function saveDJSettings() {
         if (!currentDjId) return;
@@ -731,45 +477,36 @@
       if (word && !blacklistedWords.includes(word)) {
         blacklistedWords.push(word);
         await dbClient.from('djs').update({ blacklist: blacklistedWords }).eq('id', currentDjId);
-        input.value = '';
+        input.value = ''; renderBlacklistUI();
       }
     }
+    
     async function addQuickBlacklistWord() {
       const input = document.getElementById('quick-blacklist-input');
       const word = input.value.trim().toLowerCase();
       if (word && !blacklistedWords.includes(word)) {
           blacklistedWords.push(word);
           await dbClient.from('djs').update({ blacklist: blacklistedWords }).eq('id', currentDjId);
-          input.value = '';
-          toonPopup(`'${word}' geblokkeerd.`);
-          toggleDjQuickPanel('blacklist');
+          input.value = ''; toonPopup(`'${word}' geblokkeerd.`); toggleDjQuickPanel('blacklist');
       }
     }
+    
     async function removeBlacklistWord(word) {
       blacklistedWords = blacklistedWords.filter(w => w !== word);
       await dbClient.from('djs').update({ blacklist: blacklistedWords }).eq('id', currentDjId);
+      renderBlacklistUI();
     }
+    
     function renderBlacklistUI() {
       const container = document.getElementById('blacklist-words-container');
       if (!container) return;
       container.innerHTML = blacklistedWords.map(w => `<span class="badge" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);">${w} <span style="cursor:pointer;color:var(--danger-color);" onclick="removeBlacklistWord('${w}')">×</span></span>`).join('');
     }
 
-    function showDJLoginFromGuest() {
-      document.getElementById('screen-guest').classList.add('hidden');
-      document.getElementById('guest-navbar').classList.add('hidden');
-      document.getElementById('screen-auth').classList.remove('hidden');
-      switchAuthTab('dj');
-    }
-
-    function switchToGuestFromDJ() {
-      sessionStorage.removeItem('logged_in_dj_id');
-      if (currentPartyCode) sessionStorage.setItem('entered_party_code', currentPartyCode);
-      location.reload();
-    }
-
+    function showDJLoginFromGuest() { document.getElementById('screen-guest').classList.add('hidden'); document.getElementById('guest-navbar').classList.add('hidden'); document.getElementById('screen-auth').classList.remove('hidden'); switchAuthTab('dj'); }
+    function switchToGuestFromDJ() { sessionStorage.removeItem('logged_in_dj_id'); sessionStorage.removeItem('logged_in_dj_pin'); if (currentPartyCode) sessionStorage.setItem('entered_party_code', currentPartyCode); location.reload(); }
     function logoutGuest() { sessionStorage.removeItem('entered_party_code'); location.reload(); }
-    function logoutDJ() { sessionStorage.removeItem('logged_in_dj_id'); sessionStorage.removeItem('entered_party_code'); location.reload(); }
+    function logoutDJ() { sessionStorage.removeItem('logged_in_dj_id'); sessionStorage.removeItem('logged_in_dj_pin'); sessionStorage.removeItem('entered_party_code'); location.reload(); }
 
     function listenToRealtime() {
       if (!dbClient || !currentDjId) return;
@@ -779,7 +516,6 @@
         .subscribe();
     }
 
-    // --- XML LIBRARY LOGIC ---
     async function loadLibrary() {
         if (!currentDjId) return;
         const { data, error } = await dbClient.from('library_songs').select('*').eq('dj_id', currentDjId);
@@ -787,13 +523,12 @@
     }
 
     async function uploadXML(event) {
-      const file = event.target.files[0];
-      if (!file || !currentDjId) return;
+      const file = event.target.files[0]; if (!file || !currentDjId) return;
       const progressText = document.getElementById('xml-progress-text');
       const reader = new FileReader();
       
       reader.onload = async (e) => {
-        progressText.innerText = 'Bestand inlezen... Een moment geduld aub.';
+        progressText.innerText = 'Bestand inlezen...';
         const xmlDoc = new DOMParser().parseFromString(e.target.result, "text/xml");
         const tracks = xmlDoc.getElementsByTagName("TRACK");
         let imported = [];
@@ -804,96 +539,67 @@
           if (title) imported.push({ dj_id: currentDjId, title, artist: artist || "Onbekend" });
         }
         
-        if(imported.length === 0) {
-          progressText.innerText = 'Geen nummers gevonden.';
-          event.target.value = '';
-          return;
-        }
+        if(imported.length === 0) { progressText.innerText = 'Geen nummers gevonden.'; event.target.value = ''; return; }
 
         progressText.innerText = `Oude bibliotheek wissen...`;
         await dbClient.from('library_songs').delete().eq('dj_id', currentDjId);
 
-        const chunkSize = 500;
-        let successCount = 0;
+        const chunkSize = 500; let successCount = 0;
         for (let i = 0; i < imported.length; i += chunkSize) {
           const chunk = imported.slice(i, i + chunkSize);
           const { error } = await dbClient.from('library_songs').insert(chunk);
-          if (!error) {
-            successCount += chunk.length;
-            progressText.innerText = `Bezig met uploaden... ${successCount} van ${imported.length} verwerkt.`;
-          }
+          if (!error) { successCount += chunk.length; progressText.innerText = `Uploaden... ${successCount} / ${imported.length}`; }
         }
-        toonPopup(`${successCount} nummers succesvol geïmporteerd!`);
-        progressText.innerText = 'Upload voltooid!';
-        setTimeout(() => { progressText.innerText = ''; }, 4000);
-        event.target.value = '';
-        loadLibrary();
+        toonPopup(`${successCount} nummers geïmporteerd!`);
+        progressText.innerText = ''; event.target.value = ''; loadLibrary();
       };
       reader.readAsText(file);
     }
     
     async function resetLibraryDatabase() {
-      if (confirm("WEET JE HET HEEL ZEKER? Dit wist je compleet geüploade bibliotheek.")) {
+      if (confirm("WEET JE HET ZEKER? Dit wist je compleet geüploade bibliotheek.")) {
         toonPopup("Wissen...");
         await dbClient.from('library_songs').delete().eq('dj_id', currentDjId);
-        toonPopup("Bibliotheek is volledig leeggemaakt!");
-        loadLibrary();
+        toonPopup("Bibliotheek is leeggemaakt!"); loadLibrary();
       }
     }
 
-    // --- REQUESTS LOGIC ---
     async function loadRequests() {
       if (!currentDjId) return;
       const { data, error } = await dbClient.from('requests').select('*').eq('dj_id', currentDjId);
-      if (data && !error) { 
-        allSongs = data; 
-        renderGuestRequests(); 
-        renderDJQueue();
-      }
+      if (data && !error) { allSongs = data; renderGuestRequests(); renderDJQueue(); }
     }
 
     function toggleManualRequestForm() {
       const box = document.getElementById('manual-request-box');
       box.classList.toggle('hidden');
       const btn = document.getElementById('btn-toggle-manual');
-      if(box.classList.contains('hidden')) btn.innerText = '➕ Staat je nummer er niet tussen? Klik hier!';
-      else btn.innerText = '➖ Verberg handmatige invoer';
+      if(box.classList.contains('hidden')) btn.innerText = '➕ Staat je nummer er niet tussen?';
+      else btn.innerText = '➖ Verberg formulier';
     }
 
     function filterSongs(query) {
       const resultsDiv = document.getElementById('search-results');
       if (!query || query.length < 2) { resultsDiv.style.display = 'none'; return; }
-      
       const q = query.toLowerCase();
-      // Zoek in vaste library
       const libMatches = librarySongs.filter(s => (s.title + ' ' + s.artist).toLowerCase().includes(q)).slice(0, 6);
 
       if (libMatches.length === 0) { resultsDiv.style.display = 'none'; return; }
 
       resultsDiv.innerHTML = libMatches.map(s => {
-        // Check of hij in de live requests staat
         const liveVerzoek = allSongs.find(req => req.title === s.title && req.artist === s.artist);
-        let statusBadge = '';
-        let passId = 0; // 0 betekent het is een nieuw verzoek uit library
-        let passTitle = s.title.replace(/'/g, "\\'");
-        let passArtist = s.artist.replace(/'/g, "\\'");
-
+        let statusBadge = ''; let passId = 0; 
+        
+        // Anti-crash fix voor speciale tekens en quotes
+        let pT = s.title.replace(/'/g, "\\'").replace(/"/g, "&quot;"); 
+        let pA = s.artist.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        
         if (liveVerzoek) {
             passId = liveVerzoek.id;
             if (liveVerzoek.status === 'requested') statusBadge = '<span class="badge" style="background: var(--accent-color); margin-left: 8px; font-size: 0.65rem;">Aangevraagd</span>';
-            if (liveVerzoek.status === 'done') statusBadge = '<span class="badge" style="background: var(--success-color); margin-left: 8px; font-size: 0.65rem;">Al Gedraaid</span>';
+            if (liveVerzoek.status === 'done') statusBadge = '<span class="badge" style="background: var(--success-color); margin-left: 8px; font-size: 0.65rem;">Gedraaid</span>';
         }
-
-        return `
-        <div class="search-result-item" onclick="selectLibrarySong(${passId}, '${passTitle}', '${passArtist}')">
-          <div>
-            <div class="search-result-title" style="display:flex; align-items:center;">
-              ${s.title} ${statusBadge}
-            </div>
-            <div class="search-result-artist">${s.artist}</div>
-          </div>
-          <span style="color: var(--accent-color); font-size:1.2rem;">+</span>
-        </div>`;
+        return `<div class="search-result-item" onclick="selectLibrarySong(${passId}, '${pT}', '${pA}')"><div><div class="search-result-title" style="display:flex; align-items:center;">${s.title} ${statusBadge}</div><div class="search-result-artist">${s.artist}</div></div><span style="color: var(--accent-color); font-size:1.2rem;">+</span></div>`;
       }).join('');
       resultsDiv.style.display = 'block';
     }
@@ -908,44 +614,32 @@
 
       resultsDiv.innerHTML = libMatches.map(s => {
         const liveVerzoek = allSongs.find(req => req.title === s.title && req.artist === s.artist);
-        let statusBadge = '';
-        let passId = 0;
-        let pT = s.title.replace(/'/g, "\\'"); let pA = s.artist.replace(/'/g, "\\'");
-
+        let statusBadge = ''; let passId = 0; 
+        
+        // Anti-crash fix voor speciale tekens en quotes
+        let pT = s.title.replace(/'/g, "\\'").replace(/"/g, "&quot;"); 
+        let pA = s.artist.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        
         if (liveVerzoek) {
             passId = liveVerzoek.id;
             if (liveVerzoek.status === 'requested') statusBadge = '<span class="badge" style="background: var(--accent-color); margin-left: 8px; font-size: 0.65rem;">Aangevraagd</span>';
-            if (liveVerzoek.status === 'done') statusBadge = '<span class="badge" style="background: var(--success-color); margin-left: 8px; font-size: 0.65rem;">Al Gedraaid</span>';
+            if (liveVerzoek.status === 'done') statusBadge = '<span class="badge" style="background: var(--success-color); margin-left: 8px; font-size: 0.65rem;">Gedraaid</span>';
         }
-        return `
-        <div class="search-result-item" onclick="selectLibrarySong(${passId}, '${pT}', '${pA}', true); document.getElementById('quick-search-library').value=''; document.getElementById('quick-search-results').style.display='none'; toggleDjQuickPanel('add');">
-          <div>
-            <div class="search-result-title" style="display:flex; align-items:center;">${s.title} ${statusBadge}</div>
-            <div class="search-result-artist">${s.artist}</div>
-          </div>
-          <span style="color: var(--accent-color); font-size:1.2rem;">+</span>
-        </div>`;
+        return `<div class="search-result-item" onclick="selectLibrarySong(${passId}, '${pT}', '${pA}', true); document.getElementById('quick-search-library').value=''; document.getElementById('quick-search-results').style.display='none'; toggleDjQuickPanel('add');"><div><div class="search-result-title" style="display:flex; align-items:center;">${s.title} ${statusBadge}</div><div class="search-result-artist">${s.artist}</div></div><span style="color: var(--accent-color); font-size:1.2rem;">+</span></div>`;
       }).join('');
       resultsDiv.style.display = 'block';
     }
 
     async function selectLibrarySong(id, title, artist, isDjAction = false) {
-      document.getElementById('input-search-library').value = '';
-      document.getElementById('search-results').style.display = 'none';
-      
+      document.getElementById('input-search-library').value = ''; document.getElementById('search-results').style.display = 'none';
       if (id === 0) {
-          // Nieuw verzoek vanuit lib
           if(!isDjAction && !checkSpam()) return;
-          if (containsBlacklistedWord(title, artist)) return toonPopup('Niet toegestaan.');
+          if (!isDjAction && containsBlacklistedWord(title, artist)) return toonPopup('Niet toegestaan door DJ.');
           
           await dbClient.from('requests').insert([{ dj_id: currentDjId, party_code: currentPartyCode, title, artist, votes: 1 }]);
           if(!isDjAction) sessionStorage.setItem('last_request_time', Date.now()); 
-          toonPopup(`🎵 Verzoekje voor "${title}" doorgegeven!`);
-          loadRequests();
-      } else {
-          // Bestaand upvoten
-          vote(id, null, isDjAction);
-      }
+          toonPopup(`🎵 Verzoekje voor "${title}" doorgegeven!`); loadRequests();
+      } else { vote(id, null, isDjAction); }
     }
 
     async function submitCustomRequest() {
@@ -954,23 +648,21 @@
       const title = titleInput.value.trim(), artist = artistInput.value.trim() || 'Onbekend', note = noteInput.value.trim();
 
       if (!title) return toonPopup('Vul tenminste een titel in!');
-      if (containsBlacklistedWord(title, artist, note)) return toonPopup('Niet toegestaan.');
+      if (containsBlacklistedWord(title, artist, note)) return toonPopup('Niet toegestaan door DJ.');
 
       const { data, error } = await dbClient.from('requests').insert([{ dj_id: currentDjId, party_code: currentPartyCode, title, artist, note, votes: 1 }]).select();
       if (!error) {
         toonPopup(`🎉 Verzoekje "${title}" verstuurd!`);
         if (data && data[0]) recordVote(data[0].id);
         titleInput.value = ''; artistInput.value = ''; noteInput.value = '';
-        toggleManualRequestForm();
-        loadRequests();
+        toggleManualRequestForm(); loadRequests();
       }
     }
 
     async function vote(id, optionalNote = null, isDjAction = false) {
       if (!isDjAction && !checkSpam()) return;
-      const song = allSongs.find(s => s.id === id);
-      if (!song) return;
-      if (!isDjAction && containsBlacklistedWord(song.title, song.artist, optionalNote)) return toonPopup('Niet toegestaan.');
+      const song = allSongs.find(s => s.id === id); if (!song) return;
+      if (!isDjAction && containsBlacklistedWord(song.title, song.artist, optionalNote)) return toonPopup('Niet toegestaan door DJ.');
       
       const currentVotes = Number(song.votes) || 0;
       const newVotes = isDjAction ? currentVotes : (song.status === 'done' ? 1 : currentVotes + 1);
@@ -979,8 +671,7 @@
       
       await dbClient.from('requests').update(updateData).eq('id', id);
       if (!isDjAction) recordVote(id);
-      toonPopup(`🎵 Verzoekje doorgegeven!`);
-      loadRequests();
+      toonPopup(`🎵 Verzoekje doorgegeven!`); loadRequests();
     }
 
     function renderGuestRequests() {
@@ -992,17 +683,11 @@
 
       document.getElementById('queue-count-badge').innerText = `${queue.length} nummers`;
 
-      if (queue.length === 0) { queueDiv.innerHTML = `<p style="text-align:center; color:var(--text-sub); font-size:0.85rem; padding:20px 0;">Er zijn nog geen actieve verzoekjes.</p>`; } 
-      else {
-        queueDiv.innerHTML = queue.map(r => {
-          const hasVoted = votedIds.includes(r.id);
-          return `<div class="request-card"><div class="request-info"><div class="request-song">${r.title}</div><div class="request-artist">${r.artist}</div>${r.note ? `<div class="request-note">💬 "${r.note}"</div>` : ''}</div><button class="upvote-btn ${hasVoted ? 'voted' : ''}" onclick="vote(${r.id})" ${hasVoted ? 'disabled' : ''}><span>▲</span><span>${r.votes || 0}</span></button></div>`}).join('');
-      }
+      if (queue.length === 0) { queueDiv.innerHTML = `<p style="text-align:center; color:var(--text-sub); font-size:0.85rem; padding:20px 0;">Geen actieve verzoekjes.</p>`; } 
+      else { queueDiv.innerHTML = queue.map(r => { const hasVoted = votedIds.includes(r.id); return `<div class="request-card"><div class="request-info"><div class="request-song">${r.title}</div><div class="request-artist">${r.artist}</div>${r.note ? `<div class="request-note">💬 "${r.note}"</div>` : ''}</div><button class="upvote-btn ${hasVoted ? 'voted' : ''}" onclick="vote(${r.id})" ${hasVoted ? 'disabled' : ''}><span>▲</span><span>${r.votes || 0}</span></button></div>`}).join(''); }
 
       if (played.length === 0) { playedDiv.innerHTML = `<p style="text-align:center; color:var(--text-sub); font-size:0.85rem;">Nog geen nummers afgevinkt.</p>`; } 
-      else {
-        playedDiv.innerHTML = played.map(r => `<div class="request-card" style="opacity:0.5;"><div class="request-info"><div class="request-song" style="text-decoration:line-through;">${r.title}</div><div class="request-artist">${r.artist}</div></div><span class="badge" style="background:var(--success-color);">✓ Gedraaid</span></div>`).join('');
-      }
+      else { playedDiv.innerHTML = played.map(r => `<div class="request-card" style="opacity:0.5;"><div class="request-info"><div class="request-song" style="text-decoration:line-through;">${r.title}</div><div class="request-artist">${r.artist}</div></div><span class="badge" style="background:var(--success-color);">✓ Gedraaid</span></div>`).join(''); }
     }
 
     async function submitQuickDjRequest() {
@@ -1010,7 +695,7 @@
       const artist = document.getElementById('quick-req-artist').value.trim() || 'DJ Verzoek';
       if (!title) return toonPopup('Vul op zijn minst een titel in!');
       await dbClient.from('requests').insert([{ dj_id: currentDjId, party_code: currentPartyCode, title, artist, note: '', votes: 0 }]);
-      toonPopup(`Verzoekje "${title}" in de wachtrij!`);
+      toonPopup(`Toegevoegd!`);
       document.getElementById('quick-req-title').value = ''; document.getElementById('quick-req-artist').value = ''; toggleDjQuickPanel('add'); loadRequests();
     }
 
@@ -1042,6 +727,7 @@
 
     async function markDone(id) { await dbClient.from('requests').update({ status: 'done' }).eq('id', id); loadRequests(); }
     async function unmarkDone(id) { await dbClient.from('requests').update({ status: 'requested' }).eq('id', id); loadRequests(); }
+    
     async function wipeRequests() {
       if (confirm("Weet je ZEKER dat je alle live verzoekjes wilt wissen?")) {
         await dbClient.from('requests').delete().eq('dj_id', currentDjId).eq('status', 'requested');
@@ -1054,10 +740,14 @@
         const { data: newCode } = await dbClient.rpc('generate_unique_party_code');
         await dbClient.from('requests').delete().eq('dj_id', currentDjId);
         await dbClient.from('djs').update({ active_party_code: newCode, requests_open: true }).eq('id', currentDjId);
+        
+        // DE FIX ZIT HIER:
+        currentPartyCode = newCode;
+        document.getElementById('party-code-display').innerText = `CODE: ${newCode}`;
+        
         toonPopup(`Nieuw feest gestart! Code: ${newCode}`);
       }
     }
-
   </script>
 </body>
 </html>
