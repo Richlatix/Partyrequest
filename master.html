@@ -118,7 +118,13 @@
     // --- SUPABASE CONFIGURATION ---
     const SUPABASE_URL = "https://wiimebmtizhquwzjrixa.supabase.co";
     const SUPABASE_KEY = "sb_publishable_-TyLItKUkPl28wpvaeFQAw_kQj7ZReu";
-    let dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // HIER ZIT DE MAGIC FIX: Een unieke opslagsleutel voor de Master Admin!
+    let dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        storageKey: 'master-admin-session'
+      }
+    });
     
     let globalBlacklist = [];
 
@@ -141,12 +147,12 @@
           loadLiveFeed();
           listenToRealtime();
         } else {
-          // NIET uitloggen, anders crash je accounts.html! Toon alleen een waarschuwing.
+          // Geen admin? Blijf op inlogscherm.
           document.getElementById('login-view').classList.remove('hidden');
           document.getElementById('dashboard-view').classList.add('hidden');
           document.getElementById('force-logout-btn').classList.remove('hidden');
           if(event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-             toonPopup('⚠️ Je hebt geen Master Admin rechten op dit specifieke account. Schakel over naar accounts.html');
+             toonPopup('⚠️ Je hebt geen Master Admin rechten op dit account.');
           }
         }
       } else {
