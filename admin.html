@@ -3,136 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Partyrequest - Super Admin</title>
-    <!-- Supabase inladen -->
+    <title>Partyrequest SaaS - Super Admin</title>
+    
+    <!-- Het originele Partyrequest lettertype -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 8px; }
-        h1, h2 { color: #4CAF50; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 10px; box-sizing: border-box; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
-        button { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; }
-        button:hover { background-color: #45a049; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #444; padding: 10px; text-align: left; }
-        th { background-color: #333; }
-        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-        .demo { background: #2196F3; }
-        .bronze { background: #cd7f32; }
-        .gold { background: #FFD700; color: black; }
-        .diamond { background: #b9f2ff; color: black; }
+        /* Exacte kopie van jouw CSS variabelen en basis stijlen */
+        :root {
+            --bg-color: #0d0f12;
+            --card-bg: rgba(26, 29, 36, 0.72);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-color: #007aff;
+            --accent-gradient: linear-gradient(135deg, #007aff, #5856d6);
+            --text-main: #f5f5f7;
+            --text-sub: #8e8e93;
+            --radius-xl: 24px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --blur-val: blur(20px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(0, 122, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(88, 86, 214, 0.15) 0%, transparent 40%);
+            background-attachment: fixed;
+            padding: 40px 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Jouw Glass Cards */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: var(--blur-val);
+            -webkit-backdrop-filter: var(--blur-val);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Tekst en Layout */
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, var(--accent-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        
+        h2, h3 { margin-bottom: 16px; font-weight: 700; }
+        
+        /* Jouw Inputs */
+        .form-group { margin-bottom: 14px; }
+        .form-label {
+            display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-sub);
+            margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .input-field {
+            width: 100%; padding: 14px 16px; background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--card-border); border-radius: var(--radius-lg);
+            color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s;
+        }
+        .input-field:focus { border-color: var(--accent-color); box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2); }
+        
+        /* Jouw Buttons */
+        .btn {
+            width: 100%; padding: 14px 20px; border-radius: var(--radius-lg);
+            border: none; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--accent-gradient); color: #fff; box-shadow: 0 4px 20px rgba(0, 122, 255, 0.35); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: var(--text-main); border: 1px solid var(--card-border); }
+        .btn-sm { padding: 8px 14px; font-size: 0.82rem; border-radius: var(--radius-md); width: auto; }
+
+        /* Tabel (Aangepast aan glasthema) */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        th, td { border-bottom: 1px solid var(--card-border); padding: 14px 10px; text-align: left; }
+        th { color: var(--text-sub); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        
+        /* Badges */
+        .badge { padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+        .bg-demo { background: rgba(255,255,255,0.1); color: white; }
+        .bg-bronze { background: rgba(205, 127, 50, 0.3); color: #ffc48a; border: 1px solid rgba(205, 127, 50, 0.6); }
+        .bg-gold { background: rgba(255, 215, 0, 0.2); color: #ffd700; border: 1px solid rgba(255, 215, 0, 0.5); }
+        .bg-diamond { background: rgba(0, 229, 255, 0.2); color: #00e5ff; border: 1px solid rgba(0, 229, 255, 0.5); }
+        .bg-lifetime { background: rgba(0, 122, 255, 0.3); color: #80c4ff; border: 1px solid var(--accent-color); }
+
+        .hidden { display: none !important; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>Partyrequest | Admin Paneel</h1>
-    <p>Beheer hier de aangesloten DJ-bedrijven en abonnementen.</p>
+<div class="app-container">
+    
+    <!-- LOGIN SCHERM -->
+    <div id="loginSection" class="glass-card" style="max-width: 400px; margin: 0 auto; width: 100%; margin-top: 10vh;">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <div class="brand-title">Partyrequest SaaS</div>
+            <p style="color: var(--text-sub); font-size: 0.88rem;">Super Admin Inlog</p>
+        </div>
+        <form id="loginForm">
+            <div class="form-group">
+                <input type="email" id="adminEmail" class="input-field" placeholder="E-mailadres" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="adminPassword" class="input-field" placeholder="Wachtwoord" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Inloggen</button>
+        </form>
+    </div>
 
-    <h2>Nieuw Bedrijf Aanmaken</h2>
-    <form id="addCompanyForm">
-        <div class="form-group">
-            <label>Bedrijfsnaam</label>
-            <input type="text" id="companyName" required placeholder="Bijv. DJ Service Brabant">
+    <!-- DASHBOARD SCHERM -->
+    <div id="dashboardSection" class="hidden">
+        
+        <div class="glass-card flex-between" style="padding: 16px 24px;">
+            <div class="brand-title" style="margin: 0; font-size: 1.2rem;">SaaS Control Panel</div>
+            <button onclick="logOut()" class="btn btn-secondary btn-sm">Uitloggen</button>
         </div>
-        <div class="form-group">
-            <label>E-mailadres (Voor inlog van het bedrijf)</label>
-            <input type="email" id="companyEmail" required placeholder="info@bedrijf.nl">
-        </div>
-        <div class="form-group">
-            <label>Abonnement</label>
-            <select id="subTier">
-                <option value="demo">Demo (1 Maand)</option>
-                <option value="bronze">Bronze (1 Maand)</option>
-                <option value="gold">Gold (1 Jaar)</option>
-                <option value="diamond">Diamond (2 Jaar)</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Geldig tot (Vervaldatum)</label>
-            <input type="date" id="validUntil" required>
-        </div>
-        <button type="submit">Bedrijf Toevoegen</button>
-    </form>
 
-    <h2>Actieve Bedrijven</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Naam</th>
-                <th>E-mail</th>
-                <th>Abonnement</th>
-                <th>Geldig Tot</th>
-            </tr>
-        </thead>
-        <tbody id="companyTableBody">
-            <!-- Bedrijven worden hier via Javascript ingeladen -->
-        </tbody>
-    </table>
+        <div class="glass-card">
+            <h3>🏢 Nieuw Bedrijf Aanmaken</h3>
+            <form id="addCompanyForm">
+                <div class="form-group">
+                    <label class="form-label">Bedrijfsnaam</label>
+                    <input type="text" id="companyName" class="input-field" required placeholder="Bijv. DJ Service Brabant">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-mailadres Klant (Login)</label>
+                    <input type="email" id="companyEmail" class="input-field" required placeholder="info@bedrijf.nl">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Abonnement</label>
+                    <select id="subTier" class="input-field">
+                        <option value="demo">Demo (1 Maand)</option>
+                        <option value="bronze">Bronze (1 Maand)</option>
+                        <option value="gold">Gold (1 Jaar)</option>
+                        <option value="diamond">Diamond (2 Jaar)</option>
+                        <option value="lifetime">Oneindig (Lifetime)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Vervaldatum</label>
+                    <input type="date" id="validUntil" class="input-field" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Toevoegen aan Database</button>
+            </form>
+        </div>
+
+        <div class="glass-card">
+            <h3>👥 Actieve Klanten</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Naam</th>
+                            <th>E-mail</th>
+                            <th>Abonnement</th>
+                            <th>Geldig Tot</th>
+                        </tr>
+                    </thead>
+                    <tbody id="companyTableBody">
+                        <!-- Data wordt geladen -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    // 1. VUL HIER JOUW SUPABASE GEGEVENS IN
-    const SUPABASE_URL = 'https://JOUW-PROJECT-ID.supabase.co';
-    const SUPABASE_ANON_KEY = 'JOUW-ANON-KEY';
-    
+    // VUL JE SUPABASE KEY HIER IN (Je kunt de key uit je app gebruiken)
+    const SUPABASE_URL = 'JOUW_URL';
+    const SUPABASE_ANON_KEY = 'JOUW_KEY';
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // 2. Bedrijven ophalen en in de tabel zetten
+    const loginSection = document.getElementById('loginSection');
+    const dashboardSection = document.getElementById('dashboardSection');
+
+    async function checkSession() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            loginSection.classList.add('hidden');
+            dashboardSection.classList.remove('hidden');
+            fetchCompanies();
+        }
+    }
+    checkSession();
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('adminEmail').value;
+        const password = document.getElementById('adminPassword').value;
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert("Inloggen mislukt: " + error.message);
+        else { loginSection.classList.add('hidden'); dashboardSection.classList.remove('hidden'); fetchCompanies(); }
+    });
+
+    async function logOut() {
+        await supabase.auth.signOut();
+        dashboardSection.classList.add('hidden'); loginSection.classList.remove('hidden');
+        document.getElementById('loginForm').reset();
+    }
+
+    function updateDate() {
+        const tier = document.getElementById('subTier').value;
+        const dateInput = document.getElementById('validUntil');
+        const now = new Date();
+
+        if (tier === 'demo' || tier === 'bronze') now.setMonth(now.getMonth() + 1);
+        else if (tier === 'gold') now.setFullYear(now.getFullYear() + 1);
+        else if (tier === 'diamond') now.setFullYear(now.getFullYear() + 2);
+        else if (tier === 'lifetime') now.setFullYear(2099);
+
+        dateInput.value = now.toISOString().split('T')[0];
+    }
+    updateDate(); 
+    document.getElementById('subTier').addEventListener('change', updateDate);
+
     async function fetchCompanies() {
         const { data, error } = await supabase.from('companies').select('*').order('created_at', { ascending: false });
-        
-        if (error) {
-            console.error("Fout bij ophalen bedrijven:", error);
-            return;
-        }
+        if (error) return console.error(error);
 
         const tbody = document.getElementById('companyTableBody');
-        tbody.innerHTML = ''; // Tabel leegmaken
+        tbody.innerHTML = ''; 
 
         data.forEach(company => {
+            let displayDate = company.subscription_tier === 'lifetime' ? '∞' : company.valid_until;
             const row = `<tr>
-                <td>${company.company_name}</td>
-                <td>${company.email}</td>
-                <td><span class="status-badge ${company.subscription_tier}">${company.subscription_tier.toUpperCase()}</span></td>
-                <td>${company.valid_until}</td>
+                <td style="font-weight: 600; color: #fff;">${company.company_name}</td>
+                <td style="color: var(--text-sub);">${company.email}</td>
+                <td><span class="badge bg-${company.subscription_tier}">${company.subscription_tier.toUpperCase()}</span></td>
+                <td>${displayDate}</td>
             </tr>`;
             tbody.innerHTML += row;
         });
     }
 
-    // 3. Formulier afhandelen (Nieuw bedrijf toevoegen)
     document.getElementById('addCompanyForm').addEventListener('submit', async function(e) {
-        e.preventDefault(); // Voorkom dat de pagina herlaadt
-
+        e.preventDefault(); 
         const name = document.getElementById('companyName').value;
         const email = document.getElementById('companyEmail').value;
         const tier = document.getElementById('subTier').value;
         const valid = document.getElementById('validUntil').value;
 
-        const { error } = await supabase
-            .from('companies')
-            .insert([{ 
-                company_name: name, 
-                email: email, 
-                subscription_tier: tier, 
-                valid_until: valid 
-            }]);
+        const { error } = await supabase.from('companies').insert([{ 
+            company_name: name, email: email, subscription_tier: tier, valid_until: valid 
+        }]);
 
-        if (error) {
-            alert("Er is iets misgegaan: " + error.message);
-        } else {
+        if (error) alert("Fout: " + error.message);
+        else {
             alert("Bedrijf succesvol toegevoegd!");
-            document.getElementById('addCompanyForm').reset(); // Formulier leegmaken
-            fetchCompanies(); // Tabel direct updaten
+            document.getElementById('addCompanyForm').reset();
+            updateDate(); fetchCompanies(); 
         }
     });
-
-    // Haal de bedrijven direct op bij het laden van de pagina
-    fetchCompanies();
 </script>
-
 </body>
 </html>
