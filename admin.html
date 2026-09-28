@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partyrequest - Super Admin</title>
+    <!-- Supabase inladen -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 8px; }
+        h1, h2 { color: #4CAF50; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; box-sizing: border-box; background: #333; border: 1px solid #555; color: white; border-radius: 4px; }
+        button { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        button:hover { background-color: #45a049; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: left; }
+        th { background-color: #333; }
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .demo { background: #2196F3; }
+        .bronze { background: #cd7f32; }
+        .gold { background: #FFD700; color: black; }
+        .diamond { background: #b9f2ff; color: black; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Partyrequest | Admin Paneel</h1>
+    <p>Beheer hier de aangesloten DJ-bedrijven en abonnementen.</p>
+
+    <h2>Nieuw Bedrijf Aanmaken</h2>
+    <form id="addCompanyForm">
+        <div class="form-group">
+            <label>Bedrijfsnaam</label>
+            <input type="text" id="companyName" required placeholder="Bijv. DJ Service Brabant">
+        </div>
+        <div class="form-group">
+            <label>E-mailadres (Voor inlog van het bedrijf)</label>
+            <input type="email" id="companyEmail" required placeholder="info@bedrijf.nl">
+        </div>
+        <div class="form-group">
+            <label>Abonnement</label>
+            <select id="subTier">
+                <option value="demo">Demo (1 Maand)</option>
+                <option value="bronze">Bronze (1 Maand)</option>
+                <option value="gold">Gold (1 Jaar)</option>
+                <option value="diamond">Diamond (2 Jaar)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Geldig tot (Vervaldatum)</label>
+            <input type="date" id="validUntil" required>
+        </div>
+        <button type="submit">Bedrijf Toevoegen</button>
+    </form>
+
+    <h2>Actieve Bedrijven</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Naam</th>
+                <th>E-mail</th>
+                <th>Abonnement</th>
+                <th>Geldig Tot</th>
+            </tr>
+        </thead>
+        <tbody id="companyTableBody">
+            <!-- Bedrijven worden hier via Javascript ingeladen -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // 1. VUL HIER JOUW SUPABASE GEGEVENS IN
+    const SUPABASE_URL = 'https://JOUW-PROJECT-ID.supabase.co';
+    const SUPABASE_ANON_KEY = 'JOUW-ANON-KEY';
+    
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 2. Bedrijven ophalen en in de tabel zetten
+    async function fetchCompanies() {
+        const { data, error } = await supabase.from('companies').select('*').order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error("Fout bij ophalen bedrijven:", error);
+            return;
+        }
+
+        const tbody = document.getElementById('companyTableBody');
+        tbody.innerHTML = ''; // Tabel leegmaken
+
+        data.forEach(company => {
+            const row = `<tr>
+                <td>${company.company_name}</td>
+                <td>${company.email}</td>
+                <td><span class="status-badge ${company.subscription_tier}">${company.subscription_tier.toUpperCase()}</span></td>
+                <td>${company.valid_until}</td>
+            </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // 3. Formulier afhandelen (Nieuw bedrijf toevoegen)
+    document.getElementById('addCompanyForm').addEventListener('submit', async function(e) {
+        e.preventDefault(); // Voorkom dat de pagina herlaadt
+
+        const name = document.getElementById('companyName').value;
+        const email = document.getElementById('companyEmail').value;
+        const tier = document.getElementById('subTier').value;
+        const valid = document.getElementById('validUntil').value;
+
+        const { error } = await supabase
+            .from('companies')
+            .insert([{ 
+                company_name: name, 
+                email: email, 
+                subscription_tier: tier, 
+                valid_until: valid 
+            }]);
+
+        if (error) {
+            alert("Er is iets misgegaan: " + error.message);
+        } else {
+            alert("Bedrijf succesvol toegevoegd!");
+            document.getElementById('addCompanyForm').reset(); // Formulier leegmaken
+            fetchCompanies(); // Tabel direct updaten
+        }
+    });
+
+    // Haal de bedrijven direct op bij het laden van de pagina
+    fetchCompanies();
+</script>
+
+</body>
+</html>
