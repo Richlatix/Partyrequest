@@ -9,5 +9,4 @@ function stripesSvg(w, color) {
 <polygon class="s3" points="189,0 222,0 388,240 354,240" fill="${a}"/>
 <polygon class="s4" points="0,361 0,440 144,650 199,650" fill="${a}"/></svg>`;
 }
-document.getElementById('logo-s').innerHTML = stripesSvg(130);
 document.getElementById('hero-stripes').innerHTML = stripesSvg(420);
