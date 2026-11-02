@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#121212">
+<title>DJ-dashboard – PartyRequest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+ .mnav{display:none}
+ @media (max-width:720px){
+   .dtabs{display:none!important}
+   .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40}
+   .dash{padding-bottom:110px}
+   .dash h1{font-size:32px}
+   .qrow{flex-wrap:wrap}
+   .qrow .acts{margin-left:auto}
+ }
+ .partyhead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+ .qrow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+ .qrow .acts{display:flex;gap:8px;align-items:center}
+ @media (min-width:721px) and (max-width:1100px){ .grid .side{flex:0 0 340px} .grid .wide{flex:1 1 0} .qrow .t{font-size:19px} .iconbtn,.btn.sm{height:50px} .iconbtn{width:50px} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<header class="sticky-hdr">
+  <div class="logo-s" id="logo-s"></div>
+  <div class="grow"><div class="brandname">PartyRequest</div><div class="brandsub" id="who">DJ</div></div>
+  <button class="btn sm" data-act="logout">Uitloggen</button>
+</header>
+
+<main class="dash">
+
+<!-- Lijst met feesten -->
+<section id="list">
+  <div class="kick">DJ-dashboard</div>
+  <h1 style="margin-top:8px">Jouw feesten</h1>
+  <div class="grid">
+    <div class="side" style="flex:1 1 320px;order:2">
+      <div class="card">
+        <h3>Nieuw feest</h3>
+        <form id="new-party" style="margin-top:12px">
+          <label class="f" for="np-name" style="margin-top:0">Naam van het feest</label>
+          <input id="np-name" maxlength="100" required placeholder="Bijvoorbeeld: Bruiloft Jansen">
+          <button class="btn primary block" type="submit" style="margin-top:14px">Start feest</button>
+        </form>
+      </div>
+    </div>
+    <div class="wide card" style="order:1"><h3>Mijn feesten</h3><ul id="parties" class="list" style="margin-top:8px"></ul></div>
+  </div>
+</section>
+
+<!-- Eén feest -->
+<section id="party" class="hidden">
+  <button class="btn sm" data-act="back" style="margin-bottom:18px">Alle feesten</button>
+  <div class="partyhead">
+    <div><div class="kick" id="p-name">Feest</div><h1 id="p-h1" style="margin-top:8px">Wachtrij</h1></div>
+    <div class="tabs dtabs" role="tablist" aria-label="Onderdelen">
+      <button class="on" role="tab" data-act="tab" data-tab="queue">Wachtrij</button>
+      <button role="tab" data-act="tab" data-tab="opts">Opties</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="wide" style="display:flex;flex-direction:column;gap:24px" id="main-col">
+
+      <div id="t-queue" style="display:flex;flex-direction:column;gap:24px">
+        <section class="card">
+          <div class="row" style="justify-content:space-between">
+            <h2>In de wachtrij <span class="sub" style="font-weight:500;font-size:16px" id="qn"></span></h2>
+            <button class="btn primary sm" style="height:48px" data-act="toggle-add">Verzoek toevoegen</button>
+          </div>
+          <div id="add-box" class="hidden" style="margin-top:16px">
+            <input id="lib-q" placeholder="Zoek in je bibliotheek" autocomplete="off" aria-label="Zoek in je bibliotheek">
+            <ul id="lib-res" class="list" style="margin-top:8px"></ul>
+            <form id="add-manual" class="row" style="margin-top:12px">
+              <input class="grow" id="am-title" placeholder="Titel" required maxlength="150" aria-label="Titel">
+              <input class="grow" id="am-artist" placeholder="Artiest" maxlength="150" aria-label="Artiest">
+              <button class="btn sm" type="submit">Voeg toe</button>
+            </form>
+          </div>
+          <div id="queue" style="margin-top:14px;border-top:1px solid var(--line)"></div>
+        </section>
+        <section class="card">
+          <div class="row" style="justify-content:space-between"><h2 style="font-size:20px;color:var(--sub2)">Gedraaid <span class="sub" style="font-weight:500;font-size:15px" id="dn"></span></h2><button class="btn sm" data-act="csv">Exporteer CSV</button></div>
+          <div id="played" style="margin-top:10px;border-top:1px solid var(--line)"></div>
+        </section>
+      </div>
+
+      <div id="t-opts" style="display:none;flex-direction:column;gap:24px">
+        <section class="card"><h3>Welkomstbericht</h3>
+          <label class="f" for="o-wt">Titel</label><input id="o-wt" maxlength="80">
+          <label class="f" for="o-wx">Tekst</label><textarea id="o-wx" rows="2" maxlength="300"></textarea>
+          <button class="btn sm primary" style="margin-top:14px" data-act="save-welcome">Opslaan</button></section>
+        <section class="card"><h3>Wachttijd per gast</h3><p class="sub" style="margin:6px 0 12px">Hoeveel seconden een gast moet wachten tussen twee verzoekjes.</p>
+          <div class="row"><input class="grow" id="o-cool" type="number" min="0" max="600" aria-label="Seconden"><button class="btn sm primary" data-act="save-cool">Opslaan</button></div></section>
+        <section class="card"><h3>Blacklist</h3>
+          <div class="row" style="margin-top:12px"><input class="grow" id="o-bl" placeholder="Woord dat niet op het feest hoort" maxlength="40" aria-label="Woord toevoegen"><button class="btn sm" data-act="add-bl">Toevoegen</button></div>
+          <div id="bl" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px"></div></section>
+      </div>
+    </div>
+
+    <aside class="side">
+      <section class="card">
+        <div class="kick">Feestcode</div>
+        <div id="p-code" style="margin-top:8px;font-weight:800;font-size:48px;letter-spacing:.12em;line-height:1"></div>
+        <div class="row" style="margin-top:18px;flex-wrap:nowrap;align-items:center">
+          <div id="qr" style="flex:none;background:#fff;padding:8px;border-radius:12px;line-height:0"></div>
+          <div class="sub2" style="font-size:14px;line-height:1.5">Laat gasten de QR-code scannen. Dan hoeft niemand een code over te typen.</div>
+        </div>
+        <button class="btn sm" style="margin-top:14px" data-act="copy-link">Kopieer link</button>
+        <div id="p-link" class="hidden"></div>
+      </section>
+      <section class="card" style="padding-top:8px;padding-bottom:8px">
+        <div class="row" style="justify-content:space-between;flex-wrap:nowrap;min-height:64px"><span id="l1" style="font-weight:600;font-size:16px">Verzoekjes aannemen</span>
+          <button type="button" id="sw-req" class="switch" role="switch" aria-checked="true" aria-labelledby="l1" data-act="toggle-req"></button></div>
+      </section>
+      <section class="card">
+        <h3>Feest afsluiten</h3>
+        <p class="sub2" style="margin:6px 0 14px;font-size:14px;line-height:1.5">De wachtrij gaat dicht en de code komt vrij. Dat kan niet ongedaan worden.</p>
+        <button class="btn danger" data-act="close">Feest afsluiten</button>
+      </section>
+    </aside>
+  </div>
+</section>
+</main>
+
+<nav class="nav mnav hidden" id="mnav" aria-label="Onderdelen">
+  <button class="on" data-act="tab" data-tab="queue"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Wachtrij</button>
+  <button data-act="tab" data-tab="opts"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 0 0-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 0 0-2 1.2l-2.3-.9-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9a7 7 0 0 0 2 1.2l.4 2.6h4l.4-2.6a7 7 0 0 0 2-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Opties</button>
+</nav>
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="dj.js"></script>
+</body>
+</html>
