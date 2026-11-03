@@ -1,145 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#121212">
-<title>PartyRequest by MXT Productions – verzoekjes voor DJ's</title>
-<meta name="description" content="Gasten scannen de QR-code, kiezen een nummer en het staat direct in jouw lijst. Verzoekjes voor DJ's, in je eigen huisstijl.">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PartyRequest by MXT Productions</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
- .wrap{max-width:1240px;margin:0 auto;padding:0 32px}
- .sec{padding:88px 0;border-bottom:1px solid var(--line)}
- .sec.alt{background:#181818}
- .sec h2.big{font-size:44px;line-height:1.08;letter-spacing:-.6px;margin-top:12px;font-weight:800}
- .kick{font-size:14px;letter-spacing:.14em}
- .lnk{height:48px;padding:0 24px;border-radius:999px;font-weight:700;font-size:16px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
- .lnk.fill{background:var(--accent);color:var(--on-accent)}
- .lnk.line{border:1px solid var(--ghost);color:#fff}
- .navlink{font-weight:600;font-size:16px;color:#fff;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
- header.site{display:flex;flex-wrap:wrap;align-items:center;gap:8px 32px;padding:0 32px 0 32px;background:var(--footer);border-bottom:1px solid var(--line);min-height:76px}
- header.site .logo-s{position:relative;width:130px;height:76px;overflow:hidden;flex:none}
- header.site .logo-s .stripes{position:absolute;left:0;top:0}
- header.site nav{display:flex;flex-wrap:wrap;align-items:center;gap:6px 24px}
- .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
- #hero-stripes{position:absolute;left:0;top:0;line-height:0}
- .hero .in{position:relative;max-width:1240px;margin:0 auto;padding:96px 32px 104px;display:flex;justify-content:flex-end}
- .hero h1{font-size:64px;line-height:1.04;letter-spacing:-1px;font-weight:800;margin-top:14px}
- .feat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:44px}
- .plans{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:44px;align-items:stretch}
- .plan{display:flex;flex-direction:column;padding:32px}
- .plan.pop{border-color:var(--accent)}
- .plan ul{list-style:none;margin:24px 0 0;font-size:16px;line-height:2;color:var(--sub2)}
- .price{margin-top:12px;font-weight:800;font-size:40px;line-height:1}
- .price small{font-weight:500;font-size:16px;color:var(--sub)}
- .faq{border-top:1px solid var(--line);padding:22px 0}
- .faq:last-child{border-bottom:1px solid var(--line)}
- .faq h3{font-weight:700;font-size:20px}.faq p{margin-top:8px;font-size:16px;line-height:1.6;color:var(--sub2)}
- .cta{position:relative;overflow:hidden;background:linear-gradient(100deg,#1D4700 0%,#2B6300 55%,#357800 100%)}
- .cta svg{position:absolute;right:0;top:0;height:100%}
- footer.site{background:var(--footer)}
- footer.site .in{max-width:1240px;margin:0 auto;padding:48px 32px 40px;display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between}
- footer.site .col{flex:1 1 220px;font-size:15px;line-height:2;color:var(--sub2)}
- footer.site a{color:var(--sub2);text-decoration:none}
- footer.site .h{font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
- .login-menu{position:relative}
- .login-menu summary{list-style:none;cursor:pointer}
- .login-menu summary::-webkit-details-marker{display:none}
- .login-menu .pop{position:absolute;right:0;top:56px;min-width:240px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px;z-index:20}
- .login-menu .pop a{display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:10px;color:#fff;text-decoration:none;font-weight:600}
- .login-menu .pop a:hover{background:var(--line)}
- @media (max-width:1000px){.feat{grid-template-columns:repeat(2,minmax(0,1fr))}.plans{grid-template-columns:1fr}.hero .in{justify-content:flex-start;padding:170px 24px 72px}#hero-stripes svg{width:190px;height:auto}.hero h1{font-size:46px}.sec h2.big{font-size:34px}}
- @media (max-width:560px){.feat{grid-template-columns:1fr}.wrap{padding:0 20px}.sec{padding:64px 0}header.site{padding:0 16px}header.site nav .navlink{display:none}.hero h1{font-size:38px}.login-menu .pop{right:-8px}}
+.k-wrap{max-width:560px;margin:0 auto;padding:48px 24px 40px}
+.k-stripes{line-height:0;margin-bottom:24px}
+.k-card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;margin-top:14px;transition:border-color .15s}
+.k-card:hover,.k-card:focus-visible{border-color:var(--accent)}
+.k-card b{display:block;font-size:20px}
+.k-card span{display:block;margin-top:6px;font-size:14px;color:var(--sub);line-height:1.5}
+.k-foot{margin-top:36px;text-align:center;font-size:13px;color:var(--sub)}
+.k-foot a{color:var(--sub)}
 </style>
 </head>
 <body>
-
-<header class="site">
-  <div style="flex:1 1 180px;min-width:0"><div class="brandname" style="font-size:22px">PartyRequest</div><div class="brandsub">by MXT Productions</div></div>
-  <nav aria-label="Hoofdmenu">
-    <a class="navlink" href="#functies">Functies</a>
-    <a class="navlink" href="#prijzen">Prijzen</a>
-    <a class="navlink" href="#vragen">Veelgestelde vragen</a>
-    <details class="login-menu">
-      <summary class="lnk line" role="button">Inloggen</summary>
-      <div class="pop">
-        <a href="beheer.html">Inloggen voor bedrijven</a>
-        <a href="feest.html#dj">Inloggen als DJ</a>
-      </div>
-    </details>
-    <a class="lnk fill" href="mailto:info.mxtproductions@gmail.com?subject=Demo%20aanvragen%20PartyRequest">Vraag een demo aan</a>
-  </nav>
-</header>
-
-<section class="hero">
-  <div id="hero-stripes"></div>
-  <div class="in">
-    <div style="flex:0 1 640px;min-width:0">
-      <div class="kick">Verzoekjes voor DJ's</div>
-      <h1>Je gasten sturen<br>zelf hun verzoekje<span style="color:var(--accent)">.</span></h1>
-      <p style="margin-top:22px;font-size:19px;line-height:1.55;color:var(--sub2)">Gasten scannen de QR-code, kiezen een nummer en het staat direct in jouw lijst. Ook de tante.</p>
-      <div style="margin-top:34px;display:flex;flex-wrap:wrap;gap:14px">
-        <a class="lnk fill" style="height:52px;padding:0 30px" href="mailto:info.mxtproductions@gmail.com?subject=Demo%20aanvragen%20PartyRequest">Vraag een demo aan</a>
-        <a class="lnk line" style="height:52px;padding:0 30px" href="#prijzen">Bekijk de prijzen</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="functies" class="sec alt"><div class="wrap">
-  <div class="kick">Functies</div>
-  <h2 class="big">Alles wat een DJ nodig heeft<span style="color:var(--accent)">.</span></h2>
-  <div class="feat">
-    <div class="card"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#7DFF00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM18 14h2M14 18h2"/></svg><h3 style="margin:18px 0 8px;font-size:21px">Scan en klaar</h3><p style="font-size:16px;line-height:1.6;color:var(--sub2)">Geen app om te installeren. Zelfs de oom redt het.</p></div>
-    <div class="card"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#7DFF00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V6M6 11l6-6 6 6"/><path d="M5 21h14"/></svg><h3 style="margin:18px 0 8px;font-size:21px">Wachtrij op stemmen</h3><p style="font-size:16px;line-height:1.6;color:var(--sub2)">Populaire nummers komen bovenaan. Jij houdt de laatste stem.</p></div>
-    <div class="card"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#7DFF00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.3 0 2-.8 2-1.8 0-1.2-1-1.5-1-2.7 0-1 .8-1.5 1.8-1.5H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="8" cy="11" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16" cy="11" r="1"/></svg><h3 style="margin:18px 0 8px;font-size:21px">Jouw huisstijl</h3><p style="font-size:16px;line-height:1.6;color:var(--sub2)">Je eigen logo en kleur op het gastenscherm. Netjes weggewerkt, net als de kabels.</p></div>
-    <div class="card"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#7DFF00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg><h3 style="margin:18px 0 8px;font-size:21px">Blacklist</h3><p style="font-size:16px;line-height:1.6;color:var(--sub2)">Zet woorden op de lijst. Dan blijft het gezellig.</p></div>
-  </div>
-</div></section>
-
-<section id="prijzen" class="sec"><div class="wrap">
-  <div class="kick">Prijzen</div>
-  <h2 class="big">Kies wat bij je past<span style="color:var(--accent)">.</span></h2>
-  <div class="plans">
-    <div class="card plan"><h3 style="font-size:24px;font-weight:800">Starter</h3><div class="price">[PRIJS] <small>per maand</small></div>
-      <ul><li>1 DJ</li><li>1 feest tegelijk</li><li>Eigen logo en kleur</li></ul><div style="flex:1"></div>
-      <a class="lnk line" style="margin-top:28px" href="mailto:info.mxtproductions@gmail.com?subject=Demo%20aanvragen%20PartyRequest">Vraag een demo aan</a></div>
-    <div class="card plan pop"><div class="kick" style="font-size:12px">Meest gekozen</div><h3 style="margin-top:8px;font-size:24px;font-weight:800">Pro</h3><div class="price">[PRIJS] <small>per maand</small></div>
-      <ul><li>Tot 5 DJ's</li><li>3 feesten tegelijk</li><li>Eigen logo en kleur</li></ul><div style="flex:1"></div>
-      <a class="lnk line" style="margin-top:28px" href="mailto:info.mxtproductions@gmail.com?subject=Demo%20aanvragen%20PartyRequest">Vraag een demo aan</a></div>
-    <div class="card plan"><h3 style="font-size:24px;font-weight:800">Business</h3><div class="price">[PRIJS] <small>per maand</small></div>
-      <ul><li>Tot 25 DJ's</li><li>20 feesten tegelijk</li><li>Eigen logo en kleur</li><li>Zonder "by MXT Productions"</li></ul><div style="flex:1"></div>
-      <a class="lnk line" style="margin-top:28px" href="mailto:info.mxtproductions@gmail.com?subject=Demo%20aanvragen%20PartyRequest">Vraag een demo aan</a></div>
-  </div>
-</div></section>
-
-<section id="vragen" class="sec alt"><div class="wrap" style="display:flex;flex-wrap:wrap;gap:48px">
-  <div style="flex:1 1 320px"><div class="kick">Veelgestelde vragen</div><h2 class="big">Even checken<span style="color:var(--accent)">.</span></h2></div>
-  <div style="flex:2 1 520px;min-width:0">
-    <div class="faq"><h3>Moeten gasten een app installeren?</h3><p>Nee. Ze scannen de QR-code en het werkt in de browser.</p></div>
-    <div class="faq"><h3>Kan ik mijn eigen logo en kleur gebruiken?</h3><p>Ja. Het gastenscherm toont jouw logo en jouw accentkleur. Wij zorgen dat de tekst leesbaar blijft.</p></div>
-    <div class="faq"><h3>Kan ik mijn eigen muzieklijst gebruiken?</h3><p>Ja. Elke DJ uploadt zijn eigen XML uit Rekordbox of andere DJ-software, en gasten zoeken in zijn lijst.</p></div>
-    <div class="faq"><h3>Kan een bedrijf meerdere DJ's aanmaken?</h3><p>Ja, tot het aantal in je abonnement. Elke DJ krijgt een eigen code.</p></div>
-  </div>
-</div></section>
-
-<section class="cta">
-  <svg viewBox="0 0 400 200" preserveAspectRatio="none" width="420" height="260" aria-hidden="true"><polygon points="190,0 230,0 130,200 90,200" fill="#121212" fill-opacity="0.85"/><polygon points="260,0 300,0 200,200 160,200" fill="#121212" fill-opacity="0.85"/><polygon points="330,0 370,0 270,200 230,200" fill="#121212" fill-opacity="0.85"/></svg>
-  <div class="wrap" style="position:relative;padding-top:72px;padding-bottom:72px">
-    <h2 style="font-size:44px;line-height:1.08;color:#fff;letter-spacing:-.6px;font-weight:800">Klaar voor je eerste feest?</h2>
-    <p style="margin-top:12px;font-size:19px;color:#fff">Sneller dan een plaat wisselen.</p>
-    <a class="lnk fill" style="margin-top:28px;height:52px;padding:0 30px" href="mailto:info.mxtproductions@gmail.com?subject=Demo%20aanvragen%20PartyRequest">Vraag een demo aan</a>
-  </div>
-</section>
-
-<footer class="site"><div class="in">
-  <div class="col"><div style="font-weight:800;font-size:22px;color:#fff">PartyRequest</div><div style="font-weight:300;font-size:13px;color:var(--sub);margin-top:3px;line-height:1.4">by MXT Productions</div><div style="margin-top:16px;font-weight:300;font-size:16px">U vraagt, wij draaien.</div></div>
-  <div class="col"><div class="h">Contact</div><div>info.mxtproductions@gmail.com</div><div>+31 (0)6 22 49 90 93</div><div>Zeegstraat 39, 5541 EW Reusel</div><div>KvK [KvK-nummer]</div></div>
-  <div class="col"><div class="h">Meer</div><div><a href="https://mxtproductions.nl">mxtproductions.nl</a></div><div><a href="#">Privacy</a></div><div><a href="#">Voorwaarden</a></div></div>
-</div></footer>
-
+<main class="k-wrap">
+  <div class="k-stripes" id="k-stripes"></div>
+  <div class="brandname" style="font-size:30px">PartyRequest</div>
+  <div class="brandsub">by MXT Productions</div>
+  <h1 style="margin:32px 0 0;font-size:30px;line-height:1.15">Waar wil je naartoe?</h1>
+  <a class="k-card" href="beheer.html"><b>Inloggen voor bedrijven</b><span>Beheer je DJ's, feesten, abonnement en huisstijl.</span></a>
+  <a class="k-card" href="feest.html#dj"><b>Inloggen als DJ</b><span>Met je e-mailadres en de code van 6 cijfers.</span></a>
+  <p class="k-foot">Ben je gast op een feest? Scan de QR-code van de DJ.<br><a href="https://mxtproductions.nl/partyrequest/">Meer over PartyRequest</a></p>
+</main>
 <script src="common-lite.js"></script>
 </body>
 </html>
